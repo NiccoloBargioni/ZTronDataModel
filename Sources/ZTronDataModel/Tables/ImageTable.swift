@@ -1,0 +1,127 @@
+import Foundation
+import SQLite3
+import SQLite
+
+
+/// - `IMAGE(name, description, position, searchLabel, gallery, tool, tab, map, game)`
+/// - `PK(name, gallery, tool, tab, map, game)`
+/// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+///
+/// Situations may arise where images with the same apparent identity show up. By design choice, in those cases the repeating images actually have
+/// each their own identity, to facilitate disposing the subhierarchies and customizing them independently. For example:
+///
+///
+///                                              Master
+///                                         /              \
+///           3,4-di-nitroxy-methyl-propane                  Octa-hydro-2,5-nitro-3,4,7-para-zokine
+///         /                                                                                        \
+///     formaldehyde                                                                                 formaldehyde
+///          |                                                                                            |
+///      racing fuel                                                                                  racing fuel
+///
+/// The two `racing fuel` have different identities even though their `name` is the same, because  the two `formaldehyde` have different
+/// identities.
+///
+/// Up to date 28 Nov. 2023, it is guaranteed that the subset of the primary key `name`, `gallery`, `tool`, `map`, `game` is unique
+/// and `tab` is redundant. Though, it's necessary to guarantee referential integrity with respect to `GALLERY`.
+///
+/// - **CONSTRAINTS:**
+///     - `position >= 0`
+///
+/// - **ACTIVE TRIGGERS:**
+///     - `forbid_attaching_image_to_master`: Prevents an image from being associated with a gallery that's not a leaf of its hierarchy.
+///
+///         It collaborates with `forbid_master_containing_images` on ``HAS_SUBGALLERY`` to guarantee that images only appear at leaf gallery nodes.
+///     - `cascade_master_delete_from_image`:  When deleting an image from `IMAGE`, it triggers the disposal of the whole subhierarchy rooted in the deleted image, and the
+///     relationship between it and its master from `IMAGE_VARIANT`, if the deleted image was a slave.
+///
+///         Requires that the connection is opened with `PRAGMA recursive_triggers = 1`
+///
+///         Needs testing.
+///
+/// - **CONSTRAINTS NOT ENFORCED BY TRIGGERS:**
+///     - The `position`s should be unique for each (gallery, tool, map, game, master); this constraint can be temporarily violated while sorting the images for a given (game, map, tool, gallery, master),
+///     but SQLite doesn't support `DISABLE TRIGGER`, therefore it's the user's responsibility to maintain this invariant.
+///     - `positions` should span the whole `{0..<images.count}` interval, with no duplicates,  where `images` is the array af all the images
+///     for a given (`game`, `map`, `tab`, `tool`, `gallery`).
+///    -  An image should only be allowed to appear at the deepest level of the gallery hierarchy. A sophisticated
+///       check to validate that images can only appear at maximum depth across the whole hierarchy starting with the same gallery root, and that every leaf
+///       gallery has at least one child image is recommended.
+public class Image: DBTableCreator {
+    let tableName: String = "IMAGE"
+    let nameColumn: Expression<String>
+    let descriptionColumn: Expression<String>
+    let positionColumn: Expression<Int>
+    let searchLabelColumn: Expression<String?>
+    let foreignKeys: Image.ForeignKeys
+    let table: SQLite.Table
+    
+    internal init() {
+        self.table = Table(tableName)
+        self.nameColumn = Expression<String>("name")
+        self.descriptionColumn = Expression<String>("description")
+        self.positionColumn = Expression<Int>("position")
+        self.searchLabelColumn = Expression<String?>("searchLabel")
+        self.foreignKeys = Image.ForeignKeys()
+    }
+    
+    func makeTable(for dbConnection: OpaquePointer) throws {
+        let galleryModel = DomainModel.gallery
+        
+        let tableCreationStatement =
+            """
+                CREATE TABLE IF NOT EXISTS \(self.tableName) (
+                    \(self.nameColumn.template) TEXT NOT NULL,
+                    \(self.descriptionColumn.template) TEXT NOT NULL,
+                    \(self.positionColumn.template) INT NOT NULL CHECK(\(self.positionColumn.template) >= 0),
+                    \(self.searchLabelColumn.template) TEXT,
+                    \(self.foreignKeys.galleryColumn.template) TEXT NOT NULL,
+                    \(self.foreignKeys.tabColumn.template) TEXT NOT NULL,
+                    \(self.foreignKeys.toolColumn.template) TEXT NOT NULL,
+                    \(self.foreignKeys.mapColumn.template) TEXT NOT NULL,
+                    \(self.foreignKeys.gameColumn.template) TEXT NOT NULL,
+                    PRIMARY KEY (
+                        \(self.nameColumn.template),
+                        \(self.foreignKeys.galleryColumn.template),
+                        \(self.foreignKeys.toolColumn.template),
+                        \(self.foreignKeys.tabColumn.template),
+                        \(self.foreignKeys.mapColumn.template),
+                        \(self.foreignKeys.gameColumn.template)
+                    ),
+                    FOREIGN KEY (
+                        \(self.foreignKeys.galleryColumn.template),
+                        \(self.foreignKeys.toolColumn.template),
+                        \(self.foreignKeys.tabColumn.template),
+                        \(self.foreignKeys.mapColumn.template),
+                        \(self.foreignKeys.gameColumn.template)
+                    ) REFERENCES \(galleryModel.tableName)(
+                        \(galleryModel.nameColumn.template),
+                        \(galleryModel.foreignKeys.toolColumn.template),
+                        \(galleryModel.foreignKeys.tabColumn.template),
+                        \(galleryModel.foreignKeys.mapColumn.template),
+                        \(galleryModel.foreignKeys.gameColumn.template)
+                    ) ON DELETE CASCADE ON UPDATE CASCADE
+                )
+            """
+        
+        try DBMS.performSQLStatement(for: dbConnection, query: tableCreationStatement)
+        try self.makeForbidAttachingImageToMasterTrigger(for: dbConnection)
+        try self.makeCascadeMasterDeleteFromImageTrigger(for: dbConnection)
+    }
+    
+    class ForeignKeys {
+        let galleryColumn: Expression<String>
+        let toolColumn: Expression<String>
+        let tabColumn: Expression<String>
+        let mapColumn: Expression<String>
+        let gameColumn: Expression<String>
+
+        internal init() {
+            self.galleryColumn = Expression<String>("gallery")
+            self.toolColumn = Expression<String>("tool")
+            self.tabColumn = Expression<String>("tab")
+            self.mapColumn = Expression<String>("map")
+            self.gameColumn = Expression<String>("game")
+        }
+    }
+}
