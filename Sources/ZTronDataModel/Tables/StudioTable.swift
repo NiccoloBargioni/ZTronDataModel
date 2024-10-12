@@ -23,16 +23,16 @@ public class Studio: DBTableCreator {
     
     let tableName: String = "STUDIO"
     
-    let nameColumn: Expression<String>
-    let positionColumn: Expression<Int>
-    let assetsImageNameColumn: Expression<String>
+    let nameColumn: SQLite.Expression<String>
+    let positionColumn: SQLite.Expression<Int>
+    let assetsImageNameColumn: SQLite.Expression<String>
     let table: SQLite.Table
     
     internal init() {
         self.table = Table(self.tableName)
-        self.nameColumn = Expression<String>("name")
-        self.assetsImageNameColumn = Expression<String>("assetsImageName")
-        self.positionColumn = Expression<Int>("position")
+        self.nameColumn = SQLite.Expression<String>("name")
+        self.assetsImageNameColumn = SQLite.Expression<String>("assetsImageName")
+        self.positionColumn = SQLite.Expression<Int>("position")
     }
     
     func makeTable(for dbConnection: OpaquePointer) throws {

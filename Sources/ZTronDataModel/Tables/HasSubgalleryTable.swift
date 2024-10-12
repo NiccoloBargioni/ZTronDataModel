@@ -26,16 +26,16 @@ import SQLite
 ///     subgalleries for a given (`game`, `map`, `tab`, `tool`, `master`). This should be true for each `master`.
 public class HasSubgallery: DBTableCreator {
     let tableName = "HAS_SUBGALLERY"
-    let masterColumn: Expression<String>
-    let slaveColumn: Expression<String>
+    let masterColumn: SQLite.Expression<String>
+    let slaveColumn: SQLite.Expression<String>
     let foreignKeys: HasSubgallery.ForeignKeys
     
     let table: SQLite.Table
     
     internal init() {
         self.table = Table(tableName)
-        self.masterColumn = Expression<String>("master")
-        self.slaveColumn = Expression<String>("slave")
+        self.masterColumn = SQLite.Expression<String>("master")
+        self.slaveColumn = SQLite.Expression<String>("slave")
         self.foreignKeys = HasSubgallery.ForeignKeys()
     }
     
@@ -85,16 +85,16 @@ public class HasSubgallery: DBTableCreator {
     }
     
     class ForeignKeys {
-        let toolColumn: Expression<String>
-        let tabColumn: Expression<String>
-        let mapColumn: Expression<String>
-        let gameColumn: Expression<String>
+        let toolColumn: SQLite.Expression<String>
+        let tabColumn: SQLite.Expression<String>
+        let mapColumn: SQLite.Expression<String>
+        let gameColumn: SQLite.Expression<String>
 
         internal init() {
-            self.toolColumn = Expression<String>("tool")
-            self.tabColumn = Expression<String>("tab")
-            self.mapColumn = Expression<String>("map")
-            self.gameColumn = Expression<String>("game")
+            self.toolColumn = SQLite.Expression<String>("tool")
+            self.tabColumn = SQLite.Expression<String>("tab")
+            self.mapColumn = SQLite.Expression<String>("map")
+            self.gameColumn = SQLite.Expression<String>("game")
 
         }
     }

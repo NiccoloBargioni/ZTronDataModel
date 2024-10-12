@@ -27,18 +27,18 @@ import SQLite
 public class Label: DBTableCreator {
     
     let tableName: String = "LABEL"
-    let labelColumn: Expression<String>
-    let isActiveColumn: Expression<Bool>
-    let iconColumn: Expression<String?>
-    let assetsImageNameColumn: Expression<String?>
-    let textColorHexColumn: Expression<String>
-    let backgroundColorHexColumn: Expression<String>
-    let opacityColumn: Expression<Double>
+    let labelColumn: SQLite.Expression<String>
+    let isActiveColumn: SQLite.Expression<Bool>
+    let iconColumn: SQLite.Expression<String?>
+    let assetsImageNameColumn: SQLite.Expression<String?>
+    let textColorHexColumn: SQLite.Expression<String>
+    let backgroundColorHexColumn: SQLite.Expression<String>
+    let opacityColumn: SQLite.Expression<Double>
     
-    let maxAABBOriginXColumn: Expression<Double?>
-    let maxAABBOriginYColumn: Expression<Double?>
-    let maxAABBWidthColumn: Expression<Double?>
-    let maxAABBHeightColumn: Expression<Double?>
+    let maxAABBOriginXColumn: SQLite.Expression<Double?>
+    let maxAABBOriginYColumn: SQLite.Expression<Double?>
+    let maxAABBWidthColumn: SQLite.Expression<Double?>
+    let maxAABBHeightColumn: SQLite.Expression<Double?>
     
     let foreignKeys: Label.ForeignKeys
     let table: SQLite.Table
@@ -46,17 +46,17 @@ public class Label: DBTableCreator {
     init() {
         self.table = Table(tableName)
 
-        self.labelColumn = Expression<String>("label")
-        self.isActiveColumn = Expression<Bool>("isActive")
-        self.iconColumn = Expression<String?>("icon")
-        self.assetsImageNameColumn = Expression<String?>("assetsImageName")
-        self.textColorHexColumn = Expression<String>("textColorHex")
-        self.backgroundColorHexColumn = Expression<String>("backgroundColorHex")
-        self.opacityColumn = Expression<Double>("opacity")
-        self.maxAABBOriginXColumn = Expression<Double?>("maxAABBOriginX")
-        self.maxAABBOriginYColumn = Expression<Double?>("maxAABBOriginY")
-        self.maxAABBWidthColumn = Expression<Double?>("maxAABBWidth")
-        self.maxAABBHeightColumn = Expression<Double?>("maxAABBHeight")
+        self.labelColumn = SQLite.Expression<String>("label")
+        self.isActiveColumn = SQLite.Expression<Bool>("isActive")
+        self.iconColumn = SQLite.Expression<String?>("icon")
+        self.assetsImageNameColumn = SQLite.Expression<String?>("assetsImageName")
+        self.textColorHexColumn = SQLite.Expression<String>("textColorHex")
+        self.backgroundColorHexColumn = SQLite.Expression<String>("backgroundColorHex")
+        self.opacityColumn = SQLite.Expression<Double>("opacity")
+        self.maxAABBOriginXColumn = SQLite.Expression<Double?>("maxAABBOriginX")
+        self.maxAABBOriginYColumn = SQLite.Expression<Double?>("maxAABBOriginY")
+        self.maxAABBWidthColumn = SQLite.Expression<Double?>("maxAABBWidth")
+        self.maxAABBHeightColumn = SQLite.Expression<Double?>("maxAABBHeight")
         self.foreignKeys = Label.ForeignKeys()
     }
     
@@ -115,20 +115,20 @@ public class Label: DBTableCreator {
     }
     
     class ForeignKeys {
-        let imageColumn: Expression<String>
-        let galleryColumn: Expression<String>
-        let tabColumn: Expression<String>
-        let toolColumn: Expression<String>
-        let mapColumn: Expression<String>
-        let gameColumn: Expression<String>
+        let imageColumn: SQLite.Expression<String>
+        let galleryColumn: SQLite.Expression<String>
+        let tabColumn: SQLite.Expression<String>
+        let toolColumn: SQLite.Expression<String>
+        let mapColumn: SQLite.Expression<String>
+        let gameColumn: SQLite.Expression<String>
 
         init() {
-            self.imageColumn = Expression<String>("image")
-            self.galleryColumn = Expression<String>("gallery")
-            self.toolColumn = Expression<String>("tool")
-            self.tabColumn = Expression<String>("tab")
-            self.mapColumn = Expression<String>("map")
-            self.gameColumn = Expression<String>("game")
+            self.imageColumn = SQLite.Expression<String>("image")
+            self.galleryColumn = SQLite.Expression<String>("gallery")
+            self.toolColumn = SQLite.Expression<String>("tool")
+            self.tabColumn = SQLite.Expression<String>("tab")
+            self.mapColumn = SQLite.Expression<String>("map")
+            self.gameColumn = SQLite.Expression<String>("game")
         }
     }
 }

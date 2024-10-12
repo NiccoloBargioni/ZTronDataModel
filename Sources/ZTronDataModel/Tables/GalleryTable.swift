@@ -44,18 +44,18 @@ import SQLite
 public class Gallery: DBTableCreator {
     let tableName = "GALLERY"
     
-    let nameColumn: Expression<String>
-    let positionColumn: Expression<Int>
-    let assetsImageNameColumn: Expression<String?>
+    let nameColumn: SQLite.Expression<String>
+    let positionColumn: SQLite.Expression<Int>
+    let assetsImageNameColumn: SQLite.Expression<String?>
     let foreignKeys: Gallery.ForeignKeys
     let table: SQLite.Table
     
     internal init() {
         self.table = Table(tableName)
-        self.positionColumn = Expression<Int>("position")
-        self.nameColumn = Expression<String>("name")
+        self.positionColumn = SQLite.Expression<Int>("position")
+        self.nameColumn = SQLite.Expression<String>("name")
         self.foreignKeys = Gallery.ForeignKeys()
-        self.assetsImageNameColumn = Expression<String?>("assetsImageName")
+        self.assetsImageNameColumn = SQLite.Expression<String?>("assetsImageName")
     }
     
     func makeTable(for dbConnection: OpaquePointer) throws {
@@ -96,16 +96,16 @@ public class Gallery: DBTableCreator {
     }
     
     class ForeignKeys {
-        let toolColumn: Expression<String>
-        let tabColumn: Expression<String>
-        let mapColumn: Expression<String>
-        let gameColumn: Expression<String>
+        let toolColumn: SQLite.Expression<String>
+        let tabColumn: SQLite.Expression<String>
+        let mapColumn: SQLite.Expression<String>
+        let gameColumn: SQLite.Expression<String>
 
         internal init() {
-            self.toolColumn = Expression<String>("tool")
-            self.tabColumn = Expression<String>("tab")
-            self.mapColumn = Expression<String>("map")
-            self.gameColumn = Expression<String>("game")
+            self.toolColumn = SQLite.Expression<String>("tool")
+            self.tabColumn = SQLite.Expression<String>("tab")
+            self.mapColumn = SQLite.Expression<String>("map")
+            self.gameColumn = SQLite.Expression<String>("game")
         }
     }
 }

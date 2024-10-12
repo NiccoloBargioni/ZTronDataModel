@@ -23,17 +23,17 @@ import SQLite
 ///     of all the games for a given `studio`.
 public class Game: DBTableCreator {
     let tableName = "GAME"
-    let nameColumn: Expression<String>
-    let positionColumn: Expression<Int>
-    let assetsImageNameColumn: Expression<String>
+    let nameColumn: SQLite.Expression<String>
+    let positionColumn: SQLite.Expression<Int>
+    let assetsImageNameColumn: SQLite.Expression<String>
     let foreignKeys: Game.ForeignKeys
     let table: SQLite.Table
     
     internal init() {
         self.table = Table(tableName)
-        self.nameColumn = Expression<String>("name")
-        self.positionColumn = Expression<Int>("position")
-        self.assetsImageNameColumn = Expression<String>("assetsImageName")
+        self.nameColumn = SQLite.Expression<String>("name")
+        self.positionColumn = SQLite.Expression<Int>("position")
+        self.assetsImageNameColumn = SQLite.Expression<String>("assetsImageName")
         self.foreignKeys = Game.ForeignKeys()
     }
     
@@ -56,10 +56,10 @@ public class Game: DBTableCreator {
     }
     
     class ForeignKeys {
-        let studioColumn: Expression<String>
+        let studioColumn: SQLite.Expression<String>
         
         internal init() {
-            self.studioColumn = Expression<String>("studio")
+            self.studioColumn = SQLite.Expression<String>("studio")
         }
     }
 }

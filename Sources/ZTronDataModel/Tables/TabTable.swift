@@ -24,17 +24,17 @@ import SQLite
 public class Tab: DBTableCreator {
     let tableName = "TAB"
     
-    let nameColumn: Expression<String>
-    let positionColumn: Expression<Int>
-    let iconNameColumn: Expression<String>
+    let nameColumn: SQLite.Expression<String>
+    let positionColumn: SQLite.Expression<Int>
+    let iconNameColumn: SQLite.Expression<String>
     let foreignKeys: Tab.ForeignKeys
     let table: SQLite.Table
     
     internal init() {
         self.table = Table(tableName)
-        self.nameColumn = Expression<String>("name")
-        self.positionColumn = Expression<Int>("position")
-        self.iconNameColumn = Expression<String>("iconName")
+        self.nameColumn = SQLite.Expression<String>("name")
+        self.positionColumn = SQLite.Expression<Int>("position")
+        self.iconNameColumn = SQLite.Expression<String>("iconName")
         self.foreignKeys = Tab.ForeignKeys()
     }
     
@@ -68,12 +68,12 @@ public class Tab: DBTableCreator {
     }
     
     class ForeignKeys {
-        let mapColumn: Expression<String>
-        let gameColumn: Expression<String>
+        let mapColumn: SQLite.Expression<String>
+        let gameColumn: SQLite.Expression<String>
         
         internal init() {
-            self.mapColumn = Expression<String>("map")
-            self.gameColumn = Expression<String>("game")
+            self.mapColumn = SQLite.Expression<String>("map")
+            self.gameColumn = SQLite.Expression<String>("game")
         }
     }
 }

@@ -31,23 +31,23 @@ import SQLite
 public class BoundingCircle: DBTableCreator {
     
     let tableName: String = "BOUNDING_CIRCLE"
-    let colorHexColumn: Expression<String>
-    let isActiveColumn: Expression<Bool>
-    let opacityColumn: Expression<Double>
-    let idleDiameterColumn: Expression<Double?>
-    let normalizedCenterXColumn: Expression<Double?>
-    let normalizedCenterYColumn: Expression<Double?>
+    let colorHexColumn: SQLite.Expression<String>
+    let isActiveColumn: SQLite.Expression<Bool>
+    let opacityColumn: SQLite.Expression<Double>
+    let idleDiameterColumn: SQLite.Expression<Double?>
+    let normalizedCenterXColumn: SQLite.Expression<Double?>
+    let normalizedCenterYColumn: SQLite.Expression<Double?>
     let foreignKeys: BoundingCircle.ForeignKeys
     let table: SQLite.Table
     
     internal init() {
         self.table = Table(tableName)
-        self.colorHexColumn = Expression<String>("colorHex")
-        self.isActiveColumn = Expression<Bool>("isActive")
-        self.opacityColumn = Expression<Double>("opacity")
-        self.idleDiameterColumn = Expression<Double?>("idleDiameter")
-        self.normalizedCenterXColumn = Expression<Double?>("normalizedCenterX")
-        self.normalizedCenterYColumn = Expression<Double?>("normalizedCenterY")
+        self.colorHexColumn = SQLite.Expression<String>("colorHex")
+        self.isActiveColumn = SQLite.Expression<Bool>("isActive")
+        self.opacityColumn = SQLite.Expression<Double>("opacity")
+        self.idleDiameterColumn = SQLite.Expression<Double?>("idleDiameter")
+        self.normalizedCenterXColumn = SQLite.Expression<Double?>("normalizedCenterX")
+        self.normalizedCenterYColumn = SQLite.Expression<Double?>("normalizedCenterY")
         self.foreignKeys = BoundingCircle.ForeignKeys()
     }
     
@@ -100,20 +100,20 @@ public class BoundingCircle: DBTableCreator {
     }
     
     class ForeignKeys {
-        let imageColumn: Expression<String>
-        let galleryColumn: Expression<String>
-        let toolColumn: Expression<String>
-        let tabColumn: Expression<String>
-        let mapColumn: Expression<String>
-        let gameColumn: Expression<String>
+        let imageColumn: SQLite.Expression<String>
+        let galleryColumn: SQLite.Expression<String>
+        let toolColumn: SQLite.Expression<String>
+        let tabColumn: SQLite.Expression<String>
+        let mapColumn: SQLite.Expression<String>
+        let gameColumn: SQLite.Expression<String>
         
         internal init() {
-            self.imageColumn = Expression<String>("image")
-            self.galleryColumn = Expression<String>("gallery")
-            self.toolColumn = Expression<String>("tool")
-            self.tabColumn = Expression<String>("tab")
-            self.mapColumn = Expression<String>("map")
-            self.gameColumn = Expression<String>("game")
+            self.imageColumn = SQLite.Expression<String>("image")
+            self.galleryColumn = SQLite.Expression<String>("gallery")
+            self.toolColumn = SQLite.Expression<String>("tool")
+            self.tabColumn = SQLite.Expression<String>("tab")
+            self.mapColumn = SQLite.Expression<String>("map")
+            self.gameColumn = SQLite.Expression<String>("game")
         }
     }
 }

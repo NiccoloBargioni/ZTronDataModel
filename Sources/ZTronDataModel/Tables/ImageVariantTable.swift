@@ -32,15 +32,15 @@ import SQLite
 public class ImageVariant: DBTableCreator {
     
     let tableName: String = "IMAGE_VARIANT"
-    let masterColumn: Expression<String>
-    let slaveColumn: Expression<String>
-    let variantColumn: Expression<String>
-    let bottomBarIconColumn: Expression<String>
+    let masterColumn: SQLite.Expression<String>
+    let slaveColumn: SQLite.Expression<String>
+    let variantColumn: SQLite.Expression<String>
+    let bottomBarIconColumn: SQLite.Expression<String>
     
-    let boundingFrameOriginXColumn: Expression<Double?>
-    let boundingFrameOriginYColumn: Expression<Double?>
-    let boundingFrameWidthColumn: Expression<Double?>
-    let boundingFrameHeightColumn: Expression<Double?>
+    let boundingFrameOriginXColumn: SQLite.Expression<Double?>
+    let boundingFrameOriginYColumn: SQLite.Expression<Double?>
+    let boundingFrameWidthColumn: SQLite.Expression<Double?>
+    let boundingFrameHeightColumn: SQLite.Expression<Double?>
     
     let foreignKeys: ImageVariant.ForeignKeys
     
@@ -48,15 +48,15 @@ public class ImageVariant: DBTableCreator {
     
     internal init() {
         self.table = Table(tableName)
-        self.masterColumn = Expression<String>("master")
-        self.slaveColumn = Expression<String>("slave")
-        self.variantColumn = Expression<String>("variant")
-        self.bottomBarIconColumn = Expression<String>("bottomBarIcon")
+        self.masterColumn = SQLite.Expression<String>("master")
+        self.slaveColumn = SQLite.Expression<String>("slave")
+        self.variantColumn = SQLite.Expression<String>("variant")
+        self.bottomBarIconColumn = SQLite.Expression<String>("bottomBarIcon")
         
-        self.boundingFrameOriginXColumn = Expression<Double?>("boundingFrameOriginX")
-        self.boundingFrameOriginYColumn = Expression<Double?>("boundingFrameoriginY")
-        self.boundingFrameWidthColumn = Expression<Double?>("boundingFrameWidth")
-        self.boundingFrameHeightColumn = Expression<Double?>("boundingFrameHeight")
+        self.boundingFrameOriginXColumn = SQLite.Expression<Double?>("boundingFrameOriginX")
+        self.boundingFrameOriginYColumn = SQLite.Expression<Double?>("boundingFrameoriginY")
+        self.boundingFrameWidthColumn = SQLite.Expression<Double?>("boundingFrameWidth")
+        self.boundingFrameHeightColumn = SQLite.Expression<Double?>("boundingFrameHeight")
         
         self.foreignKeys = ImageVariant.ForeignKeys()
     }
@@ -112,18 +112,18 @@ public class ImageVariant: DBTableCreator {
     }
     
     class ForeignKeys {
-        let galleryColumn: Expression<String>
-        let toolColumn: Expression<String>
-        let tabColumn: Expression<String>
-        let mapColumn: Expression<String>
-        let gameColumn: Expression<String>
+        let galleryColumn: SQLite.Expression<String>
+        let toolColumn: SQLite.Expression<String>
+        let tabColumn: SQLite.Expression<String>
+        let mapColumn: SQLite.Expression<String>
+        let gameColumn: SQLite.Expression<String>
 
         internal init() {
-            self.galleryColumn = Expression<String>("gallery")
-            self.toolColumn = Expression<String>("tool")
-            self.tabColumn = Expression<String>("tab")
-            self.mapColumn = Expression<String>("map")
-            self.gameColumn = Expression<String>("game")
+            self.galleryColumn = SQLite.Expression<String>("gallery")
+            self.toolColumn = SQLite.Expression<String>("tool")
+            self.tabColumn = SQLite.Expression<String>("tab")
+            self.mapColumn = SQLite.Expression<String>("map")
+            self.gameColumn = SQLite.Expression<String>("game")
         }
     }
 }

@@ -29,18 +29,18 @@ import SQLite
 public class Tool: DBTableCreator {
     let tableName = "TOOL"
     
-    let nameColumn: Expression<String>
-    let positionColumn: Expression<Int>
-    let assetsImageNameColumn: Expression<String>
+    let nameColumn: SQLite.Expression<String>
+    let positionColumn: SQLite.Expression<Int>
+    let assetsImageNameColumn: SQLite.Expression<String>
     let foreignKeys: Tool.ForeignKeys
     let table: SQLite.Table
     
     internal init() {
         self.table = Table(tableName)
-        self.nameColumn = Expression<String>("name")
-        self.positionColumn = Expression<Int>("position")
+        self.nameColumn = SQLite.Expression<String>("name")
+        self.positionColumn = SQLite.Expression<Int>("position")
         self.foreignKeys = Tool.ForeignKeys()
-        self.assetsImageNameColumn = Expression<String>("assetsImageName")
+        self.assetsImageNameColumn = SQLite.Expression<String>("assetsImageName")
     }
     
     func makeTable(for dbConnection: OpaquePointer) throws {
@@ -77,14 +77,14 @@ public class Tool: DBTableCreator {
     }
     
     class ForeignKeys {
-        let tabColumn: Expression<String>
-        let mapColumn: Expression<String>
-        let gameColumn: Expression<String>
+        let tabColumn: SQLite.Expression<String>
+        let mapColumn: SQLite.Expression<String>
+        let gameColumn: SQLite.Expression<String>
         
         internal init() {
-            self.tabColumn = Expression<String>("tab")
-            self.mapColumn = Expression<String>("map")
-            self.gameColumn = Expression<String>("game")
+            self.tabColumn = SQLite.Expression<String>("tab")
+            self.mapColumn = SQLite.Expression<String>("map")
+            self.gameColumn = SQLite.Expression<String>("game")
         }
     }
 }

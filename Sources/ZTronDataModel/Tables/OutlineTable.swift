@@ -26,14 +26,14 @@ import SQLite
 public class Outline: DBTableCreator {
     
     let tableName: String = "OUTLINE"
-    let colorHexColumn: Expression<String>
-    let isActiveColumn: Expression<Bool>
-    let opacityColumn: Expression<Double>
+    let colorHexColumn: SQLite.Expression<String>
+    let isActiveColumn: SQLite.Expression<Bool>
+    let opacityColumn: SQLite.Expression<Double>
     
-    let boundingBoxOriginXColumn: Expression<Double>
-    let boundingBoxOriginYColumn: Expression<Double>
-    let boundingBoxWidthColumn: Expression<Double>
-    let boundingBoxHeightColumn: Expression<Double>
+    let boundingBoxOriginXColumn: SQLite.Expression<Double>
+    let boundingBoxOriginYColumn: SQLite.Expression<Double>
+    let boundingBoxWidthColumn: SQLite.Expression<Double>
+    let boundingBoxHeightColumn: SQLite.Expression<Double>
     
     let foreignKeys: Outline.ForeignKeys
     
@@ -41,13 +41,13 @@ public class Outline: DBTableCreator {
     
     internal init() {
         self.table = Table(tableName)
-        self.colorHexColumn = Expression<String>("colorHex")
-        self.isActiveColumn = Expression<Bool>("isActive")
-        self.opacityColumn = Expression<Double>("opacity")
-        self.boundingBoxOriginXColumn = Expression<Double>("boundingBoxOriginX")
-        self.boundingBoxOriginYColumn = Expression<Double>("boundingBoxOriginY")
-        self.boundingBoxWidthColumn = Expression<Double>("boundingBoxWidth")
-        self.boundingBoxHeightColumn = Expression<Double>("boundingBoxHeight")
+        self.colorHexColumn = SQLite.Expression<String>("colorHex")
+        self.isActiveColumn = SQLite.Expression<Bool>("isActive")
+        self.opacityColumn = SQLite.Expression<Double>("opacity")
+        self.boundingBoxOriginXColumn = SQLite.Expression<Double>("boundingBoxOriginX")
+        self.boundingBoxOriginYColumn = SQLite.Expression<Double>("boundingBoxOriginY")
+        self.boundingBoxWidthColumn = SQLite.Expression<Double>("boundingBoxWidth")
+        self.boundingBoxHeightColumn = SQLite.Expression<Double>("boundingBoxHeight")
         self.foreignKeys = Outline.ForeignKeys()
     }
     
@@ -101,20 +101,20 @@ public class Outline: DBTableCreator {
     }
     
     class ForeignKeys {
-        let imageColumn: Expression<String>
-        let galleryColumn: Expression<String>
-        let toolColumn: Expression<String>
-        let tabColumn: Expression<String>
-        let mapColumn: Expression<String>
-        let gameColumn: Expression<String>
+        let imageColumn: SQLite.Expression<String>
+        let galleryColumn: SQLite.Expression<String>
+        let toolColumn: SQLite.Expression<String>
+        let tabColumn: SQLite.Expression<String>
+        let mapColumn: SQLite.Expression<String>
+        let gameColumn: SQLite.Expression<String>
         
         internal init() {
-            self.imageColumn = Expression<String>("image")
-            self.galleryColumn = Expression<String>("gallery")
-            self.toolColumn = Expression<String>("tool")
-            self.tabColumn = Expression<String>("tab")
-            self.mapColumn = Expression<String>("map")
-            self.gameColumn = Expression<String>("game")
+            self.imageColumn = SQLite.Expression<String>("image")
+            self.galleryColumn = SQLite.Expression<String>("gallery")
+            self.toolColumn = SQLite.Expression<String>("tool")
+            self.tabColumn = SQLite.Expression<String>("tab")
+            self.mapColumn = SQLite.Expression<String>("map")
+            self.gameColumn = SQLite.Expression<String>("game")
         }
     }
 }

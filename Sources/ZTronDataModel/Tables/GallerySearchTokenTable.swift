@@ -22,17 +22,17 @@ import SQLite
 ///     - `icon` must be the name of an SFSymbol or systemImage.
 public class GallerySearchToken: DBTableCreator {
     let tableName = "GALLERY_SEARCH_TOKEN"
-    let titleColumn: Expression<String>
-    let iconColumn: Expression<String>
-    let iconColorHexColumn: Expression<String>
+    let titleColumn: SQLite.Expression<String>
+    let iconColumn: SQLite.Expression<String>
+    let iconColorHexColumn: SQLite.Expression<String>
     let foreignKeys: GallerySearchToken.ForeignKeys
     let table: SQLite.Table
     
     internal init() {
         self.table = Table(tableName)
-        self.titleColumn = Expression<String>("title")
-        self.iconColumn = Expression<String>("icon")
-        self.iconColorHexColumn = Expression<String>("iconColorHex")
+        self.titleColumn = SQLite.Expression<String>("title")
+        self.iconColumn = SQLite.Expression<String>("icon")
+        self.iconColorHexColumn = SQLite.Expression<String>("iconColorHex")
         self.foreignKeys = GallerySearchToken.ForeignKeys()
     }
     
@@ -77,19 +77,19 @@ public class GallerySearchToken: DBTableCreator {
     }
     
     class ForeignKeys {
-        let galleryColumn: Expression<String>
-        let toolColumn: Expression<String>
-        let tabColumn: Expression<String>
-        let mapColumn: Expression<String>
-        let gameColumn: Expression<String>
+        let galleryColumn: SQLite.Expression<String>
+        let toolColumn: SQLite.Expression<String>
+        let tabColumn: SQLite.Expression<String>
+        let mapColumn: SQLite.Expression<String>
+        let gameColumn: SQLite.Expression<String>
 
         
         internal init() {
-            self.galleryColumn = Expression<String>("gallery")
-            self.toolColumn = Expression<String>("tool")
-            self.tabColumn = Expression<String>("tab")
-            self.mapColumn = Expression<String>("map")
-            self.gameColumn = Expression<String>("game")
+            self.galleryColumn = SQLite.Expression<String>("gallery")
+            self.toolColumn = SQLite.Expression<String>("tool")
+            self.tabColumn = SQLite.Expression<String>("tab")
+            self.mapColumn = SQLite.Expression<String>("map")
+            self.gameColumn = SQLite.Expression<String>("game")
         }
 
     }
