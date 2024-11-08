@@ -24,6 +24,9 @@ let package = Package(
             name: "ZTronDataModel",
             dependencies: [
                 .product(name: "SQLite", package: "SQLite.swift")
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency=targeted")
             ]
         ),
         .testTarget(

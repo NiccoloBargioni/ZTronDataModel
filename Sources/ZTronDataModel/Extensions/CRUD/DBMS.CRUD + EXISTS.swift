@@ -164,4 +164,102 @@ extension DBMS.CRUD {
         
         return try dbConnection.scalar(countLabelQuery) == 1
     }
+    
+    // MARK: Tool Exists
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    public static func toolExists(
+        for dbConnection: Connection,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Bool {
+        let toolModel = DBMS.tool
+
+        let countQuery = toolModel.table.where(
+            toolModel.nameColumn == tool &&
+            toolModel.foreignKeys.tabColumn == tab &&
+            toolModel.foreignKeys.mapColumn == map &&
+            toolModel.foreignKeys.gameColumn == game
+        ).count
+        
+        return try dbConnection.scalar(countQuery) == 1
+    }
+    
+    
+    // MARK: Tab Exists
+    /// - `TAB(name, position, iconName, map, game)`
+    /// - `PK(name, map, game)`
+    /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    public static func tabExists(
+        for dbConnection: Connection,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Bool {
+        let tabModel = DBMS.tab
+
+        let countQuery = tabModel.table.where(
+            tabModel.nameColumn == tab &&
+            tabModel.foreignKeys.mapColumn == map &&
+            tabModel.foreignKeys.gameColumn == game
+        ).count
+        
+        return try dbConnection.scalar(countQuery) == 1
+    }
+
+    
+    // MARK: Map Exists
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    public static func mapExists(
+        for dbConnection: Connection,
+        map: String,
+        game: String
+    ) throws -> Bool {
+        let mapModel = DBMS.map
+
+        let countQuery = mapModel.table.where(
+            mapModel.nameColumn == map &&
+            mapModel.foreignKeys.gameColumn == game
+        ).count
+        
+        return try dbConnection.scalar(countQuery) == 1
+    }
+    
+    
+    // MARK: Game exists
+    /// - `GAME(name, position, assetsImageName, studio)`
+    /// - `PK(name)`
+    /// - `FK(studio) REFERENCES STUDIO(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    public static func gameExists(
+        for dbConnection: Connection,
+        game: String
+    ) throws -> Bool {
+        let gameModel = DBMS.game
+
+        let countQuery = gameModel.table.where(gameModel.nameColumn == game).count
+        
+        return try dbConnection.scalar(countQuery) == 1
+    }
+    
+    
+    // MARK: Studio exists
+    /// - `STUDIO(name, position, assetsImageName)`
+    /// - `PK(name)`
+    public static func studioExists(
+        for dbConnection: Connection,
+        studio: String
+    ) throws -> Bool {
+        let gameModel = DBMS.studio
+
+        let countQuery = gameModel.table.where(gameModel.nameColumn == studio).count
+        
+        return try dbConnection.scalar(countQuery) == 1
+    }
+
 }
+
