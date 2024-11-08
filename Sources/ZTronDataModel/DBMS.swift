@@ -126,7 +126,12 @@ public class DBMS {
         return count
     }
     
-    public static func transaction(_ caller: String = #function, _ body: @escaping (_ dbConnection: Connection) throws -> TransactionResult) throws {
+    public static func transaction(
+        _ caller: String = #function,
+        _ body: @escaping (_ dbConnection: Connection) throws -> TransactionResult,
+        _ didCommit: (() -> Void)? = nil,
+        _ didRollback: (() -> Void)? = nil
+    ) throws {
         let dbConnection = try Self.openDB(caller: caller)
         var transactionBegun: Bool = false
         
@@ -139,13 +144,16 @@ public class DBMS {
             switch transactionResult {
                 case .commit:
                     try dbConnection.run("COMMIT TRANSACTION")
+                    didCommit?()
                 
                 case .rollback:
                     try dbConnection.run("ROLLBACK TRANSACTION")
+                    didRollback?()
             }
         } catch {
             if transactionBegun {
                 try dbConnection.run("ROLLBACK TRANSACTION")
+                didRollback?()
             }
             
             throw error
