@@ -47,28 +47,29 @@ public class DBMS {
     }
     
     #if DEBUG
-    public static func mockInit() throws {
+    public static func mockInit(or: OnConflict = .abort) throws {
         guard let dbConnection = try? self.openSQLite3DB(caller: #function) else {
             fatalError("Could not open a connection to database \(self.DB_NAME)")
         }
         
         let statements = [
             """
-            INSERT INTO "main"."STUDIO" ("name", "position", "assetsImageName") VALUES ('infinity ward', '0', 'placeholderStudio');
+            INSERT OR \(or.rawValue) INTO "main"."STUDIO" ("name", "position", "assetsImageName") VALUES ('infinity ward', '0', 'placeholderStudio');
             """,
             """
-            INSERT INTO "main"."GAME" ("name", "position", "assetsImageName", "studio") VALUES ('infinite warfare', '0', 'placeholderGame', 'infinity ward');
+            INSERT OR \(or.rawValue) INTO "main"."GAME" ("name", "position", "assetsImageName", "studio") VALUES ('infinite warfare', '0', 'placeholderGame', 'infinity ward');
             """,
             """
-            INSERT INTO "main"."MAP" ("name", "position", "assetsImageName", "game") VALUES ('spaceland', '0', 'placeholderMap', 'infinite warfare');
+            INSERT OR \(or.rawValue) INTO "main"."MAP" ("name", "position", "assetsImageName", "game") VALUES ('spaceland', '0', 'placeholderMap', 'infinite warfare');
             """,
             """
-            INSERT INTO "main"."TAB" ("name", "position", "iconName", "game", "map") VALUES ('music', '0', 'controller.fill', 'infinite warfare', 'spaceland');
+            INSERT OR \(or.rawValue) INTO "main"."TAB" ("name", "position", "iconName", "game", "map") VALUES ('music', '0', 'controller.fill', 'infinite warfare', 'spaceland');
             """,
             """
-            INSERT INTO "main"."TOOL" ("name", "position", "assetsImageName", "tab", "game", "map") VALUES ('love the 80s', '0', 'placeholderTool', 'music', 'infinite warfare', 'spaceland');
+            INSERT OR \(or.rawValue) INTO "main"."TOOL" ("name", "position", "assetsImageName", "tab", "game", "map") VALUES ('love the 80s', '0', 'placeholderTool', 'music', 'infinite warfare', 'spaceland');
             """
         ]
+        
         try self.performSQLStatement(for: dbConnection, query: "BEGIN EXCLUSIVE TRANSACTION")
         
         try statements.forEach { statement in
