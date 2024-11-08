@@ -52,6 +52,10 @@ public class DBMS {
             fatalError("Could not open a connection to database \(self.DB_NAME)")
         }
         
+        defer {
+            sqlite3_close(dbConnection)
+        }
+        
         let statements = [
             """
             INSERT OR \(or.rawValue) INTO "main"."STUDIO" ("name", "position", "assetsImageName") VALUES ('infinity ward', '0', 'placeholderStudio');
@@ -77,13 +81,17 @@ public class DBMS {
                 try performSQLStatement(for: dbConnection, query: statement)
             } catch {
                 try self.performSQLStatement(for: dbConnection, query: "ROLLBACK TRANSACTION")
-                sqlite3_close(dbConnection)
                 fatalError("Could not perform the following query: \(statement)")
             }
         }
         
-        try self.performSQLStatement(for: dbConnection, query: "COMMIT TRANSACTION")
-        sqlite3_close(dbConnection)
+        do {
+            try self.performSQLStatement(for: dbConnection, query: "COMMIT TRANSACTION")
+        } catch {
+            if or != .rollback {
+                throw error
+            }
+        }
     }
     #endif
 
