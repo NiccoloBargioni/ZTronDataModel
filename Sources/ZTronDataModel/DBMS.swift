@@ -90,7 +90,13 @@ public class DBMS {
             }
         }
         
-        try self.performSQLStatement(for: dbConnection, query: "COMMIT TRANSACTION")
+        do {
+            try self.performSQLStatement(for: dbConnection, query: "COMMIT TRANSACTION")
+        } catch {
+            if or != .rollback {
+                throw error
+            }
+        }
     }
     #endif
 
