@@ -80,18 +80,17 @@ public class DBMS {
             do {
                 try performSQLStatement(for: dbConnection, query: statement)
             } catch {
-                try self.performSQLStatement(for: dbConnection, query: "ROLLBACK TRANSACTION")
-                fatalError("Could not perform the following query: \(statement)")
+                do {
+                    try self.performSQLStatement(for: dbConnection, query: "ROLLBACK TRANSACTION")
+                } catch {
+                    if or != .rollback {
+                        throw error
+                    }
+                }
             }
         }
         
-        do {
-            try self.performSQLStatement(for: dbConnection, query: "COMMIT TRANSACTION")
-        } catch {
-            if or != .rollback {
-                throw error
-            }
-        }
+        try self.performSQLStatement(for: dbConnection, query: "COMMIT TRANSACTION")
     }
     #endif
 
