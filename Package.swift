@@ -26,7 +26,7 @@ let package = Package(
                 .product(name: "SQLite", package: "SQLite.swift")
             ],
             swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency=targeted")
+                .enableExperimentalFeature("StrictConcurrency=complete")
             ]
         ),
         .testTarget(

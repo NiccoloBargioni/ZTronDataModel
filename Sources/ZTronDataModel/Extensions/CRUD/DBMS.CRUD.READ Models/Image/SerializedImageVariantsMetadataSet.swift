@@ -1,6 +1,6 @@
 import Foundation
 
-public class SerializedImageVariantsMetadataSet: ReadImageOptional {
+public final class SerializedImageVariantsMetadataSet: ReadImageOptional {
     private let variants: [SerializedImageVariantMetadataModel]
     
     internal init(variants: [SerializedImageVariantMetadataModel]) {

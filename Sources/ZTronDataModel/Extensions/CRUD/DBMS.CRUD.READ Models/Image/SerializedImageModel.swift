@@ -4,7 +4,7 @@ import SQLite
 
 
 /// - `IMAGE(name, description, position, searchLabel, gallery, tool, tab, map, game)`
-public class SerializedImageModel: ReadImageOptional {
+public final class SerializedImageModel: ReadImageOptional {
     private let name: String
     private let description: String
     private let position: Int

@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 import SQLite
 
-public class SerializedBoundingCircleModel: ReadImageOptional {
+public final class SerializedBoundingCircleModel: ReadImageOptional {
     private let colorHex: String
     private let _isActive: Bool
     private let opacity: Double

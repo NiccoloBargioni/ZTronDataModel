@@ -1,6 +1,6 @@
 import Foundation
 
-public class SerializedLabelsSet: ReadImageOptional {
+public final class SerializedLabelsSet: ReadImageOptional {
     private let labels: [SerializedLabelModel]
     
     internal init(labels: [SerializedLabelModel]) {

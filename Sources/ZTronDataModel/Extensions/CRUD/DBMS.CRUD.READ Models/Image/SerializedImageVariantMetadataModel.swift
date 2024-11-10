@@ -3,7 +3,7 @@ import SQLite
 import SQLite3
 
 /// - `IMAGE_VARIANT(master, slave, variant, bottomBarIcon, boundingFrameOriginX, boundingFrameOriginY, boundingFrameWidth, boundingFrameHeight, gallery, tool, tab, map, game)`
-public class SerializedImageVariantMetadataModel: ReadImageOptional {
+public final class SerializedImageVariantMetadataModel: ReadImageOptional {
     private let master: String
     private let slave: String
     private let variant: String

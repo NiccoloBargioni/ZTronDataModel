@@ -2,7 +2,7 @@ import Foundation
 import SQLite
 import SQLite3
 
-public class SerializedLabelModel: ReadImageOptional {
+public final class SerializedLabelModel: ReadImageOptional {
     private let label: String
     private let _isActive: Bool
     private let icon: String?

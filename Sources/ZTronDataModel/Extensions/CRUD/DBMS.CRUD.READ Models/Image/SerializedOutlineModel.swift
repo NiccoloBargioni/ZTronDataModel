@@ -3,7 +3,7 @@ import SQLite
 import SQLite3
 
 /// - `OUTLINE(colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
-public class SerializedOutlineModel: ReadImageOptional {
+public final class SerializedOutlineModel: ReadImageOptional {
     private let colorHex: String
     private let _isActive: Bool
     private let opacity: Double
