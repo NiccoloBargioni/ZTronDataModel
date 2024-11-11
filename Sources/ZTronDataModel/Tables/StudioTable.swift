@@ -1,6 +1,6 @@
 import Foundation
 import SQLite3
-import SQLite
+@preconcurrency import SQLite
 
 /// - `STUDIO(name, position, assetsImageName)`
 /// - `PK(name)`
@@ -19,7 +19,7 @@ import SQLite
 ///     - The `position`s should be unique; this constraint can be temporarily violated while sorting the studios, but SQLite doesn't support `DISABLE TRIGGER`,
 ///         therefore it's the user's responsibility to maintain this invariant.
 ///     - `positions` should span the whole `{0..<studios.count}` interval, with no duplicates.
-public class Studio: DBTableCreator {
+public final class Studio: DBTableCreator {
     
     let tableName: String = "STUDIO"
     

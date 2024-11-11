@@ -4,6 +4,7 @@ import SQLite3
 
 /// - `OUTLINE(colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
 public final class SerializedOutlineModel: ReadImageOptional {
+    private let resourceName: String
     private let colorHex: String
     private let _isActive: Bool
     private let opacity: Double
@@ -17,6 +18,7 @@ public final class SerializedOutlineModel: ReadImageOptional {
     
     internal init(_ fromRow: Row) {
         let outline = DBMS.outline
+        self.resourceName = fromRow[outline.resourceNameColumn]
         self.colorHex = fromRow[outline.colorHexColumn]
         self._isActive = fromRow[outline.isActiveColumn]
         self.opacity = fromRow[outline.opacityColumn]
@@ -48,6 +50,10 @@ public final class SerializedOutlineModel: ReadImageOptional {
     public static func == (lhs: SerializedOutlineModel, rhs: SerializedOutlineModel) -> Bool {
         return lhs.image == rhs.image && lhs.gallery == rhs.gallery && lhs.tool == rhs.tool &&
             lhs.tab == rhs.tab && lhs.map == rhs.map && lhs.game == rhs.game
+    }
+    
+    public func getResourceName() -> String {
+        return self.resourceName
     }
     
     public func getColorHex() -> String {

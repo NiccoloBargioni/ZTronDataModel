@@ -1,6 +1,6 @@
 import Foundation
 import SQLite3
-import SQLite
+@preconcurrency import SQLite
 
 
 /// - `HAS_SUBGALLERY(master, slave, tool, tab, map, game)`
@@ -24,7 +24,7 @@ import SQLite
 ///         but SQLite doesn't support `DISABLE TRIGGER`, therefore it's the user's responsibility to maintain this invariant.
 ///     - `positions` should span the whole `{0..<subgalleries.count}` interval, with no duplicates,  where `subgalleries` is the array af all the
 ///     subgalleries for a given (`game`, `map`, `tab`, `tool`, `master`). This should be true for each `master`.
-public class HasSubgallery: DBTableCreator {
+public final class HasSubgallery: DBTableCreator {
     let tableName = "HAS_SUBGALLERY"
     let masterColumn: SQLite.Expression<String>
     let slaveColumn: SQLite.Expression<String>
@@ -84,7 +84,7 @@ public class HasSubgallery: DBTableCreator {
         try makeForbidMasterContainingImagesTrigger(for: dbConnection)
     }
     
-    class ForeignKeys {
+    final class ForeignKeys: Sendable {
         let toolColumn: SQLite.Expression<String>
         let tabColumn: SQLite.Expression<String>
         let mapColumn: SQLite.Expression<String>

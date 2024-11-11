@@ -1,6 +1,6 @@
 import Foundation
 import SQLite3
-import SQLite
+@preconcurrency import SQLite
 
 /// - `IMAGE_VARIANT(master, slave, variant, bottomBarIcon, boundingFrameOriginX, boundingFrameOriginY, boundingFrameWidth, boundingFrameHeight, gallery, tool, tab, map, game)`
 /// - `PK(slave, gallery, tool, tab, map, game)`
@@ -29,7 +29,7 @@ import SQLite
 ///
 /// - **CONSTRAINTS NOT ENFORCED BY TRIGGERS:**
 ///     None
-public class ImageVariant: DBTableCreator {
+public final class ImageVariant: DBTableCreator {
     
     let tableName: String = "IMAGE_VARIANT"
     let masterColumn: SQLite.Expression<String>
@@ -111,7 +111,7 @@ public class ImageVariant: DBTableCreator {
         try self.makeBoundingFrameNullityCheckTrigger(for: dbConnection)
     }
     
-    class ForeignKeys {
+    final class ForeignKeys: Sendable {
         let galleryColumn: SQLite.Expression<String>
         let toolColumn: SQLite.Expression<String>
         let tabColumn: SQLite.Expression<String>

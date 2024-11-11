@@ -1,6 +1,6 @@
 import Foundation
 import SQLite3
-import SQLite
+@preconcurrency import SQLite
 
 /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
 /// - `PK(name, tool, tab, map, game)`
@@ -41,7 +41,7 @@ import SQLite
 /// - **CONSTRAINTS NOT ENFORCED BY TRIGGERS:**
 ///     - `assetsImageName` is nullable, but all the leaf galleries in a gallery's subhierarchy should verify the condition `assetsImageName IS NOT NULL`, while
 ///     all the internal nodes, including the root, should verify `assetsImageName IS NULL`.
-public class Gallery: DBTableCreator {
+public final class Gallery: DBTableCreator {
     let tableName = "GALLERY"
     
     let nameColumn: SQLite.Expression<String>
@@ -95,7 +95,7 @@ public class Gallery: DBTableCreator {
         try DBMS.performSQLStatement(for: dbConnection, query: tableCreationStatement)
     }
     
-    class ForeignKeys {
+    final class ForeignKeys: Sendable {
         let toolColumn: SQLite.Expression<String>
         let tabColumn: SQLite.Expression<String>
         let mapColumn: SQLite.Expression<String>

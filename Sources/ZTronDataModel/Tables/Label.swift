@@ -1,6 +1,6 @@
 import Foundation
 import SQLite3
-import SQLite
+@preconcurrency import SQLite
 
 /// - `LABEL(label, isActive, icon, assetsImageName, textColorHex, backgroundColorHex, opacity, maxAABBOriginX, maxAABBOriginY, maxAABBWidth, maxAABBHeight, image, gallery, tool, tab, map, game)`
 /// - `PK(label, image, gallery, tool, tab, map, game)`
@@ -24,7 +24,7 @@ import SQLite
 ///
 /// - **CONSTRAINTS NOT ENFORCED BY TRIGGERS:**
 ///     None
-public class Label: DBTableCreator {
+public final class Label: DBTableCreator {
     
     let tableName: String = "LABEL"
     let labelColumn: SQLite.Expression<String>
@@ -114,7 +114,7 @@ public class Label: DBTableCreator {
         try self.makeMaxAABBNotNullConstraint(for: dbConnection)
     }
     
-    class ForeignKeys {
+    final class ForeignKeys: Sendable {
         let imageColumn: SQLite.Expression<String>
         let galleryColumn: SQLite.Expression<String>
         let tabColumn: SQLite.Expression<String>

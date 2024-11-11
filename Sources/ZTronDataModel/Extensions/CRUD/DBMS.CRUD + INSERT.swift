@@ -330,6 +330,7 @@ extension DBMS {
         public static func insertIntoOutline(
             or: OnConflict = .fail,
             for dbConnection: Connection,
+            resourceName: String,
             colorHex: String,
             isActive: Bool,
             opacity: Double,
@@ -345,6 +346,7 @@ extension DBMS {
             try dbConnection.run(
                 outline.table.insert(
                     or: or,
+                    outline.resourceNameColumn <- resourceName,
                     outline.colorHexColumn <- colorHex,
                     outline.isActiveColumn <- isActive,
                     outline.opacityColumn <- opacity,

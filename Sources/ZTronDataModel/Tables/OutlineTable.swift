@@ -1,8 +1,8 @@
 import Foundation
 import SQLite3
-import SQLite
+@preconcurrency import SQLite
 
-/// - `OUTLINE(colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
+/// - `OUTLINE(resourceName, colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
 /// - `PK(image, gallery, tool, tab, map, game)`
 /// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
 ///
@@ -23,9 +23,10 @@ import SQLite
 ///
 /// - **CONSTRAINTS NOT ENFORCED BY TRIGGERS:**
 ///     None
-public class Outline: DBTableCreator {
+public final class Outline: DBTableCreator {
     
     let tableName: String = "OUTLINE"
+    let resourceNameColumn: SQLite.Expression<String>
     let colorHexColumn: SQLite.Expression<String>
     let isActiveColumn: SQLite.Expression<Bool>
     let opacityColumn: SQLite.Expression<Double>
@@ -41,6 +42,7 @@ public class Outline: DBTableCreator {
     
     internal init() {
         self.table = Table(tableName)
+        self.resourceNameColumn = SQLite.Expression<String>("resourceName")
         self.colorHexColumn = SQLite.Expression<String>("colorHex")
         self.isActiveColumn = SQLite.Expression<Bool>("isActive")
         self.opacityColumn = SQLite.Expression<Double>("opacity")
@@ -58,6 +60,7 @@ public class Outline: DBTableCreator {
         let tableCreationStatement =
             """
                 CREATE TABLE IF NOT EXISTS \(self.tableName) (
+                    \(self.resourceNameColumn.template) TEXT NOT NULL,
                     \(self.colorHexColumn.template) TEXT NOT NULL,
                     \(self.isActiveColumn.template) INTEGER NOT NULL,
                     \(self.opacityColumn.template) REAL NOT NULL CHECK(\(self.opacityColumn.template) BETWEEN 0 AND 1),
@@ -100,7 +103,7 @@ public class Outline: DBTableCreator {
         try DBMS.performSQLStatement(for: dbConnection, query: tableCreationStatement)
     }
     
-    class ForeignKeys {
+    final class ForeignKeys: Sendable {
         let imageColumn: SQLite.Expression<String>
         let galleryColumn: SQLite.Expression<String>
         let toolColumn: SQLite.Expression<String>

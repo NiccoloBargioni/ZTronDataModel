@@ -1,6 +1,6 @@
 import Foundation
 import SQLite3
-import SQLite
+@preconcurrency import SQLite
 
 
 /// - `IMAGE(name, description, position, searchLabel, gallery, tool, tab, map, game)`
@@ -47,7 +47,7 @@ import SQLite
 ///    -  An image should only be allowed to appear at the deepest level of the gallery hierarchy. A sophisticated
 ///       check to validate that images can only appear at maximum depth across the whole hierarchy starting with the same gallery root, and that every leaf
 ///       gallery has at least one child image is recommended.
-public class Image: DBTableCreator {
+public final class Image: DBTableCreator {
     let tableName: String = "IMAGE"
     let nameColumn: SQLite.Expression<String>
     let descriptionColumn: SQLite.Expression<String>
@@ -109,7 +109,7 @@ public class Image: DBTableCreator {
         try self.makeCascadeMasterDeleteFromImageTrigger(for: dbConnection)
     }
     
-    class ForeignKeys {
+    final class ForeignKeys: Sendable {
         let galleryColumn: SQLite.Expression<String>
         let toolColumn: SQLite.Expression<String>
         let tabColumn: SQLite.Expression<String>

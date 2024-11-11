@@ -1,6 +1,6 @@
 import Foundation
 import SQLite3
-import SQLite
+@preconcurrency import SQLite
 
 /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
 /// - `PK(image, gallery, tool, tab, map, game)`
@@ -28,7 +28,7 @@ import SQLite
 ///     and `idleDiameter` must not be NULL.
 ///     - When an image has an outline and a bounding circle, `normalizedCenterX`, `normalizedCenterY` must be nil, while
 ///     idleDiameter can be whatever.
-public class BoundingCircle: DBTableCreator {
+public final class BoundingCircle: DBTableCreator {
     
     let tableName: String = "BOUNDING_CIRCLE"
     let colorHexColumn: SQLite.Expression<String>
@@ -99,7 +99,7 @@ public class BoundingCircle: DBTableCreator {
         try self.makeNotNullTrigger(for: dbConnection)
     }
     
-    class ForeignKeys {
+    final class ForeignKeys: Sendable {
         let imageColumn: SQLite.Expression<String>
         let galleryColumn: SQLite.Expression<String>
         let toolColumn: SQLite.Expression<String>

@@ -1,6 +1,6 @@
 import Foundation
 import SQLite3
-import SQLite
+@preconcurrency import SQLite
 
 /// - `GALLERY_SEARCH_TOKEN(title, icon, iconColorHex, gallery, tool, tab, map, game)`
 /// - `PK(gallery, tool, tab, map, game)`
@@ -20,7 +20,7 @@ import SQLite
 ///
 /// - **CONSTRAINTS NOT ENFORCED BY TRIGGERS:**
 ///     - `icon` must be the name of an SFSymbol or systemImage.
-public class GallerySearchToken: DBTableCreator {
+public final class GallerySearchToken: DBTableCreator {
     let tableName = "GALLERY_SEARCH_TOKEN"
     let titleColumn: SQLite.Expression<String>
     let iconColumn: SQLite.Expression<String>
@@ -76,7 +76,7 @@ public class GallerySearchToken: DBTableCreator {
         try DBMS.performSQLStatement(for: dbConnection, query: tableCreationStatement)
     }
     
-    class ForeignKeys {
+    final class ForeignKeys: Sendable {
         let galleryColumn: SQLite.Expression<String>
         let toolColumn: SQLite.Expression<String>
         let tabColumn: SQLite.Expression<String>

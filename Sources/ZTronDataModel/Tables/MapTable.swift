@@ -1,7 +1,7 @@
 import Foundation
 import SQLite3
-import SQLite
-    
+@preconcurrency import SQLite
+
 /// - `MAP(name, position, assetsImageName, game)`
 /// - `PK(name, game)`
 /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
@@ -21,7 +21,7 @@ import SQLite
 ///         therefore it's the user's responsibility to maintain this invariant.
 ///     - `positions` should span the whole `{0..<maps.count}` interval, with no duplicates,  where `maps` is the array af all the maps
 ///     for a given `game`.
-public class Map: DBTableCreator {
+public final class Map: DBTableCreator {
     let tableName = "MAP"
 
     let nameColumn: SQLite.Expression<String>
@@ -60,7 +60,7 @@ public class Map: DBTableCreator {
        
     }
     
-    class ForeignKeys {
+    final class ForeignKeys: Sendable {
         let gameColumn: SQLite.Expression<String>
         
         internal init() {

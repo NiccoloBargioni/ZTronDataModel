@@ -1,6 +1,6 @@
 import Foundation
 import SQLite3
-import SQLite
+@preconcurrency import SQLite
     
 /// - `GAME(name, position, assetsImageName, studio)`
 /// - `PK(name)`
@@ -21,7 +21,7 @@ import SQLite
 ///     support `DISABLE TRIGGER`, therefore it's the user's responsibility to maintain this invariant.
 ///     - `positions` should span the whole `{0..<games.count}` interval, with no duplicates,  where `games` is the array
 ///     of all the games for a given `studio`.
-public class Game: DBTableCreator {
+public final class Game: DBTableCreator {
     let tableName = "GAME"
     let nameColumn: SQLite.Expression<String>
     let positionColumn: SQLite.Expression<Int>
@@ -55,7 +55,7 @@ public class Game: DBTableCreator {
         try DBMS.performSQLStatement(for: dbConnection, query: tableCreationStatement)
     }
     
-    class ForeignKeys {
+    final class ForeignKeys: Sendable {
         let studioColumn: SQLite.Expression<String>
         
         internal init() {

@@ -1,6 +1,6 @@
 import Foundation
 import SQLite3
-import SQLite
+@preconcurrency import SQLite
 
 /// - `TOOL(name, position, assetsImageName, tab, map, game)`
 /// - `PK(name, tab, map, game)`
@@ -26,7 +26,7 @@ import SQLite
 ///         therefore it's the user's responsibility to maintain this invariant.
 ///     - `positions` should span the whole `{0..<tools.count}` interval, with no duplicates,  where `tools` is the array af all the tools
 ///     for a given (`game`, `map`, `tab`).
-public class Tool: DBTableCreator {
+public final class Tool: DBTableCreator {
     let tableName = "TOOL"
     
     let nameColumn: SQLite.Expression<String>
@@ -76,7 +76,7 @@ public class Tool: DBTableCreator {
         try DBMS.performSQLStatement(for: dbConnection, query: tableCreationStatement)
     }
     
-    class ForeignKeys {
+    final class ForeignKeys: Sendable {
         let tabColumn: SQLite.Expression<String>
         let mapColumn: SQLite.Expression<String>
         let gameColumn: SQLite.Expression<String>
