@@ -30,7 +30,7 @@ public final class SerializedOutlineModel: ReadImageOptional {
             ),
             size: CGSize(
                 width: fromRow[outline.boundingBoxWidthColumn],
-                height: fromRow[outline.boundingBoxOriginYColumn]
+                height: fromRow[outline.boundingBoxHeightColumn]
             )
         )
         
