@@ -4,6 +4,14 @@ import SQLite
 
 extension DBMS {
     public class CRUD {
+        static internal let hexValidatingRegex: NSRegularExpression = {
+            do {
+                return try NSRegularExpression(pattern: "^#(?:[0-9a-fA-F]{3}){1,2}$")
+            } catch {
+                fatalError("^#(?:[0-9a-fA-F]{3}){1,2}$ is not a valid regular expression. Aborting")
+            }
+        }()
+
         private init() { }
         
         // MARK: - CREATE

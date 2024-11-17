@@ -140,6 +140,7 @@ public class DBMS {
         return count
     }
     
+    /// - Important: If an exception happens during a transaction, the transaction rolls back and rethrows.
     public static func transaction(
         _ caller: String = #function,
         _ body: @escaping (_ dbConnection: Connection) throws -> TransactionResult,
