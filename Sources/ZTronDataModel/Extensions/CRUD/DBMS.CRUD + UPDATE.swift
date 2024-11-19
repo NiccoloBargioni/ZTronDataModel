@@ -299,7 +299,7 @@ public extension DBMS.CRUD {
         try DBMS.performSQLStatement(
             for: sqlite3Connection, 
             query: """
-            UPDATE \(DBMS.outline.tableName) 
+            UPDATE \(outline.tableName) 
             SET \(outline.isActiveColumn.template) = (
                     CASE WHEN \(outline.isActiveColumn.template) = 0 THEN 1
                     ELSE 0 END
@@ -330,7 +330,7 @@ public extension DBMS.CRUD {
         try DBMS.performSQLStatement(
             for: sqlite3Connection,
             query: """
-            UPDATE \(DBMS.outline.tableName) 
+            UPDATE \(boundingCircle.tableName) 
             SET \(boundingCircle.isActiveColumn.template) = (
                     CASE WHEN \(boundingCircle.isActiveColumn.template) = 0 THEN 1
                     ELSE 0 END
