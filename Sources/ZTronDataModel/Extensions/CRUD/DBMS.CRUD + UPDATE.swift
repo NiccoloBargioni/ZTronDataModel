@@ -303,10 +303,10 @@ public extension DBMS.CRUD {
             ) 
             WHERE \(outline.foreignKeys.imageColumn.template) = "\(image)" AND 
                   \(outline.foreignKeys.galleryColumn.template) = "\(gallery)" AND
-                  \(outline.foreignKeys.toolColumn.template) = \(tool) AND
-                  \(outline.foreignKeys.tabColumn.template) = \(tab) AND
-                  \(outline.foreignKeys.mapColumn.template) = \(map) AND
-                  \(outline.foreignKeys.gameColumn.template) = \(game)
+                  \(outline.foreignKeys.toolColumn.template) = "\(tool)" AND
+                  \(outline.foreignKeys.tabColumn.template) = "\(tab)" AND
+                  \(outline.foreignKeys.mapColumn.template) = "\(map)" AND
+                  \(outline.foreignKeys.gameColumn.template) = "\(game)"
             """
         )
     }
@@ -334,10 +334,10 @@ public extension DBMS.CRUD {
             ) 
             WHERE \(boundingCircle.foreignKeys.imageColumn.template) = "\(image)" AND 
                   \(boundingCircle.foreignKeys.galleryColumn.template) = "\(gallery)" AND
-                  \(boundingCircle.foreignKeys.toolColumn.template) = \(tool) AND
-                  \(boundingCircle.foreignKeys.tabColumn.template) = \(tab) AND
-                  \(boundingCircle.foreignKeys.mapColumn.template) = \(map) AND
-                  \(boundingCircle.foreignKeys.gameColumn.template) = \(game)
+                  \(boundingCircle.foreignKeys.toolColumn.template) = "\(tool)" AND
+                  \(boundingCircle.foreignKeys.tabColumn.template) = "\(tab)" AND
+                  \(boundingCircle.foreignKeys.mapColumn.template) = "\(map)" AND
+                  \(boundingCircle.foreignKeys.gameColumn.template) = "\(game)"
             """
         )
     }
