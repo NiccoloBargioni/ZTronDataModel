@@ -153,6 +153,7 @@ public extension DBMS.CRUD {
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
     static func updateBoundingCircleColor(
+        for dbConnection: Connection,
         colorHex: String,
         opacity: Double?,
         image: String,
@@ -179,34 +180,30 @@ public extension DBMS.CRUD {
             }
         }
         
-        try DBMS.transaction { dbConnection in
-            let boundingCircle = DBMS.boundingCircle
-            
-            let boundingCircleToUpdate = boundingCircle.table.filter(
-                boundingCircle.foreignKeys.imageColumn == image &&
-                boundingCircle.foreignKeys.galleryColumn == gallery.lowercased() &&
-                boundingCircle.foreignKeys.toolColumn == tool.lowercased() &&
-                boundingCircle.foreignKeys.tabColumn == tab.lowercased() &&
-                boundingCircle.foreignKeys.mapColumn == map.lowercased() &&
-                boundingCircle.foreignKeys.gameColumn == game.lowercased()
+        let boundingCircle = DBMS.boundingCircle
+        
+        let boundingCircleToUpdate = boundingCircle.table.filter(
+            boundingCircle.foreignKeys.imageColumn == image &&
+            boundingCircle.foreignKeys.galleryColumn == gallery.lowercased() &&
+            boundingCircle.foreignKeys.toolColumn == tool.lowercased() &&
+            boundingCircle.foreignKeys.tabColumn == tab.lowercased() &&
+            boundingCircle.foreignKeys.mapColumn == map.lowercased() &&
+            boundingCircle.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        if let opacity = opacity {
+            try dbConnection.run(
+                boundingCircleToUpdate.update(
+                    boundingCircle.colorHexColumn <- colorHex,
+                    boundingCircle.opacityColumn <- opacity
+                )
             )
-            
-            if let opacity = opacity {
-                try dbConnection.run(
-                    boundingCircleToUpdate.update(
-                        boundingCircle.colorHexColumn <- colorHex,
-                        boundingCircle.opacityColumn <- opacity
-                    )
+        } else {
+            try dbConnection.run(
+                boundingCircleToUpdate.update(
+                    boundingCircle.colorHexColumn <- colorHex
                 )
-            } else {
-                try dbConnection.run(
-                    boundingCircleToUpdate.update(
-                        boundingCircle.colorHexColumn <- colorHex
-                    )
-                )
-            }
-            
-            return .commit
+            )
         }
     }
     
