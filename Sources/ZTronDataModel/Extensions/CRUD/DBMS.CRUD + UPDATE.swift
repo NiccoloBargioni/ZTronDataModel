@@ -301,11 +301,11 @@ public extension DBMS.CRUD {
                     CASE WHEN \(outline.isActiveColumn.template) = 0 THEN 1
                     ELSE 0 END
             ) 
-            WHERE \(outline.foreignKeys.imageColumn.template) = "\(image)" && 
-                  \(outline.foreignKeys.galleryColumn.template) = "\(gallery)" &&
-                  \(outline.foreignKeys.toolColumn.template) = \(tool) &&
-                  \(outline.foreignKeys.tabColumn.template) = \(tab) &&
-                  \(outline.foreignKeys.mapColumn.template) = \(map) &&
+            WHERE \(outline.foreignKeys.imageColumn.template) = "\(image)" AND 
+                  \(outline.foreignKeys.galleryColumn.template) = "\(gallery)" AND
+                  \(outline.foreignKeys.toolColumn.template) = \(tool) AND
+                  \(outline.foreignKeys.tabColumn.template) = \(tab) AND
+                  \(outline.foreignKeys.mapColumn.template) = \(map) AND
                   \(outline.foreignKeys.gameColumn.template) = \(game)
             """
         )
@@ -332,11 +332,11 @@ public extension DBMS.CRUD {
                     CASE WHEN \(boundingCircle.isActiveColumn.template) = 0 THEN 1
                     ELSE 0 END
             ) 
-            WHERE \(boundingCircle.foreignKeys.imageColumn.template) = "\(image)" && 
-                  \(boundingCircle.foreignKeys.galleryColumn.template) = "\(gallery)" &&
-                  \(boundingCircle.foreignKeys.toolColumn.template) = \(tool) &&
-                  \(boundingCircle.foreignKeys.tabColumn.template) = \(tab) &&
-                  \(boundingCircle.foreignKeys.mapColumn.template) = \(map) &&
+            WHERE \(boundingCircle.foreignKeys.imageColumn.template) = "\(image)" AND 
+                  \(boundingCircle.foreignKeys.galleryColumn.template) = "\(gallery)" AND
+                  \(boundingCircle.foreignKeys.toolColumn.template) = \(tool) AND
+                  \(boundingCircle.foreignKeys.tabColumn.template) = \(tab) AND
+                  \(boundingCircle.foreignKeys.mapColumn.template) = \(map) AND
                   \(boundingCircle.foreignKeys.gameColumn.template) = \(game)
             """
         )
