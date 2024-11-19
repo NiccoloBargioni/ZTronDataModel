@@ -16,6 +16,7 @@ public extension DBMS.CRUD {
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
     static func updateOutlineColor(
+        for dbConnection: Connection, 
         colorHex: String,
         opacity: Double?,
         image: String,
@@ -42,35 +43,32 @@ public extension DBMS.CRUD {
             }
         }
         
-        try DBMS.transaction { dbConnection in
-            let outlineTable = DBMS.outline
-            
-            let outlineToUpdate = outlineTable.table.filter(
-                outlineTable.foreignKeys.imageColumn == image &&
-                outlineTable.foreignKeys.galleryColumn == gallery.lowercased() &&
-                outlineTable.foreignKeys.toolColumn == tool.lowercased() &&
-                outlineTable.foreignKeys.tabColumn == tab.lowercased() &&
-                outlineTable.foreignKeys.mapColumn == map.lowercased() &&
-                outlineTable.foreignKeys.gameColumn == game.lowercased()
+        let outlineTable = DBMS.outline
+        
+        let outlineToUpdate = outlineTable.table.filter(
+            outlineTable.foreignKeys.imageColumn == image &&
+            outlineTable.foreignKeys.galleryColumn == gallery.lowercased() &&
+            outlineTable.foreignKeys.toolColumn == tool.lowercased() &&
+            outlineTable.foreignKeys.tabColumn == tab.lowercased() &&
+            outlineTable.foreignKeys.mapColumn == map.lowercased() &&
+            outlineTable.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        if let opacity = opacity {
+            try dbConnection.run(
+                outlineToUpdate.update(
+                    outlineTable.colorHexColumn <- colorHex,
+                    outlineTable.opacityColumn <- opacity
+                )
             )
-            
-            if let opacity = opacity {
-                try dbConnection.run(
-                    outlineToUpdate.update(
-                        outlineTable.colorHexColumn <- colorHex,
-                        outlineTable.opacityColumn <- opacity
-                    )
+        } else {
+            try dbConnection.run(
+                outlineToUpdate.update(
+                    outlineTable.colorHexColumn <- colorHex
                 )
-            } else {
-                try dbConnection.run(
-                    outlineToUpdate.update(
-                        outlineTable.colorHexColumn <- colorHex
-                    )
-                )
-            }
-            
-            return .commit
+            )
         }
+            
     }
     
     
@@ -82,6 +80,7 @@ public extension DBMS.CRUD {
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
     static func updateOutlineOpacity(
+        for dbConnection: Connection,
         opacity: Double,
         image: String,
         gallery: String,
@@ -96,30 +95,27 @@ public extension DBMS.CRUD {
         }
         
         
-        try DBMS.transaction { dbConnection in
-            let outlineTable = DBMS.outline
-            
-            let outlineToUpdate = outlineTable.table.filter(
-                outlineTable.foreignKeys.imageColumn == image &&
-                outlineTable.foreignKeys.galleryColumn == gallery.lowercased() &&
-                outlineTable.foreignKeys.toolColumn == tool.lowercased() &&
-                outlineTable.foreignKeys.tabColumn == tab.lowercased() &&
-                outlineTable.foreignKeys.mapColumn == map.lowercased() &&
-                outlineTable.foreignKeys.gameColumn == game.lowercased()
+        let outlineTable = DBMS.outline
+        
+        let outlineToUpdate = outlineTable.table.filter(
+            outlineTable.foreignKeys.imageColumn == image &&
+            outlineTable.foreignKeys.galleryColumn == gallery.lowercased() &&
+            outlineTable.foreignKeys.toolColumn == tool.lowercased() &&
+            outlineTable.foreignKeys.tabColumn == tab.lowercased() &&
+            outlineTable.foreignKeys.mapColumn == map.lowercased() &&
+            outlineTable.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        try dbConnection.run(
+            outlineToUpdate.update(
+                outlineTable.opacityColumn <- opacity
             )
-            
-            try dbConnection.run(
-                outlineToUpdate.update(
-                    outlineTable.opacityColumn <- opacity
-                )
-            )
-            
-            return .commit
-        }
+        )
     }
     
     
     static func updateIsOutlineActive(
+        for dbConnection: Connection,
         isActive: Bool,
         image: String,
         gallery: String,
@@ -129,26 +125,22 @@ public extension DBMS.CRUD {
         game: String
     ) throws -> Void {
         
-        try DBMS.transaction { dbConnection in
-            let outlineTable = DBMS.outline
-            
-            let outlineToUpdate = outlineTable.table.filter(
-                outlineTable.foreignKeys.imageColumn == image &&
-                outlineTable.foreignKeys.galleryColumn == gallery.lowercased() &&
-                outlineTable.foreignKeys.toolColumn == tool.lowercased() &&
-                outlineTable.foreignKeys.tabColumn == tab.lowercased() &&
-                outlineTable.foreignKeys.mapColumn == map.lowercased() &&
-                outlineTable.foreignKeys.gameColumn == game.lowercased()
+        let outlineTable = DBMS.outline
+        
+        let outlineToUpdate = outlineTable.table.filter(
+            outlineTable.foreignKeys.imageColumn == image &&
+            outlineTable.foreignKeys.galleryColumn == gallery.lowercased() &&
+            outlineTable.foreignKeys.toolColumn == tool.lowercased() &&
+            outlineTable.foreignKeys.tabColumn == tab.lowercased() &&
+            outlineTable.foreignKeys.mapColumn == map.lowercased() &&
+            outlineTable.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        try dbConnection.run(
+            outlineToUpdate.update(
+                outlineTable.isActiveColumn <- isActive
             )
-            
-            try dbConnection.run(
-                outlineToUpdate.update(
-                    outlineTable.isActiveColumn <- isActive
-                )
-            )
-            
-            return .commit
-        }
+        )
     }
     
     
@@ -227,6 +219,7 @@ public extension DBMS.CRUD {
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
     static func updateBoundingCircleOpacity(
+        for dbConnection: Connection,
         opacity: Double,
         image: String,
         gallery: String,
@@ -241,30 +234,27 @@ public extension DBMS.CRUD {
         }
         
         
-        try DBMS.transaction { dbConnection in
-            let boundingCircleTable = DBMS.boundingCircle
-            
-            let boundingCircleToUpdate = boundingCircleTable.table.filter(
-                boundingCircleTable.foreignKeys.imageColumn == image &&
-                boundingCircleTable.foreignKeys.galleryColumn == gallery.lowercased() &&
-                boundingCircleTable.foreignKeys.toolColumn == tool.lowercased() &&
-                boundingCircleTable.foreignKeys.tabColumn == tab.lowercased() &&
-                boundingCircleTable.foreignKeys.mapColumn == map.lowercased() &&
-                boundingCircleTable.foreignKeys.gameColumn == game.lowercased()
+        let boundingCircleTable = DBMS.boundingCircle
+        
+        let boundingCircleToUpdate = boundingCircleTable.table.filter(
+            boundingCircleTable.foreignKeys.imageColumn == image &&
+            boundingCircleTable.foreignKeys.galleryColumn == gallery.lowercased() &&
+            boundingCircleTable.foreignKeys.toolColumn == tool.lowercased() &&
+            boundingCircleTable.foreignKeys.tabColumn == tab.lowercased() &&
+            boundingCircleTable.foreignKeys.mapColumn == map.lowercased() &&
+            boundingCircleTable.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        try dbConnection.run(
+            boundingCircleToUpdate.update(
+                boundingCircleTable.opacityColumn <- opacity
             )
-            
-            try dbConnection.run(
-                boundingCircleToUpdate.update(
-                    boundingCircleTable.opacityColumn <- opacity
-                )
-            )
-            
-            return .commit
-        }
+        )
     }
     
     
     static func updateIsBoundingCircleActive(
+        for dbConnection: Connection,
         isActive: Bool,
         image: String,
         gallery: String,
@@ -274,25 +264,85 @@ public extension DBMS.CRUD {
         game: String
     ) throws -> Void {
         
-        try DBMS.transaction { dbConnection in
-            let boundingCircleTable = DBMS.boundingCircle
-            
-            let boundingCircleToUpdate = boundingCircleTable.table.filter(
-                boundingCircleTable.foreignKeys.imageColumn == image &&
-                boundingCircleTable.foreignKeys.galleryColumn == gallery.lowercased() &&
-                boundingCircleTable.foreignKeys.toolColumn == tool.lowercased() &&
-                boundingCircleTable.foreignKeys.tabColumn == tab.lowercased() &&
-                boundingCircleTable.foreignKeys.mapColumn == map.lowercased() &&
-                boundingCircleTable.foreignKeys.gameColumn == game.lowercased()
+        let boundingCircleTable = DBMS.boundingCircle
+        
+        let boundingCircleToUpdate = boundingCircleTable.table.filter(
+            boundingCircleTable.foreignKeys.imageColumn == image &&
+            boundingCircleTable.foreignKeys.galleryColumn == gallery.lowercased() &&
+            boundingCircleTable.foreignKeys.toolColumn == tool.lowercased() &&
+            boundingCircleTable.foreignKeys.tabColumn == tab.lowercased() &&
+            boundingCircleTable.foreignKeys.mapColumn == map.lowercased() &&
+            boundingCircleTable.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        try dbConnection.run(
+            boundingCircleToUpdate.update(
+                boundingCircleTable.isActiveColumn <- isActive
             )
+        )
             
-            try dbConnection.run(
-                boundingCircleToUpdate.update(
-                    boundingCircleTable.isActiveColumn <- isActive
-                )
-            )
-            
-            return .commit
-        }
     }
+    
+    
+    static func toggleOutlineActive(
+        for dbConnection: Connection,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws {
+        let sqlite3Connection = dbConnection.handle
+        let outline = DBMS.outline
+        
+        try DBMS.performSQLStatement(
+            for: sqlite3Connection, 
+            query: """
+            UPDATE \(outline.tableName) 
+            SET \(outline.isActiveColumn.template) = (
+                    CASE WHEN \(outline.isActiveColumn.template) = 0 THEN 1
+                    ELSE 0 END
+            ) 
+            WHERE \(outline.foreignKeys.imageColumn.template) = "\(image)" && 
+                  \(outline.foreignKeys.galleryColumn.template) = "\(gallery)" &&
+                  \(outline.foreignKeys.toolColumn.template) = \(tool) &&
+                  \(outline.foreignKeys.tabColumn.template) = \(tab) &&
+                  \(outline.foreignKeys.mapColumn.template) = \(map) &&
+                  \(outline.foreignKeys.gameColumn.template) = \(game)
+            """
+        )
+    }
+    
+    
+    static func toggleBoundingCircleActive(
+        for dbConnection: Connection,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws {
+        let sqlite3Connection = dbConnection.handle
+        let boundingCircle = DBMS.boundingCircle
+        
+        try DBMS.performSQLStatement(
+            for: sqlite3Connection,
+            query: """
+            UPDATE \(boundingCircle.tableName) 
+            SET \(boundingCircle.isActiveColumn.template) = (
+                    CASE WHEN \(boundingCircle.isActiveColumn.template) = 0 THEN 1
+                    ELSE 0 END
+            ) 
+            WHERE \(boundingCircle.foreignKeys.imageColumn.template) = "\(image)" && 
+                  \(boundingCircle.foreignKeys.galleryColumn.template) = "\(gallery)" &&
+                  \(boundingCircle.foreignKeys.toolColumn.template) = \(tool) &&
+                  \(boundingCircle.foreignKeys.tabColumn.template) = \(tab) &&
+                  \(boundingCircle.foreignKeys.mapColumn.template) = \(map) &&
+                  \(boundingCircle.foreignKeys.gameColumn.template) = \(game)
+            """
+        )
+    }
+
 }
