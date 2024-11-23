@@ -20,7 +20,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
         
         self.master = fromRow[variant.masterColumn]
         self.slave = fromRow[variant.slaveColumn]
-        self.variant = fromRow[variant.slaveColumn]
+        self.variant = fromRow[variant.variantColumn]
         self.bottomBarIcon = fromRow[variant.bottomBarIconColumn]
         
         let x = fromRow[variant.boundingFrameOriginXColumn]

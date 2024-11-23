@@ -39,6 +39,7 @@ extension DBMS.CRUD {
         )
         .order(image.positionColumn)
         
+        
         return try dbConnection.prepare(firstLevelMastersQuery).map { imageRow in
             return SerializedImageModel(imageRow)
         }
