@@ -8,6 +8,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
     private let slave: String
     private let variant: String
     private let bottomBarIcon: String
+    private let goBackBottomBarIcon: String?
     private let boundingFrame: CGRect?
     private let gallery: String
     private let tool: String
@@ -22,6 +23,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
         self.slave = fromRow[variant.slaveColumn]
         self.variant = fromRow[variant.variantColumn]
         self.bottomBarIcon = fromRow[variant.bottomBarIconColumn]
+        self.goBackBottomBarIcon = fromRow[variant.goBackBottomBarIconColumn]
         
         let x = fromRow[variant.boundingFrameOriginXColumn]
         let y = fromRow[variant.boundingFrameOriginYColumn]
@@ -74,6 +76,10 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
     
     public func getBottomBarIcon() -> String {
         return self.bottomBarIcon
+    }
+    
+    public func getGoBackBottomBarIcon() -> String? {
+        return self.goBackBottomBarIcon
     }
     
     public func getBoundingFrame() -> CGRect? {

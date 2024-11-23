@@ -45,6 +45,37 @@ extension DBMS.CRUD {
         }
     }
     
+    
+    public static func readImageByID(
+        for dbConnection: Connection,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> SerializedImageModel {
+        let imageModel = DBMS.image
+        
+        let findImageQuery = imageModel.table.filter(
+            imageModel.nameColumn == image &&
+            imageModel.foreignKeys.galleryColumn == gallery &&
+            imageModel.foreignKeys.toolColumn == tool &&
+            imageModel.foreignKeys.tabColumn == tab &&
+            imageModel.foreignKeys.mapColumn == map &&
+            imageModel.foreignKeys.gameColumn == game
+        )
+        
+        let theImage = try dbConnection.prepare(findImageQuery).map { resultRow in
+            return SerializedImageModel(resultRow)
+        }
+        
+        assert(theImage.count == 1)
+        
+        return theImage.first!
+    }
+    
+    
     //MARK: - READ FIRST LAYER OF GALLERIES
     private static func readFirstLevelOfGalleriesForTool(
         for dbConnection: Connection,

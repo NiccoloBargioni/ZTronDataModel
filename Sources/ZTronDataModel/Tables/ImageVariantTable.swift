@@ -36,6 +36,7 @@ public final class ImageVariant: DBTableCreator {
     let slaveColumn: SQLite.Expression<String>
     let variantColumn: SQLite.Expression<String>
     let bottomBarIconColumn: SQLite.Expression<String>
+    let goBackBottomBarIconColumn: SQLite.Expression<String?>
     
     let boundingFrameOriginXColumn: SQLite.Expression<Double?>
     let boundingFrameOriginYColumn: SQLite.Expression<Double?>
@@ -52,6 +53,7 @@ public final class ImageVariant: DBTableCreator {
         self.slaveColumn = SQLite.Expression<String>("slave")
         self.variantColumn = SQLite.Expression<String>("variant")
         self.bottomBarIconColumn = SQLite.Expression<String>("bottomBarIcon")
+        self.goBackBottomBarIconColumn = SQLite.Expression<String?>("goBackBottombarIcon")
         
         self.boundingFrameOriginXColumn = SQLite.Expression<Double?>("boundingFrameOriginX")
         self.boundingFrameOriginYColumn = SQLite.Expression<Double?>("boundingFrameoriginY")
@@ -71,6 +73,7 @@ public final class ImageVariant: DBTableCreator {
                     \(self.slaveColumn.template) TEXT NOT NULL,
                     \(self.variantColumn.template) TEXT NOT NULL,
                     \(self.bottomBarIconColumn.template) TEXT NOT NULL,
+                    \(self.goBackBottomBarIconColumn.template) TEXT,
                     \(self.boundingFrameOriginXColumn.template) REAL,
                     \(self.boundingFrameOriginYColumn.template) REAL,
                     \(self.boundingFrameWidthColumn.template) REAL,
