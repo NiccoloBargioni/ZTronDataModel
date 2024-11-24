@@ -29,6 +29,28 @@ public final class SerializedImageModel: ReadImageOptional {
         self.game = fromRow[image.foreignKeys.gameColumn]
     }
     
+    internal init(
+        name: String,
+        description: String,
+        position: Int,
+        searchLabel: String?,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) {
+        self.name = name
+        self.description = description
+        self.position = position
+        self.searchLabel = searchLabel
+        self.gallery = gallery
+        self.tool = tool
+        self.tab = tab
+        self.map = map
+        self.game = game
+    }
+    
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.name)
         hasher.combine(self.gallery)
@@ -73,5 +95,21 @@ public final class SerializedImageModel: ReadImageOptional {
     
     public func getGame() -> String {
         return self.game
+    }
+    
+    public func toString() -> String {
+        return """
+        IMAGE(
+            name: \(self.name),
+            description: \(self.description),
+            position: \(self.position),
+            searchLabel: \(String(describing: self.searchLabel)),
+            gallery: \(self.gallery),
+            tool: \(self.tool),
+            tab: \(self.tab),
+            map: \(self.map),
+            game: \(self.game)
+        )
+        """
     }
 }

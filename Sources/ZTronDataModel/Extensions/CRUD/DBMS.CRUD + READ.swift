@@ -222,7 +222,7 @@ extension DBMS.CRUD {
          * Label: [28, 38] U [39, 43]
          * Foreign keys: [39, 43]
          */
-        var imageDictionary: [String: (name: String, description: String, position: Int, searchLabel: String?)] = [:]
+        var imageDictionary: [String: SerializedImageModel] = [:]
         
         while rc == SQLITE_ROW {
             guard let id = sqlite3_column_text(selectStatement, 0) else {
@@ -230,6 +230,37 @@ extension DBMS.CRUD {
                 Self.logger.error("\(reason)")
                 throw SQLQueryError.readError(reason: reason)
             }
+            
+            guard let galleryFK = sqlite3_column_text(selectStatement, 39) else {
+                let reason = "Could not read column 39 with name \(imageTable.foreignKeys.galleryColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
+                Self.logger.error("\(reason)")
+                throw SQLQueryError.readError(reason: reason)
+            }
+            
+            guard let toolFK = sqlite3_column_text(selectStatement, 40) else {
+                let reason = "Could not read column 40 with name \(imageTable.foreignKeys.toolColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
+                Self.logger.error("\(reason)")
+                throw SQLQueryError.readError(reason: reason)
+            }
+            
+            guard let tabFK = sqlite3_column_text(selectStatement, 41) else {
+                let reason = "Could not read column 41 with name \(imageTable.foreignKeys.tabColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
+                Self.logger.error("\(reason)")
+                throw SQLQueryError.readError(reason: reason)
+            }
+            
+            guard let mapFK = sqlite3_column_text(selectStatement, 42) else {
+                let reason = "Could not read column 42 with name \(imageTable.foreignKeys.mapColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
+                Self.logger.error("\(reason)")
+                throw SQLQueryError.readError(reason: reason)
+            }
+
+            guard let gameFK = sqlite3_column_text(selectStatement, 43) else {
+                let reason = "Could not read column 43 with name \(imageTable.foreignKeys.gameColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
+                Self.logger.error("\(reason)")
+                throw SQLQueryError.readError(reason: reason)
+            }
+
             
             let imageName = String(cString: id)
             
@@ -242,25 +273,23 @@ extension DBMS.CRUD {
                 
                 let imagePosition = sqlite3_column_int(selectStatement, 2)
                 guard imagePosition != SQLITE_NULL else {
-                    let reason = "Could not read column 2 with name \(imageTable.positionColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
+                    let reason = "Could not read column 2 with name \(imageTable.positionColumn.template) of result as int32 in \(#function) @ \(#file):\(#line)"
                     Self.logger.error("\(reason)")
                     throw SQLQueryError.readError(reason: reason)
                 }
                 
                 let searchLabel = sqlite3_column_text(selectStatement, 3)
-                /*
-                guard  else {
-                    let reason = "Could not read column 3 with name \(imageTable.searchLabelColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
-                    Self.logger.error("\(reason)")
-                    throw SQLQueryError.readError(reason: reason)
-                }
-                 */
                 
-                imageDictionary[imageName] = (
+                imageDictionary[imageName] = SerializedImageModel(
                     name: imageName,
                     description: String(cString: descrption),
                     position: Int(imagePosition),
-                    searchLabel: sqlite3_column_type(selectStatement, 3) != SQLITE_NULL ? String(cString: searchLabel!) : nil
+                    searchLabel: sqlite3_column_type(selectStatement, 3) != SQLITE_NULL ? String(cString: searchLabel!) : nil,
+                    gallery: String(cString: galleryFK),
+                    tool: String(cString: toolFK),
+                    tab: String(cString: tabFK),
+                    map: String(cString: mapFK),
+                    game: String(cString: gameFK)
                 )
             }
             
@@ -277,12 +306,7 @@ extension DBMS.CRUD {
         print(#function)
         imageDictionary.keys.forEach { image in
             Self.logger.error("""
-            IMAGE(
-                  name: \(imageDictionary[image]!.name),
-                  description: \(imageDictionary[image]!.description),
-                  position: \(imageDictionary[image]!.position),
-                  searchLabel: \(String(describing: imageDictionary[image]!.searchLabel)
-            )
+            \(imageDictionary[image]!.toString())
             """)
         }
 
