@@ -8,4 +8,5 @@ public enum SQLQueryError: Error {
     case creationStatementPreparationError(reason: String)
     case unsatisfiedConvention(reason: String)
     case genericError(reason: String)
+    case readError(reason: String)
 }

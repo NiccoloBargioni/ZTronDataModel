@@ -2,11 +2,19 @@ import XCTest
 @testable import ZTronDataModel
 
 final class ZTronDataModelTests: XCTestCase {
-    func testExample() throws {
-        // XCTest Documentation
-        // https://developer.apple.com/documentation/xctest
-
-        // Defining Test Cases and Test Methods
-        // https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods
+    func testReadImageByIDWithOptions() throws {
+        let connection = try DBMS.openDB(caller: #function)
+        
+        try DBMS.make()
+        
+        try DBMS.CRUD.readImageByIDWithOptions(
+            for: connection,
+            image: "recreational.area.crate.binoculars",
+            gallery: "binoculars",
+            tool: "memory charms",
+            tab: "side quests",
+            map: "rave in the redwoods",
+            game: "infinite warfare"
+        )
     }
 }

@@ -76,6 +76,159 @@ extension DBMS.CRUD {
     }
     
     
+    public static func readImageByIDWithOptions(
+        for dbConnection: Connection,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> [ReadImageOption: [(any ReadImageOptional)?]] {
+        let imageTable = DBMS.image
+        let imageVariants = DBMS.imageVariant
+        let outline = DBMS.outline
+        let boundingCircle = DBMS.boundingCircle
+        let label = DBMS.label
+        
+        let selectQueryStatement: String = """
+        WITH parentImage AS (
+        SELECT
+            \(imageTable.tableName).\(imageTable.nameColumn.template) AS childImage,
+            \(imageVariants.tableName).\(imageVariants.masterColumn.template) AS parent
+        FROM
+            \(imageTable.tableName)
+        LEFT OUTER JOIN
+            \(imageVariants.tableName)
+        ON
+            \(imageTable.tableName).\(imageTable.nameColumn.template) = \(imageVariants.tableName).\(imageVariants.slaveColumn.template)
+            AND \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.galleryColumn.template)
+            AND \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.toolColumn.template)
+            AND \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.tabColumn.template)
+            AND \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.mapColumn.template)
+            AND \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.gameColumn.template)
+        WHERE
+            \(imageTable.tableName).\(imageTable.nameColumn.template) = "\(image)" AND
+            \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = "\(gallery)" AND
+            \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = "\(tool)" AND
+            \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = "\(tab)" AND
+            \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = "\(map)" AND
+            \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = "\(game)"
+        )
+        SELECT  \(imageTable.tableName).\(imageTable.nameColumn.template),
+                     \(imageTable.tableName).\(imageTable.descriptionColumn.template),
+                     \(imageTable.tableName).\(imageTable.positionColumn.template),
+                     \(imageTable.tableName).\(imageTable.searchLabelColumn.template),
+                     \(imageVariants.tableName).\(imageVariants.masterColumn),
+                     \(imageVariants.tableName).\(imageVariants.slaveColumn.template),
+                     \(imageVariants.tableName).\(imageVariants.variantColumn.template),
+                     \(imageVariants.tableName).\(imageVariants.bottomBarIconColumn.template),
+                     \(imageVariants.tableName).\(imageVariants.goBackBottomBarIconColumn.template),
+                     \(imageVariants.tableName).\(imageVariants.boundingFrameOriginXColumn.template),
+                     \(imageVariants.tableName).\(imageVariants.boundingFrameOriginYColumn.template),
+                     \(imageVariants.tableName).\(imageVariants.boundingFrameWidthColumn.template),
+                     \(imageVariants.tableName).\(imageVariants.boundingFrameHeightColumn.template),
+                     parentImage.parent as parentImage,
+                     \(outline.tableName).\(outline.resourceNameColumn.template),
+                     \(outline.tableName).\(outline.colorHexColumn.template) as outlineColorHex,
+                     \(outline.tableName).\(outline.opacityColumn.template) as outlineOpacity,
+                     \(outline.tableName).\(outline.isActiveColumn.template) as isOutlineActive,
+                     \(outline.tableName).\(outline.boundingBoxOriginXColumn.template) as outlineBountingBoxOriginX,
+                     \(outline.tableName).\(outline.boundingBoxOriginYColumn.template) as outlineBoundingBoxOriginY,
+                     \(outline.tableName).\(outline.boundingBoxWidthColumn.template) as outlineBoundingBoxWidth,
+                     \(outline.tableName).\(outline.boundingBoxHeightColumn.template) as outlineBoundingBoxHeight,
+                     \(boundingCircle.tableName).\(boundingCircle.colorHexColumn.template) as boundingCircleColorHex,
+                     \(boundingCircle.tableName).\(boundingCircle.opacityColumn.template) as boundingCircleOpacity,
+                     \(boundingCircle.tableName).\(boundingCircle.isActiveColumn.template) as isBoundingCircleActive,
+                     \(boundingCircle.tableName).\(boundingCircle.idleDiameterColumn.template),
+                     \(boundingCircle.tableName).\(boundingCircle.normalizedCenterXColumn.template),
+                     \(boundingCircle.tableName).\(boundingCircle.normalizedCenterYColumn.template),
+                     \(label.tableName).\(label.labelColumn.template),
+                     \(label.tableName).\(label.isActiveColumn.template) as isLabelActive,
+                     \(label.tableName).\(label.iconColumn.template) as labelIcon,
+                     \(label.tableName).\(label.assetsImageNameColumn.template) as labelAssetsImageName,
+                     \(label.tableName).\(label.textColorHexColumn.template) as labelTextColorHex,
+                     \(label.tableName).\(label.backgroundColorHexColumn.template) as labelBackgroundColorHex,
+                     \(label.tableName).\(label.opacityColumn.template) as labelOpacity,
+                     \(label.tableName).\(label.maxAABBOriginXColumn.template),
+                     \(label.tableName).\(label.maxAABBOriginYColumn.template),
+                     \(label.tableName).\(label.maxAABBWidthColumn.template),
+                     \(label.tableName).\(label.maxAABBHeightColumn.template),
+                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn),
+                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn),
+                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn),
+                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn),
+                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn)
+             FROM \(imageTable.tableName) LEFT OUTER JOIN \(imageVariants.tableName) ON
+                                     \(imageTable.tableName).\(imageTable.nameColumn.template) = \(imageVariants.tableName).\(imageVariants.masterColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.galleryColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.toolColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.tabColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.mapColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.gameColumn.template)
+                                     LEFT OUTER JOIN parentImage ON
+                                     \(imageTable.tableName).\(imageTable.nameColumn.template) = parentImage.childImage
+                                     LEFT OUTER JOIN \(outline.tableName) ON
+                                     \(imageTable.tableName).\(imageTable.nameColumn.template) = \(outline.tableName).\(outline.foreignKeys.imageColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = \(outline.tableName).\(outline.foreignKeys.galleryColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = \(outline.tableName).\(outline.foreignKeys.toolColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = \(outline.tableName).\(outline.foreignKeys.tabColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = \(outline.tableName).\(outline.foreignKeys.mapColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = \(outline.tableName).\(outline.foreignKeys.gameColumn.template)
+                                     LEFT OUTER JOIN \(boundingCircle.tableName) ON
+                                     \(imageTable.tableName).\(imageTable.nameColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.imageColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.galleryColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.toolColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.tabColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.mapColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.gameColumn.template)
+                                     LEFT OUTER JOIN \(label.tableName) ON
+                                     \(imageTable.tableName).\(imageTable.nameColumn.template) = \(label.tableName).\(label.foreignKeys.imageColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = \(label.tableName).\(label.foreignKeys.galleryColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = \(label.tableName).\(label.foreignKeys.toolColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = \(label.tableName).\(label.foreignKeys.tabColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = \(label.tableName).\(label.foreignKeys.mapColumn.template) AND
+                                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = \(label.tableName).\(label.foreignKeys.gameColumn.template)
+            WHERE   \(imageTable.tableName).\(imageTable.nameColumn.template) = "\(image)" AND
+                    \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = "\(gallery)" AND
+                    \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = "\(tool)" AND
+                    \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = "\(tab)" AND
+                    \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = "\(map)" AND
+                    \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = "\(game)"
+        """
+        
+        
+        let dbHandle = dbConnection.handle
+        
+        var selectStatement: OpaquePointer?
+        
+        guard sqlite3_prepare_v2(dbHandle, selectQueryStatement, -1, &selectStatement, nil) == SQLITE_OK else {
+            let errmsg = String(cString: sqlite3_errmsg(dbHandle)!)
+            throw SQLQueryError.readError(reason: errmsg)
+        }
+
+        var rc = sqlite3_step(selectStatement)
+
+        while rc == SQLITE_ROW {
+            guard let id = sqlite3_column_text(selectStatement, 0) else { throw SQLQueryError.readError(reason: "Could not read column 0 of result as text in \(#function) @ \(#file):\(#line)") }
+            let imageName = String(cString: id)
+            
+            print(imageName)
+            
+            rc = sqlite3_step(selectStatement)
+        }
+
+        if rc != SQLITE_DONE {
+            let errmsg = String(cString: sqlite3_errmsg(dbHandle)!)
+            throw SQLQueryError.readError(reason: errmsg)
+        }
+
+        // clean up when we're done
+
+        sqlite3_finalize(selectStatement)
+        return [:]
+    }
+    
     //MARK: - READ FIRST LAYER OF GALLERIES
     private static func readFirstLevelOfGalleriesForTool(
         for dbConnection: Connection,
