@@ -247,17 +247,20 @@ extension DBMS.CRUD {
                     throw SQLQueryError.readError(reason: reason)
                 }
                 
-                guard let searchLabel = sqlite3_column_text(selectStatement, 3) else {
+                let searchLabel = sqlite3_column_text(selectStatement, 3)
+                /*
+                guard  else {
                     let reason = "Could not read column 3 with name \(imageTable.searchLabelColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
                     Self.logger.error("\(reason)")
                     throw SQLQueryError.readError(reason: reason)
                 }
+                 */
                 
                 imageDictionary[imageName] = (
                     name: imageName,
                     description: String(cString: descrption),
                     position: Int(imagePosition),
-                    searchLabel: sqlite3_column_type(selectStatement, 3) != SQLITE_NULL ? String(cString: searchLabel) : nil
+                    searchLabel: sqlite3_column_type(selectStatement, 3) != SQLITE_NULL ? String(cString: searchLabel!) : nil
                 )
             }
             
