@@ -226,23 +226,31 @@ extension DBMS.CRUD {
         
         while rc == SQLITE_ROW {
             guard let id = sqlite3_column_text(selectStatement, 0) else {
-                throw SQLQueryError.readError(reason: "Could not read column 0 with name \(imageTable.nameColumn.template) of result as text in \(#function) @ \(#file):\(#line)")
+                let reason = "Could not read column 0 with name \(imageTable.nameColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
+                Self.logger.error("\(reason)")
+                throw SQLQueryError.readError(reason: reason)
             }
             
             let imageName = String(cString: id)
             
             if imageDictionary[imageName] == nil {
                 guard let descrption = sqlite3_column_text(selectStatement, 1) else {
-                    throw SQLQueryError.readError(reason: "Could not read column 1 with name \(imageTable.descriptionColumn.template) of result as text in \(#function) @ \(#file):\(#line)")
+                    let reason = "Could not read column 1 with name \(imageTable.descriptionColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
+                    Self.logger.error("\(reason)")
+                    throw SQLQueryError.readError(reason: reason)
                 }
                 
                 let imagePosition = sqlite3_column_int(selectStatement, 2)
                 guard imagePosition != SQLITE_NULL else {
-                    throw SQLQueryError.readError(reason: "Could not read column 2 with name \(imageTable.positionColumn.template) of result as text in \(#function) @ \(#file):\(#line)")
+                    let reason = "Could not read column 2 with name \(imageTable.positionColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
+                    Self.logger.error("\(reason)")
+                    throw SQLQueryError.readError(reason: reason)
                 }
                 
                 guard let searchLabel = sqlite3_column_text(selectStatement, 3) else {
-                    throw SQLQueryError.readError(reason: "Could not read column 3 with name \(imageTable.searchLabelColumn.template) of result as text in \(#function) @ \(#file):\(#line)")
+                    let reason = "Could not read column 3 with name \(imageTable.searchLabelColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
+                    Self.logger.error("\(reason)")
+                    throw SQLQueryError.readError(reason: reason)
                 }
                 
                 imageDictionary[imageName] = (
@@ -258,6 +266,7 @@ extension DBMS.CRUD {
 
         if rc != SQLITE_DONE {
             let errmsg = String(cString: sqlite3_errmsg(dbHandle)!)
+            Self.logger.error("\(errmsg)")
             throw SQLQueryError.readError(reason: errmsg)
         }
 
