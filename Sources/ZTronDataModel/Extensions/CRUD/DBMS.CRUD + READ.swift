@@ -202,6 +202,10 @@ extension DBMS.CRUD {
         
         var selectStatement: OpaquePointer?
         
+        defer {
+            sqlite3_finalize(selectStatement)
+        }
+        
         guard sqlite3_prepare_v2(dbHandle, selectQueryStatement, -1, &selectStatement, nil) == SQLITE_OK else {
             let errmsg = String(cString: sqlite3_errmsg(dbHandle)!)
             throw SQLQueryError.readError(reason: errmsg)
@@ -272,7 +276,6 @@ extension DBMS.CRUD {
 
         // clean up when we're done
 
-        sqlite3_finalize(selectStatement)
         return [:]
     }
     
