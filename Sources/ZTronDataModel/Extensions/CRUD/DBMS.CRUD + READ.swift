@@ -115,50 +115,50 @@ extension DBMS.CRUD {
             \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = "\(map)" AND
             \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = "\(game)"
         )
-        SELECT  \(imageTable.tableName).\(imageTable.nameColumn.template),
-                     \(imageTable.tableName).\(imageTable.descriptionColumn.template),
-                     \(imageTable.tableName).\(imageTable.positionColumn.template),
-                     \(imageTable.tableName).\(imageTable.searchLabelColumn.template),
-                     \(imageVariants.tableName).\(imageVariants.masterColumn),
-                     \(imageVariants.tableName).\(imageVariants.slaveColumn.template),
-                     \(imageVariants.tableName).\(imageVariants.variantColumn.template),
-                     \(imageVariants.tableName).\(imageVariants.bottomBarIconColumn.template),
-                     \(imageVariants.tableName).\(imageVariants.goBackBottomBarIconColumn.template),
-                     \(imageVariants.tableName).\(imageVariants.boundingFrameOriginXColumn.template),
-                     \(imageVariants.tableName).\(imageVariants.boundingFrameOriginYColumn.template),
-                     \(imageVariants.tableName).\(imageVariants.boundingFrameWidthColumn.template),
-                     \(imageVariants.tableName).\(imageVariants.boundingFrameHeightColumn.template),
-                     parentImage.parent as parentImage,
-                     \(outline.tableName).\(outline.resourceNameColumn.template),
-                     \(outline.tableName).\(outline.colorHexColumn.template) as outlineColorHex,
-                     \(outline.tableName).\(outline.opacityColumn.template) as outlineOpacity,
-                     \(outline.tableName).\(outline.isActiveColumn.template) as isOutlineActive,
-                     \(outline.tableName).\(outline.boundingBoxOriginXColumn.template) as outlineBountingBoxOriginX,
-                     \(outline.tableName).\(outline.boundingBoxOriginYColumn.template) as outlineBoundingBoxOriginY,
-                     \(outline.tableName).\(outline.boundingBoxWidthColumn.template) as outlineBoundingBoxWidth,
-                     \(outline.tableName).\(outline.boundingBoxHeightColumn.template) as outlineBoundingBoxHeight,
-                     \(boundingCircle.tableName).\(boundingCircle.colorHexColumn.template) as boundingCircleColorHex,
-                     \(boundingCircle.tableName).\(boundingCircle.opacityColumn.template) as boundingCircleOpacity,
-                     \(boundingCircle.tableName).\(boundingCircle.isActiveColumn.template) as isBoundingCircleActive,
-                     \(boundingCircle.tableName).\(boundingCircle.idleDiameterColumn.template),
-                     \(boundingCircle.tableName).\(boundingCircle.normalizedCenterXColumn.template),
-                     \(boundingCircle.tableName).\(boundingCircle.normalizedCenterYColumn.template),
-                     \(label.tableName).\(label.labelColumn.template),
-                     \(label.tableName).\(label.isActiveColumn.template) as isLabelActive,
-                     \(label.tableName).\(label.iconColumn.template) as labelIcon,
-                     \(label.tableName).\(label.assetsImageNameColumn.template) as labelAssetsImageName,
-                     \(label.tableName).\(label.textColorHexColumn.template) as labelTextColorHex,
-                     \(label.tableName).\(label.backgroundColorHexColumn.template) as labelBackgroundColorHex,
-                     \(label.tableName).\(label.opacityColumn.template) as labelOpacity,
-                     \(label.tableName).\(label.maxAABBOriginXColumn.template),
-                     \(label.tableName).\(label.maxAABBOriginYColumn.template),
-                     \(label.tableName).\(label.maxAABBWidthColumn.template),
-                     \(label.tableName).\(label.maxAABBHeightColumn.template),
-                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn),
-                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn),
-                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn),
-                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn),
-                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn)
+        SELECT  \(imageTable.tableName).\(imageTable.nameColumn.template),                                                          /*0*/
+                     \(imageTable.tableName).\(imageTable.descriptionColumn.template),                                              /*1*/
+                     \(imageTable.tableName).\(imageTable.positionColumn.template),                                                 /*2*/                 
+                     \(imageTable.tableName).\(imageTable.searchLabelColumn.template),                                              /*3*/
+                     \(imageVariants.tableName).\(imageVariants.masterColumn),                                                      /*4*/
+                     \(imageVariants.tableName).\(imageVariants.slaveColumn.template),                                              /*5*/
+                     \(imageVariants.tableName).\(imageVariants.variantColumn.template),                                            /*6*/
+                     \(imageVariants.tableName).\(imageVariants.bottomBarIconColumn.template),                                      /*7*/                                         
+                     \(imageVariants.tableName).\(imageVariants.goBackBottomBarIconColumn.template),                                /*8*/
+                     \(imageVariants.tableName).\(imageVariants.boundingFrameOriginXColumn.template),                               /*9*/
+                     \(imageVariants.tableName).\(imageVariants.boundingFrameOriginYColumn.template),                               /*10*/
+                     \(imageVariants.tableName).\(imageVariants.boundingFrameWidthColumn.template),                                 /*11*/
+                     \(imageVariants.tableName).\(imageVariants.boundingFrameHeightColumn.template),                                /*12*/
+                     parentImage.parent as parentImage,                                                                             /*13*/
+                     \(outline.tableName).\(outline.resourceNameColumn.template),                                                   /*14*/
+                     \(outline.tableName).\(outline.colorHexColumn.template) as outlineColorHex,                                    /*15*/
+                     \(outline.tableName).\(outline.opacityColumn.template) as outlineOpacity,                                      /*16*/
+                     \(outline.tableName).\(outline.isActiveColumn.template) as isOutlineActive,                                    /*17*/
+                     \(outline.tableName).\(outline.boundingBoxOriginXColumn.template) as outlineBountingBoxOriginX,                /*18*/
+                     \(outline.tableName).\(outline.boundingBoxOriginYColumn.template) as outlineBoundingBoxOriginY,                /*19*/
+                     \(outline.tableName).\(outline.boundingBoxWidthColumn.template) as outlineBoundingBoxWidth,                    /*20*/
+                     \(outline.tableName).\(outline.boundingBoxHeightColumn.template) as outlineBoundingBoxHeight,                  /*21*/
+                     \(boundingCircle.tableName).\(boundingCircle.colorHexColumn.template) as boundingCircleColorHex,               /*22*/
+                     \(boundingCircle.tableName).\(boundingCircle.opacityColumn.template) as boundingCircleOpacity,                 /*23*/
+                     \(boundingCircle.tableName).\(boundingCircle.isActiveColumn.template) as isBoundingCircleActive,               /*24*/
+                     \(boundingCircle.tableName).\(boundingCircle.idleDiameterColumn.template),                                     /*25*/
+                     \(boundingCircle.tableName).\(boundingCircle.normalizedCenterXColumn.template),                                /*26*/
+                     \(boundingCircle.tableName).\(boundingCircle.normalizedCenterYColumn.template),                                /*27*/
+                     \(label.tableName).\(label.labelColumn.template),                                                              /*28*/
+                     \(label.tableName).\(label.isActiveColumn.template) as isLabelActive,                                          /*29*/
+                     \(label.tableName).\(label.iconColumn.template) as labelIcon,                                                  /*30*/
+                     \(label.tableName).\(label.assetsImageNameColumn.template) as labelAssetsImageName,                            /*31*/
+                     \(label.tableName).\(label.textColorHexColumn.template) as labelTextColorHex,                                  /*32*/
+                     \(label.tableName).\(label.backgroundColorHexColumn.template) as labelBackgroundColorHex,                      /*33*/
+                     \(label.tableName).\(label.opacityColumn.template) as labelOpacity,                                            /*34*/
+                     \(label.tableName).\(label.maxAABBOriginXColumn.template),                                                     /*35*/
+                     \(label.tableName).\(label.maxAABBOriginYColumn.template),                                                     /*36*/    
+                     \(label.tableName).\(label.maxAABBWidthColumn.template),                                                       /*37*/
+                     \(label.tableName).\(label.maxAABBHeightColumn.template),                                                      /*38*/
+                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn),                                               /*39*/
+                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn),                                                  /*40*/
+                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn),                                                   /*41*/
+                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn),                                                   /*42*/
+                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn)                                                   /*43*/
              FROM \(imageTable.tableName) LEFT OUTER JOIN \(imageVariants.tableName) ON
                                      \(imageTable.tableName).\(imageTable.nameColumn.template) = \(imageVariants.tableName).\(imageVariants.masterColumn.template) AND
                                      \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.galleryColumn.template) AND
@@ -209,11 +209,45 @@ extension DBMS.CRUD {
 
         var rc = sqlite3_step(selectStatement)
 
+        /*
+         * Image: [0,3] U [39, 43]
+         * Variant (where image is master): [4,12]
+         * Parent: [13]
+         * Outline: [14, 21] U [39, 43]
+         * Bounding circle: [22, 27] U [39, 43]
+         * Label: [28, 38] U [39, 43]
+         * Foreign keys: [39, 43]
+         */
+        var imageDictionary: [String: (name: String, description: String, position: Int, searchLabel: String?)] = [:]
+        
         while rc == SQLITE_ROW {
-            guard let id = sqlite3_column_text(selectStatement, 0) else { throw SQLQueryError.readError(reason: "Could not read column 0 of result as text in \(#function) @ \(#file):\(#line)") }
+            guard let id = sqlite3_column_text(selectStatement, 0) else {
+                throw SQLQueryError.readError(reason: "Could not read column 0 with name \(imageTable.nameColumn.template) of result as text in \(#function) @ \(#file):\(#line)")
+            }
+            
             let imageName = String(cString: id)
             
-            print(imageName)
+            if imageDictionary[imageName] == nil {
+                guard let descrption = sqlite3_column_text(selectStatement, 1) else {
+                    throw SQLQueryError.readError(reason: "Could not read column 1 with name \(imageTable.descriptionColumn.template) of result as text in \(#function) @ \(#file):\(#line)")
+                }
+                
+                let imagePosition = sqlite3_column_int(selectStatement, 2)
+                guard imagePosition != SQLITE_NULL else {
+                    throw SQLQueryError.readError(reason: "Could not read column 2 with name \(imageTable.positionColumn.template) of result as text in \(#function) @ \(#file):\(#line)")
+                }
+                
+                guard let searchLabel = sqlite3_column_text(selectStatement, 3) else {
+                    throw SQLQueryError.readError(reason: "Could not read column 3 with name \(imageTable.searchLabelColumn.template) of result as text in \(#function) @ \(#file):\(#line)")
+                }
+                
+                imageDictionary[imageName] = (
+                    name: imageName,
+                    description: String(cString: descrption),
+                    position: Int(imagePosition),
+                    searchLabel: sqlite3_column_type(selectStatement, 3) != SQLITE_NULL ? String(cString: searchLabel) : nil
+                )
+            }
             
             rc = sqlite3_step(selectStatement)
         }
@@ -221,6 +255,19 @@ extension DBMS.CRUD {
         if rc != SQLITE_DONE {
             let errmsg = String(cString: sqlite3_errmsg(dbHandle)!)
             throw SQLQueryError.readError(reason: errmsg)
+        }
+
+        
+        print(#function)
+        imageDictionary.keys.forEach { image in
+            Self.logger.error("""
+            IMAGE(
+                  name: \(imageDictionary[image]!.name),
+                  description: \(imageDictionary[image]!.description),
+                  position: \(imageDictionary[image]!.position),
+                  searchLabel: \(String(describing: imageDictionary[image]!.searchLabel)
+            )
+            """)
         }
 
         // clean up when we're done

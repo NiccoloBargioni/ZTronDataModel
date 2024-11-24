@@ -1,9 +1,10 @@
 import Foundation
 import SQLite3
 import SQLite
+import os
 
 extension DBMS {
-    public class CRUD {
+    public final class CRUD {
         static internal let hexValidatingRegex: NSRegularExpression = {
             do {
                 return try NSRegularExpression(pattern: "^#(?:[0-9a-fA-F]{3}){1,2}$")
@@ -11,6 +12,8 @@ extension DBMS {
                 fatalError("^#(?:[0-9a-fA-F]{3}){1,2}$ is not a valid regular expression. Aborting")
             }
         }()
+        
+        internal static let logger: os.Logger = .init(subsystem: "ZTronDataModel", category: "CRUD")
 
         private init() { }
         
