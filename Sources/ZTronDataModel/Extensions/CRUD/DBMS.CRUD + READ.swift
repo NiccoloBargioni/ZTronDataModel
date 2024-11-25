@@ -220,12 +220,12 @@ extension DBMS.CRUD {
             boundingCircle.table[boundingCircle.normalizedCenterXColumn],
             boundingCircle.table[boundingCircle.normalizedCenterYColumn],
             label.table[label.labelColumn],
-            label.table[label.opacityColumn].alias(name: "labelOpacity"),
-            label.table[label.isActiveColumn].alias(name: "isLabelActive"),
-            label.table[label.iconColumn].alias(name: "labelIcon"),
-            label.table[label.assetsImageNameColumn].alias(name: "labelAssetsImageName"),
-            label.table[label.textColorHexColumn].alias(name: "labelTextColorHex"),
-            label.table[label.backgroundColorHexColumn].alias(name: "labelBackgroundColorHex"),
+            label.table[label.opacityColumn],
+            label.table[label.isActiveColumn],
+            label.table[label.iconColumn],
+            label.table[label.assetsImageNameColumn],
+            label.table[label.textColorHexColumn],
+            label.table[label.backgroundColorHexColumn],
             label.table[label.maxAABBOriginXColumn],
             label.table[label.maxAABBOriginYColumn],
             label.table[label.maxAABBWidthColumn],
@@ -239,6 +239,9 @@ extension DBMS.CRUD {
         
         try dbConnection.prepare(sql).forEach { result in
             print("processed image: \(result[imageTable.nameColumn]), outlineColor: \(String(describing: result[outline.table[outline.colorHexColumn]])), boundingCircleColor: \(String(describing: result[boundingCircle.table[boundingCircle.colorHexColumn]]))")
+            
+            let image = SerializedImageModel(result, namespaceColumns: true)
+            print("Namespacing worked: \(image.getName())")
         }
 
         

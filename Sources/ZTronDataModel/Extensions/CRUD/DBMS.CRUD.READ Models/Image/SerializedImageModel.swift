@@ -15,18 +15,18 @@ public final class SerializedImageModel: ReadImageOptional {
     private let map: String
     private let game: String
     
-    internal init(_ fromRow: Row) {
+    internal init(_ fromRow: Row, namespaceColumns: Bool = false) {
         let image = DBMS.image
         
-        self.name = fromRow[image.nameColumn]
-        self.description = fromRow[image.descriptionColumn]
-        self.position = fromRow[image.positionColumn]
-        self.searchLabel = fromRow[image.searchLabelColumn]
-        self.gallery = fromRow[image.foreignKeys.galleryColumn]
-        self.tool = fromRow[image.foreignKeys.toolColumn]
-        self.tab = fromRow[image.foreignKeys.tabColumn]
-        self.map = fromRow[image.foreignKeys.mapColumn]
-        self.game = fromRow[image.foreignKeys.gameColumn]
+        self.name = (namespaceColumns) ? fromRow[image.table[image.nameColumn]] : fromRow[image.nameColumn]
+        self.description = (namespaceColumns) ? fromRow[image.table[image.descriptionColumn]] : fromRow[image.descriptionColumn]
+        self.position = (namespaceColumns) ? fromRow[image.table[image.positionColumn]] : fromRow[image.positionColumn]
+        self.searchLabel = (namespaceColumns) ? fromRow[image.table[image.searchLabelColumn]] : fromRow[image.searchLabelColumn]
+        self.gallery = (namespaceColumns) ? fromRow[image.table[image.foreignKeys.galleryColumn]] : fromRow[image.foreignKeys.galleryColumn]
+        self.tool = (namespaceColumns) ? fromRow[image.table[image.foreignKeys.toolColumn]] : fromRow[image.foreignKeys.toolColumn]
+        self.tab = (namespaceColumns) ? fromRow[image.table[image.foreignKeys.tabColumn]] : fromRow[image.foreignKeys.tabColumn]
+        self.map = (namespaceColumns) ? fromRow[image.table[image.foreignKeys.mapColumn]] : fromRow[image.foreignKeys.mapColumn]
+        self.game = (namespaceColumns) ? fromRow[image.table[image.foreignKeys.gameColumn]] : fromRow[image.foreignKeys.gameColumn]
     }
     
     internal init(
