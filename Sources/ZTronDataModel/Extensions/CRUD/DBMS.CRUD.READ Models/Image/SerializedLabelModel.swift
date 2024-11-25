@@ -18,25 +18,41 @@ public final class SerializedLabelModel: ReadImageOptional {
     private let map: String
     private let game: String
 
-    internal init(_ fromRow: Row) {
-        let labelModel = DBMS.label
+    internal init(
+        label: String,
+        isActive: Bool,
+        icon: String?,
+        assetsImageName: String?,
+        textColorHex: String,
+        backgroundColorHex: String,
+        opacity: Double,
+        maxAABBOriginX: Double?,
+        maxAABBOriginY: Double?,
+        maxAABBWidth: Double?,
+        maxAABBHeight: Double?,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) {
+        self.label = label
+        self._isActive = isActive
+        self.icon = icon
+        self.assetsImageName = assetsImageName
+        self.textColorHex = textColorHex
+        self.backgroundColorHex = backgroundColorHex
+        self.opacity = opacity
         
-        self.label = fromRow[labelModel.labelColumn]
-        self._isActive = fromRow[labelModel.isActiveColumn]
-        self.icon = fromRow[labelModel.iconColumn]
-        self.assetsImageName = fromRow[labelModel.assetsImageNameColumn]
-        self.textColorHex = fromRow[labelModel.textColorHexColumn]
-        self.backgroundColorHex = fromRow[labelModel.backgroundColorHexColumn]
-        self.opacity = fromRow[labelModel.opacityColumn]
-        
-        let x = fromRow[labelModel.maxAABBOriginXColumn]
-        let y = fromRow[labelModel.maxAABBOriginYColumn]
-        let w = fromRow[labelModel.maxAABBWidthColumn]
-        let h = fromRow[labelModel.maxAABBHeightColumn]
+        let x = maxAABBOriginX
+        let y = maxAABBOriginY
+        let w = maxAABBWidth
+        let h = maxAABBHeight
 
         if !((x == nil && y == nil && w == nil && h == nil) ||
              (x != nil && y != nil && w != nil && h != nil)) {
-            fatalError("x,y,w,h must either be all nil or all not nil for image \(fromRow[labelModel.foreignKeys.imageColumn])")
+            fatalError("x,y,w,h must either be all nil or all not nil for image \(image)")
         }
         
         if let x = x, let y = y, let w = w, let h = h {
@@ -48,12 +64,36 @@ public final class SerializedLabelModel: ReadImageOptional {
             self.maxAABB = nil
         }
         
-        self.image = fromRow[labelModel.foreignKeys.imageColumn]
-        self.gallery = fromRow[labelModel.foreignKeys.galleryColumn]
-        self.tool = fromRow[labelModel.foreignKeys.toolColumn]
-        self.tab = fromRow[labelModel.foreignKeys.tabColumn]
-        self.map = fromRow[labelModel.foreignKeys.mapColumn]
-        self.game = fromRow[labelModel.foreignKeys.gameColumn]
+        self.image = image
+        self.gallery = gallery
+        self.tool = tool
+        self.tab = tab
+        self.map = map
+        self.game = game
+    }
+    
+    convenience internal init(_ fromRow: Row) {
+        let labelModel = DBMS.label
+        
+        self.init(
+            label: fromRow[labelModel.labelColumn],
+            isActive: fromRow[labelModel.isActiveColumn],
+            icon: fromRow[labelModel.iconColumn],
+            assetsImageName: fromRow[labelModel.assetsImageNameColumn],
+            textColorHex: fromRow[labelModel.textColorHexColumn],
+            backgroundColorHex: fromRow[labelModel.backgroundColorHexColumn],
+            opacity: fromRow[labelModel.opacityColumn],
+            maxAABBOriginX: fromRow[labelModel.maxAABBOriginXColumn],
+            maxAABBOriginY: fromRow[labelModel.maxAABBOriginYColumn],
+            maxAABBWidth: fromRow[labelModel.maxAABBWidthColumn],
+            maxAABBHeight: fromRow[labelModel.maxAABBHeightColumn],
+            image: fromRow[labelModel.foreignKeys.imageColumn],
+            gallery: fromRow[labelModel.foreignKeys.galleryColumn],
+            tool: fromRow[labelModel.foreignKeys.toolColumn],
+            tab: fromRow[labelModel.foreignKeys.tabColumn],
+            map: fromRow[labelModel.foreignKeys.mapColumn],
+            game: fromRow[labelModel.foreignKeys.gameColumn]
+        )
     }
     
     public func hash(into hasher: inout Hasher) {

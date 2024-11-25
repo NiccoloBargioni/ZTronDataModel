@@ -245,6 +245,10 @@ extension DBMS.CRUD {
             boundingCircle.colorHexColumn.template.droppingQuotes()
         )
 
+        let labelExists = SQLite.Expression<String?>(
+            label.labelColumn.template.droppingQuotes()
+        )
+
         
         try dbConnection.prepare(sql).forEach { result in
             let image = SerializedImageModel(result, namespaceColumns: true)
@@ -271,7 +275,7 @@ extension DBMS.CRUD {
 
             if let boundingCircleHex = result[boundingCircle.table[boundingCircleExists]] {
                 let theBoundingCircle = SerializedBoundingCircleModel(
-                    colorHex: result[boundingCircle.table[boundingCircle.colorHexColumn]],
+                    colorHex: boundingCircleHex,
                     isActive: result[boundingCircle.table[boundingCircle.isActiveColumn]],
                     opacity: result[boundingCircle.table[boundingCircle.opacityColumn]],
                     idleDiameter: result[boundingCircle.table[boundingCircle.idleDiameterColumn]],
@@ -284,8 +288,28 @@ extension DBMS.CRUD {
                     map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
                     game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
                 )
-                
-                Self.logger.error("Bounding circle found for image \(theBoundingCircle.getImage()) with hex \(theBoundingCircle.getColorHex())")
+            }
+            
+            if let labelColumn = result[label.table[labelExists]] {
+                let theLabel = SerializedLabelModel(
+                    label: labelColumn,
+                    isActive: result[label.table[label.isActiveColumn]],
+                    icon: result[label.table[label.iconColumn]],
+                    assetsImageName: result[label.table[label.assetsImageNameColumn]],
+                    textColorHex: result[label.table[label.textColorHexColumn]],
+                    backgroundColorHex: result[label.table[label.backgroundColorHexColumn]],
+                    opacity: result[label.table[label.opacityColumn]],
+                    maxAABBOriginX: result[label.table[label.maxAABBOriginXColumn]],
+                    maxAABBOriginY: result[label.table[label.maxAABBOriginYColumn]],
+                    maxAABBWidth: result[label.table[label.maxAABBWidthColumn]],
+                    maxAABBHeight: result[label.table[label.maxAABBHeightColumn]],
+                    image: result[imageTable.table[imageTable.nameColumn]],
+                    gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
+                    tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
+                    tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
+                    map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
+                    game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
+                )
             }
             
         }
