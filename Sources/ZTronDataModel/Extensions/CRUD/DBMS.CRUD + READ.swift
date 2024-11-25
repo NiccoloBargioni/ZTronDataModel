@@ -418,9 +418,11 @@ extension DBMS.CRUD {
         assert(result[.images]?.count ?? 0 == 1)
         assert(result[.outlines]?.count ?? 0 <= 1)
         assert(result[.boundingCircles]?.count ?? 0 <= 1)
+        assert(result[.labels]?.count ?? 0 <= 1)
+        assert(result[.variantsMetadatas]?.count ?? 0 <= 1)
         assert(result[.masters]?.count ?? 0 <= 1)
         
-        return [:]
+        return result
     }
     
     //MARK: - READ FIRST LAYER OF GALLERIES
