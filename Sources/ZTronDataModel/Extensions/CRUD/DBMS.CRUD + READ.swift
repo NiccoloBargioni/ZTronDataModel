@@ -241,6 +241,11 @@ extension DBMS.CRUD {
             outline.resourceNameColumn.template.droppingQuotes()
         )
         
+        let boundingCircleExists = SQLite.Expression<String?>(
+            boundingCircle.colorHexColumn.template.droppingQuotes()
+        )
+
+        
         try dbConnection.prepare(sql).forEach { result in
             let image = SerializedImageModel(result, namespaceColumns: true)
             
@@ -261,9 +266,26 @@ extension DBMS.CRUD {
                     map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
                     game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
                 )
-                
-                Self.logger.error("Outline for image \(theOutline.getImage()) exists with hex \(theOutline.getColorHex())")
+            }
+            
 
+            if let boundingCircleHex = result[boundingCircleExists] {
+                let theBoundingCircle = SerializedBoundingCircleModel(
+                    colorHex: result[boundingCircle.table[boundingCircle.colorHexColumn]],
+                    isActive: result[boundingCircle.table[boundingCircle.isActiveColumn]],
+                    opacity: result[boundingCircle.table[boundingCircle.opacityColumn]],
+                    idleDiameter: result[boundingCircle.table[boundingCircle.idleDiameterColumn]],
+                    normalizedCenterX: result[boundingCircle.table[boundingCircle.normalizedCenterXColumn]],
+                    normalizedCenterY: result[boundingCircle.table[boundingCircle.normalizedCenterYColumn]],
+                    image: result[imageTable.table[imageTable.nameColumn]],
+                    gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
+                    tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
+                    tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
+                    map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
+                    game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
+                )
+                
+                Self.logger.error("Bounding circle found for image \(theBoundingCircle.getImage()) with hex \(theBoundingCircle.getColorHex())")
             }
             
         }

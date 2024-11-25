@@ -15,19 +15,49 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
     private let map: String
     private let game: String
     
-    internal init(_ fromRow: Row) {
+    convenience internal init(_ fromRow: Row) {
         let boundingCircle = DBMS.boundingCircle
         
-        self.colorHex = fromRow[boundingCircle.colorHexColumn]
-        self._isActive = fromRow[boundingCircle.isActiveColumn]
-        self.opacity = fromRow[boundingCircle.opacityColumn]
-        self.idleDiameter = fromRow[boundingCircle.idleDiameterColumn]
+        self.init(
+            colorHex: fromRow[boundingCircle.colorHexColumn],
+            isActive: fromRow[boundingCircle.isActiveColumn],
+            opacity: fromRow[boundingCircle.opacityColumn],
+            idleDiameter: fromRow[boundingCircle.idleDiameterColumn],
+            normalizedCenterX: fromRow[boundingCircle.normalizedCenterXColumn],
+            normalizedCenterY: fromRow[boundingCircle.normalizedCenterYColumn],
+            image: fromRow[boundingCircle.foreignKeys.imageColumn],
+            gallery: fromRow[boundingCircle.foreignKeys.galleryColumn],
+            tool: fromRow[boundingCircle.foreignKeys.toolColumn],
+            tab: fromRow[boundingCircle.foreignKeys.tabColumn],
+            map: fromRow[boundingCircle.foreignKeys.mapColumn],
+            game: fromRow[boundingCircle.foreignKeys.gameColumn]
+        )
+    }
+    
+    internal init(
+        colorHex: String,
+        isActive: Bool,
+        opacity: Double,
+        idleDiameter: Double?,
+        normalizedCenterX: Double?,
+        normalizedCenterY: Double?,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) {
+        self.colorHex = colorHex
+        self._isActive = isActive
+        self.opacity = opacity
+        self.idleDiameter = idleDiameter
         
-        let cx = fromRow[boundingCircle.normalizedCenterXColumn]
-        let cy = fromRow[boundingCircle.normalizedCenterYColumn]
+        let cx = normalizedCenterX
+        let cy = normalizedCenterY
         
         if cx == nil && cy != nil || cx != nil && cy == nil {
-            fatalError("cx and cy must be either both nil or both not nil for image \(fromRow[boundingCircle.foreignKeys.imageColumn])")
+            fatalError("cx and cy must be either both nil or both not nil for image \(image)")
         }
         
         if let cx = cx, let cy = cy {
@@ -36,13 +66,14 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
             self.normalizedCenter = nil
         }
         
-        self.image = fromRow[boundingCircle.foreignKeys.imageColumn]
-        self.gallery = fromRow[boundingCircle.foreignKeys.galleryColumn]
-        self.tool = fromRow[boundingCircle.foreignKeys.toolColumn]
-        self.tab = fromRow[boundingCircle.foreignKeys.tabColumn]
-        self.map = fromRow[boundingCircle.foreignKeys.mapColumn]
-        self.game = fromRow[boundingCircle.foreignKeys.gameColumn]
+        self.image = image
+        self.gallery = gallery
+        self.tool = tool
+        self.tab = tab
+        self.map = map
+        self.game = game
     }
+    
     
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.image)
