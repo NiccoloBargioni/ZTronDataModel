@@ -242,7 +242,7 @@ extension DBMS.CRUD {
         )
         
         let boundingCircleExists = SQLite.Expression<String?>(
-            boundingCircle.table[boundingCircle.colorHexColumn].template.droppingQuotes()
+            "\"\(boundingCircle.tableName)\".\"\(boundingCircle.colorHexColumn.template.droppingQuotes())\""
         )
 
         
