@@ -249,6 +249,9 @@ extension DBMS.CRUD {
             label.labelColumn.template.droppingQuotes()
         )
 
+        let variantExists = SQLite.Expression<String?>(
+            imageVariants.slaveColumn.template.droppingQuotes()
+        )
         
         try dbConnection.prepare(sql).forEach { result in
             let image = SerializedImageModel(result, namespaceColumns: true)
@@ -310,6 +313,27 @@ extension DBMS.CRUD {
                     map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
                     game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
                 )
+            }
+            
+            if let slaveColumn = result[imageVariants.table[variantExists]] {
+                let theVariant = SerializedImageVariantMetadataModel(
+                    master: result[imageVariants.table[imageVariants.masterColumn]],
+                    slave: slaveColumn,
+                    variant: result[imageVariants.table[imageVariants.variantColumn]],
+                    bottomBarIcon: result[imageVariants.table[imageVariants.bottomBarIconColumn]],
+                    goBackBottomBarIcon: result[imageVariants.table[imageVariants.goBackBottomBarIconColumn]],
+                    boundingFrameOriginX: result[imageVariants.table[imageVariants.boundingFrameOriginXColumn]],
+                    boundingFrameOriginY: result[imageVariants.table[imageVariants.boundingFrameOriginYColumn]],
+                    boundingFrameWidth: result[imageVariants.table[imageVariants.boundingFrameWidthColumn]],
+                    boundingFrameHeight: result[imageVariants.table[imageVariants.boundingFrameHeightColumn]],
+                    gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
+                    tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
+                    tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
+                    map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
+                    game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
+                )
+                
+                Self.logger.error("Found variant \(theVariant.getVariant()) of \(theVariant.getMaster())")
             }
             
         }

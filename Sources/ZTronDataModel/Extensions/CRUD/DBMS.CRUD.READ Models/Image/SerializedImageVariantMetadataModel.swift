@@ -16,23 +16,36 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
     private let map: String
     private let game: String
     
-    internal init(_ fromRow: Row) {
-        let variant = DBMS.imageVariant
+    internal init(
+        master: String,
+        slave: String,
+        variant: String,
+        bottomBarIcon: String,
+        goBackBottomBarIcon: String?,
+        boundingFrameOriginX: Double?,
+        boundingFrameOriginY: Double?,
+        boundingFrameWidth: Double?,
+        boundingFrameHeight: Double?,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) {
+        self.master = master
+        self.slave = slave
+        self.variant = variant
+        self.bottomBarIcon = bottomBarIcon
+        self.goBackBottomBarIcon = goBackBottomBarIcon
         
-        self.master = fromRow[variant.masterColumn]
-        self.slave = fromRow[variant.slaveColumn]
-        self.variant = fromRow[variant.variantColumn]
-        self.bottomBarIcon = fromRow[variant.bottomBarIconColumn]
-        self.goBackBottomBarIcon = fromRow[variant.goBackBottomBarIconColumn]
-        
-        let x = fromRow[variant.boundingFrameOriginXColumn]
-        let y = fromRow[variant.boundingFrameOriginYColumn]
-        let w = fromRow[variant.boundingFrameWidthColumn]
-        let h = fromRow[variant.boundingFrameHeightColumn]
+        let x = boundingFrameOriginX
+        let y = boundingFrameOriginY
+        let w = boundingFrameWidth
+        let h = boundingFrameHeight
 
         if !((x == nil && y == nil && w == nil && h == nil) ||
              (x != nil && y != nil && w != nil && h != nil)) {
-            fatalError("x,y,w,h must either be all nil or all not nil for slave \(fromRow[variant.slaveColumn])")
+            fatalError("x,y,w,h must either be all nil or all not nil for slave \(slave)")
         }
         
         if let x = x, let y = y, let w = w, let h = h {
@@ -44,11 +57,32 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             self.boundingFrame = nil
         }
         
-        self.gallery = fromRow[variant.foreignKeys.galleryColumn]
-        self.tool = fromRow[variant.foreignKeys.toolColumn]
-        self.tab = fromRow[variant.foreignKeys.tabColumn]
-        self.map = fromRow[variant.foreignKeys.mapColumn]
-        self.game = fromRow[variant.foreignKeys.gameColumn]
+        self.gallery = gallery
+        self.tool = tool
+        self.tab = tab
+        self.map = map
+        self.game = game
+    }
+    
+    convenience internal init(_ fromRow: Row) {
+        let variant = DBMS.imageVariant
+        
+        self.init(
+            master: fromRow[variant.masterColumn],
+            slave: fromRow[variant.slaveColumn],
+            variant: fromRow[variant.variantColumn],
+            bottomBarIcon: fromRow[variant.bottomBarIconColumn],
+            goBackBottomBarIcon: fromRow[variant.goBackBottomBarIconColumn],
+            boundingFrameOriginX: fromRow[variant.boundingFrameOriginXColumn],
+            boundingFrameOriginY: fromRow[variant.boundingFrameOriginYColumn],
+            boundingFrameWidth: fromRow[variant.boundingFrameWidthColumn],
+            boundingFrameHeight: fromRow[variant.boundingFrameHeightColumn],
+            gallery: fromRow[variant.foreignKeys.galleryColumn],
+            tool: fromRow[variant.foreignKeys.toolColumn],
+            tab: fromRow[variant.foreignKeys.tabColumn],
+            map: fromRow[variant.foreignKeys.mapColumn],
+            game: fromRow[variant.foreignKeys.gameColumn]
+        )
     }
     
     public func hash(into hasher: inout Hasher) {
