@@ -237,11 +237,32 @@ extension DBMS.CRUD {
             imageTable.table[imageTable.foreignKeys.gameColumn]
         )
         
+        let outlineExists = SQLite.Expression<String?>(outline.resourceNameColumn.template)
         try dbConnection.prepare(sql).forEach { result in
-            print("processed image: \(result[imageTable.nameColumn]), outlineColor: \(String(describing: result[outline.table[outline.colorHexColumn]])), boundingCircleColor: \(String(describing: result[boundingCircle.table[boundingCircle.colorHexColumn]]))")
-            
             let image = SerializedImageModel(result, namespaceColumns: true)
-            print("Namespacing worked: \(image.getName())")
+            
+            if let outlineResourceName = result[outline.table[outlineExists]] {
+                let theOutline = SerializedOutlineModel(
+                    resourceName: outlineResourceName,
+                    colorHex: result[outline.table[outline.colorHexColumn]],
+                    isActive: result[outline.table[outline.isActiveColumn]],
+                    opacity: result[outline.table[outline.opacityColumn]],
+                    boundingBoxOriginXColumn: result[outline.table[outline.boundingBoxOriginXColumn]],
+                    boundingBoxOriginYColumn: result[outline.table[outline.boundingBoxOriginYColumn]],
+                    boundingBoxWidthColumn: result[outline.table[outline.boundingBoxWidthColumn]],
+                    boundingBoxHeightColumn: result[outline.table[outline.boundingBoxHeightColumn]],
+                    image: result[imageTable.table[imageTable.nameColumn]],
+                    gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
+                    tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
+                    tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
+                    map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
+                    game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
+                )
+                
+                Self.logger.error("Outline for image \(theOutline.getImage()) exists with hex \(theOutline.getColorHex())")
+
+            }
+            
         }
 
         

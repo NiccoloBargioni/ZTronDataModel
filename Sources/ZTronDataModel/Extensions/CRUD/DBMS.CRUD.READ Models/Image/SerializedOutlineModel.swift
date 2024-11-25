@@ -16,31 +16,69 @@ public final class SerializedOutlineModel: ReadImageOptional {
     private let map: String
     private let game: String
     
-    internal init(_ fromRow: Row) {
-        let outline = DBMS.outline
-        self.resourceName = fromRow[outline.resourceNameColumn]
-        self.colorHex = fromRow[outline.colorHexColumn]
-        self._isActive = fromRow[outline.isActiveColumn]
-        self.opacity = fromRow[outline.opacityColumn]
+    internal init(
+        resourceName: String,
+        colorHex: String,
+        isActive: Bool,
+        opacity: Double,
+        boundingBoxOriginXColumn: Double,
+        boundingBoxOriginYColumn: Double,
+        boundingBoxWidthColumn: Double,
+        boundingBoxHeightColumn: Double,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) {
+        self.resourceName = resourceName
+        self.colorHex = colorHex
+        self._isActive = isActive
+        self.opacity = opacity
         
         self.boundingBox = CGRect(
             origin: CGPoint(
-                x: fromRow[outline.boundingBoxOriginXColumn],
-                y: fromRow[outline.boundingBoxOriginYColumn]
+                x: boundingBoxOriginXColumn,
+                y: boundingBoxOriginYColumn
             ),
             size: CGSize(
-                width: fromRow[outline.boundingBoxWidthColumn],
-                height: fromRow[outline.boundingBoxHeightColumn]
+                width: boundingBoxWidthColumn,
+                height: boundingBoxHeightColumn
             )
         )
         
-        self.image = fromRow[outline.foreignKeys.imageColumn]
-        self.gallery = fromRow[outline.foreignKeys.galleryColumn]
-        self.tool = fromRow[outline.foreignKeys.toolColumn]
-        self.tab = fromRow[outline.foreignKeys.tabColumn]
-        self.map = fromRow[outline.foreignKeys.mapColumn]
-        self.game = fromRow[outline.foreignKeys.gameColumn]
+        self.image = image
+        self.gallery = gallery
+        self.tool = tool
+        self.tab = tab
+        self.map = map
+        self.game = game
+
     }
+    
+    convenience internal init(_ fromRow: Row) {
+        let outline = DBMS.outline
+
+        self.init(
+            resourceName: fromRow[outline.resourceNameColumn],
+            colorHex: fromRow[outline.colorHexColumn],
+            isActive: fromRow[outline.isActiveColumn],
+            opacity: fromRow[outline.opacityColumn],
+            boundingBoxOriginXColumn: fromRow[outline.boundingBoxOriginXColumn],
+            boundingBoxOriginYColumn: fromRow[outline.boundingBoxOriginYColumn],
+            boundingBoxWidthColumn: fromRow[outline.boundingBoxWidthColumn],
+            boundingBoxHeightColumn: fromRow[outline.boundingBoxHeightColumn],
+            image: fromRow[outline.foreignKeys.imageColumn],
+            gallery: fromRow[outline.foreignKeys.galleryColumn],
+            tool: fromRow[outline.foreignKeys.toolColumn],
+            tab: fromRow[outline.foreignKeys.tabColumn],
+            map: fromRow[outline.foreignKeys.mapColumn],
+            game: fromRow[outline.foreignKeys.gameColumn]
+        )
+    }
+    
+    
     
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.image)

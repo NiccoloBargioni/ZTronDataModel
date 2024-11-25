@@ -15,7 +15,7 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
     private let map: String
     private let game: String
     
-    internal init(_ fromRow: Row, namespaceColumns: Bool = false) {
+    internal init(_ fromRow: Row) {
         let boundingCircle = DBMS.boundingCircle
         
         self.colorHex = fromRow[boundingCircle.colorHexColumn]
