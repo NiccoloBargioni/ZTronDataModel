@@ -2,6 +2,10 @@ import Foundation
 import SQLite3
 import SQLite
 
+extension String: ReadImageOptional {
+    
+}
+
 extension DBMS.CRUD {
     //MARK: - READ IMAGE VARIANTS
     private static func readFirstLevelMasterImagesForGallery(
@@ -83,7 +87,8 @@ extension DBMS.CRUD {
         tool: String,
         tab: String,
         map: String,
-        game: String
+        game: String,
+        options: Set<ReadImageOption> = Set<ReadImageOption>([.images])
     ) throws -> [ReadImageOption: [(any ReadImageOptional)?]] {
         let imageTable = DBMS.image
         let imageVariants = DBMS.imageVariant
@@ -253,45 +258,67 @@ extension DBMS.CRUD {
             imageVariants.slaveColumn.template.droppingQuotes()
         )
         
+        
+        var imageDictionary: [String: SerializedImageModel] = [:]
+        var outlinesDictionary: [String: SerializedOutlineModel] = [:]
+        var boundingCircleDictionary: [String: SerializedBoundingCircleModel] = [:]
+        var labelsDictionary: [String: Set<SerializedLabelModel>] = [:]
+        var variantsDictionary: [String: Set<SerializedImageVariantMetadataModel>] = [:]
+        var masterDictionary: [String: String] = [:]
+        
         try dbConnection.prepare(sql).forEach { result in
             let image = SerializedImageModel(result, namespaceColumns: true)
             
-            if let outlineResourceName = result[outline.table[outlineExists]] {
-                let theOutline = SerializedOutlineModel(
-                    resourceName: outlineResourceName,
-                    colorHex: result[outline.table[outline.colorHexColumn]],
-                    isActive: result[outline.table[outline.isActiveColumn]],
-                    opacity: result[outline.table[outline.opacityColumn]],
-                    boundingBoxOriginXColumn: result[outline.table[outline.boundingBoxOriginXColumn]],
-                    boundingBoxOriginYColumn: result[outline.table[outline.boundingBoxOriginYColumn]],
-                    boundingBoxWidthColumn: result[outline.table[outline.boundingBoxWidthColumn]],
-                    boundingBoxHeightColumn: result[outline.table[outline.boundingBoxHeightColumn]],
-                    image: result[imageTable.table[imageTable.nameColumn]],
-                    gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
-                    tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
-                    tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
-                    map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
-                    game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
-                )
+            let imageID = image.getName()
+            
+            if imageDictionary[imageID] == nil {
+                imageDictionary[imageID] = image
+                
+                if let outlineResourceName = result[outline.table[outlineExists]] {
+                    let theOutline = SerializedOutlineModel(
+                        resourceName: outlineResourceName,
+                        colorHex: result[outline.table[outline.colorHexColumn]],
+                        isActive: result[outline.table[outline.isActiveColumn]],
+                        opacity: result[outline.table[outline.opacityColumn]],
+                        boundingBoxOriginXColumn: result[outline.table[outline.boundingBoxOriginXColumn]],
+                        boundingBoxOriginYColumn: result[outline.table[outline.boundingBoxOriginYColumn]],
+                        boundingBoxWidthColumn: result[outline.table[outline.boundingBoxWidthColumn]],
+                        boundingBoxHeightColumn: result[outline.table[outline.boundingBoxHeightColumn]],
+                        image: result[imageTable.table[imageTable.nameColumn]],
+                        gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
+                        tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
+                        tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
+                        map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
+                        game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
+                    )
+                    
+                    outlinesDictionary[imageID] = theOutline
+                }
+                
+                if let boundingCircleHex = result[boundingCircle.table[boundingCircleExists]] {
+                    let theBoundingCircle = SerializedBoundingCircleModel(
+                        colorHex: boundingCircleHex,
+                        isActive: result[boundingCircle.table[boundingCircle.isActiveColumn]],
+                        opacity: result[boundingCircle.table[boundingCircle.opacityColumn]],
+                        idleDiameter: result[boundingCircle.table[boundingCircle.idleDiameterColumn]],
+                        normalizedCenterX: result[boundingCircle.table[boundingCircle.normalizedCenterXColumn]],
+                        normalizedCenterY: result[boundingCircle.table[boundingCircle.normalizedCenterYColumn]],
+                        image: result[imageTable.table[imageTable.nameColumn]],
+                        gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
+                        tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
+                        tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
+                        map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
+                        game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
+                    )
+                    
+                    boundingCircleDictionary[imageID] = theBoundingCircle
+                }
+                
+                if let master = result[parentView[parentViewParent]] {
+                    masterDictionary[imageID] = master
+                }
             }
             
-
-            if let boundingCircleHex = result[boundingCircle.table[boundingCircleExists]] {
-                let theBoundingCircle = SerializedBoundingCircleModel(
-                    colorHex: boundingCircleHex,
-                    isActive: result[boundingCircle.table[boundingCircle.isActiveColumn]],
-                    opacity: result[boundingCircle.table[boundingCircle.opacityColumn]],
-                    idleDiameter: result[boundingCircle.table[boundingCircle.idleDiameterColumn]],
-                    normalizedCenterX: result[boundingCircle.table[boundingCircle.normalizedCenterXColumn]],
-                    normalizedCenterY: result[boundingCircle.table[boundingCircle.normalizedCenterYColumn]],
-                    image: result[imageTable.table[imageTable.nameColumn]],
-                    gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
-                    tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
-                    tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
-                    map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
-                    game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
-                )
-            }
             
             if let labelColumn = result[label.table[labelExists]] {
                 let theLabel = SerializedLabelModel(
@@ -313,7 +340,14 @@ extension DBMS.CRUD {
                     map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
                     game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
                 )
+                
+                if labelsDictionary[imageID] == nil {
+                    labelsDictionary[imageID] = Set<SerializedLabelModel>()
+                }
+                
+                labelsDictionary[imageID]?.insert(theLabel)
             }
+            
             
             if let slaveColumn = result[imageVariants.table[variantExists]] {
                 let theVariant = SerializedImageVariantMetadataModel(
@@ -333,234 +367,59 @@ extension DBMS.CRUD {
                     game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
                 )
                 
-                Self.logger.error("Found variant \(theVariant.getVariant()) of \(theVariant.getMaster())")
-            }
-            
-        }
-
-        
-       /*
-        let selectQueryStatement: String = """
-        WITH parentImage AS (
-        SELECT
-            \(imageTable.tableName).\(imageTable.nameColumn.template) AS childImage,
-            \(imageVariants.tableName).\(imageVariants.masterColumn.template) AS parent
-        FROM
-            \(imageTable.tableName)
-        LEFT OUTER JOIN
-            \(imageVariants.tableName)
-        ON
-            \(imageTable.tableName).\(imageTable.nameColumn.template) = \(imageVariants.tableName).\(imageVariants.slaveColumn.template)
-            AND \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.galleryColumn.template)
-            AND \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.toolColumn.template)
-            AND \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.tabColumn.template)
-            AND \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.mapColumn.template)
-            AND \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.gameColumn.template)
-        WHERE
-            \(imageTable.tableName).\(imageTable.nameColumn.template) = "\(image)" AND
-            \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = "\(gallery)" AND
-            \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = "\(tool)" AND
-            \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = "\(tab)" AND
-            \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = "\(map)" AND
-            \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = "\(game)"
-        )
-        SELECT  \(imageTable.tableName).\(imageTable.nameColumn.template),                                                          /*0*/
-                     \(imageTable.tableName).\(imageTable.descriptionColumn.template),                                              /*1*/
-                     \(imageTable.tableName).\(imageTable.positionColumn.template),                                                 /*2*/                 
-                     \(imageTable.tableName).\(imageTable.searchLabelColumn.template),                                              /*3*/
-                     \(imageVariants.tableName).\(imageVariants.masterColumn),                                                      /*4*/
-                     \(imageVariants.tableName).\(imageVariants.slaveColumn.template),                                              /*5*/
-                     \(imageVariants.tableName).\(imageVariants.variantColumn.template),                                            /*6*/
-                     \(imageVariants.tableName).\(imageVariants.bottomBarIconColumn.template),                                      /*7*/                                         
-                     \(imageVariants.tableName).\(imageVariants.goBackBottomBarIconColumn.template),                                /*8*/
-                     \(imageVariants.tableName).\(imageVariants.boundingFrameOriginXColumn.template),                               /*9*/
-                     \(imageVariants.tableName).\(imageVariants.boundingFrameOriginYColumn.template),                               /*10*/
-                     \(imageVariants.tableName).\(imageVariants.boundingFrameWidthColumn.template),                                 /*11*/
-                     \(imageVariants.tableName).\(imageVariants.boundingFrameHeightColumn.template),                                /*12*/
-                     parentImage.parent as parentImage,                                                                             /*13*/
-                     \(outline.tableName).\(outline.resourceNameColumn.template),                                                   /*14*/
-                     \(outline.tableName).\(outline.colorHexColumn.template) as outlineColorHex,                                    /*15*/
-                     \(outline.tableName).\(outline.opacityColumn.template) as outlineOpacity,                                      /*16*/
-                     \(outline.tableName).\(outline.isActiveColumn.template) as isOutlineActive,                                    /*17*/
-                     \(outline.tableName).\(outline.boundingBoxOriginXColumn.template) as outlineBountingBoxOriginX,                /*18*/
-                     \(outline.tableName).\(outline.boundingBoxOriginYColumn.template) as outlineBoundingBoxOriginY,                /*19*/
-                     \(outline.tableName).\(outline.boundingBoxWidthColumn.template) as outlineBoundingBoxWidth,                    /*20*/
-                     \(outline.tableName).\(outline.boundingBoxHeightColumn.template) as outlineBoundingBoxHeight,                  /*21*/
-                     \(boundingCircle.tableName).\(boundingCircle.colorHexColumn.template) as boundingCircleColorHex,               /*22*/
-                     \(boundingCircle.tableName).\(boundingCircle.opacityColumn.template) as boundingCircleOpacity,                 /*23*/
-                     \(boundingCircle.tableName).\(boundingCircle.isActiveColumn.template) as isBoundingCircleActive,               /*24*/
-                     \(boundingCircle.tableName).\(boundingCircle.idleDiameterColumn.template),                                     /*25*/
-                     \(boundingCircle.tableName).\(boundingCircle.normalizedCenterXColumn.template),                                /*26*/
-                     \(boundingCircle.tableName).\(boundingCircle.normalizedCenterYColumn.template),                                /*27*/
-                     \(label.tableName).\(label.labelColumn.template),                                                              /*28*/
-                     \(label.tableName).\(label.isActiveColumn.template) as isLabelActive,                                          /*29*/
-                     \(label.tableName).\(label.iconColumn.template) as labelIcon,                                                  /*30*/
-                     \(label.tableName).\(label.assetsImageNameColumn.template) as labelAssetsImageName,                            /*31*/
-                     \(label.tableName).\(label.textColorHexColumn.template) as labelTextColorHex,                                  /*32*/
-                     \(label.tableName).\(label.backgroundColorHexColumn.template) as labelBackgroundColorHex,                      /*33*/
-                     \(label.tableName).\(label.opacityColumn.template) as labelOpacity,                                            /*34*/
-                     \(label.tableName).\(label.maxAABBOriginXColumn.template),                                                     /*35*/
-                     \(label.tableName).\(label.maxAABBOriginYColumn.template),                                                     /*36*/    
-                     \(label.tableName).\(label.maxAABBWidthColumn.template),                                                       /*37*/
-                     \(label.tableName).\(label.maxAABBHeightColumn.template),                                                      /*38*/
-                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn),                                               /*39*/
-                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn),                                                  /*40*/
-                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn),                                                   /*41*/
-                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn),                                                   /*42*/
-                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn)                                                   /*43*/
-             FROM \(imageTable.tableName) LEFT OUTER JOIN \(imageVariants.tableName) ON
-                                     \(imageTable.tableName).\(imageTable.nameColumn.template) = \(imageVariants.tableName).\(imageVariants.masterColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.galleryColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.toolColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.tabColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.mapColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = \(imageVariants.tableName).\(imageVariants.foreignKeys.gameColumn.template)
-                                     LEFT OUTER JOIN parentImage ON
-                                     \(imageTable.tableName).\(imageTable.nameColumn.template) = parentImage.childImage
-                                     LEFT OUTER JOIN \(outline.tableName) ON
-                                     \(imageTable.tableName).\(imageTable.nameColumn.template) = \(outline.tableName).\(outline.foreignKeys.imageColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = \(outline.tableName).\(outline.foreignKeys.galleryColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = \(outline.tableName).\(outline.foreignKeys.toolColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = \(outline.tableName).\(outline.foreignKeys.tabColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = \(outline.tableName).\(outline.foreignKeys.mapColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = \(outline.tableName).\(outline.foreignKeys.gameColumn.template)
-                                     LEFT OUTER JOIN \(boundingCircle.tableName) ON
-                                     \(imageTable.tableName).\(imageTable.nameColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.imageColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.galleryColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.toolColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.tabColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.mapColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = \(boundingCircle.tableName).\(boundingCircle.foreignKeys.gameColumn.template)
-                                     LEFT OUTER JOIN \(label.tableName) ON
-                                     \(imageTable.tableName).\(imageTable.nameColumn.template) = \(label.tableName).\(label.foreignKeys.imageColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = \(label.tableName).\(label.foreignKeys.galleryColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = \(label.tableName).\(label.foreignKeys.toolColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = \(label.tableName).\(label.foreignKeys.tabColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = \(label.tableName).\(label.foreignKeys.mapColumn.template) AND
-                                     \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = \(label.tableName).\(label.foreignKeys.gameColumn.template)
-            WHERE   \(imageTable.tableName).\(imageTable.nameColumn.template) = "\(image)" AND
-                    \(imageTable.tableName).\(imageTable.foreignKeys.galleryColumn.template) = "\(gallery)" AND
-                    \(imageTable.tableName).\(imageTable.foreignKeys.toolColumn.template) = "\(tool)" AND
-                    \(imageTable.tableName).\(imageTable.foreignKeys.tabColumn.template) = "\(tab)" AND
-                    \(imageTable.tableName).\(imageTable.foreignKeys.mapColumn.template) = "\(map)" AND
-                    \(imageTable.tableName).\(imageTable.foreignKeys.gameColumn.template) = "\(game)"
-        """
-        
-        
-        let dbHandle = dbConnection.handle
-        
-        var selectStatement: OpaquePointer?
-        
-        defer {
-            sqlite3_finalize(selectStatement)
-        }
-        
-        guard sqlite3_prepare_v2(dbHandle, selectQueryStatement, -1, &selectStatement, nil) == SQLITE_OK else {
-            let errmsg = String(cString: sqlite3_errmsg(dbHandle)!)
-            throw SQLQueryError.readError(reason: errmsg)
-        }
-
-        var rc = sqlite3_step(selectStatement)
-
-        /*
-         * Image: [0,3] U [39, 43]
-         * Variant (where image is master): [4,12]
-         * Parent: [13]
-         * Outline: [14, 21] U [39, 43]
-         * Bounding circle: [22, 27] U [39, 43]
-         * Label: [28, 38] U [39, 43]
-         * Foreign keys: [39, 43]
-         */
-        var imageDictionary: [String: SerializedImageModel] = [:]
-        
-        while rc == SQLITE_ROW {
-            guard let id = sqlite3_column_text(selectStatement, 0) else {
-                let reason = "Could not read column 0 with name \(imageTable.nameColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
-                Self.logger.error("\(reason)")
-                throw SQLQueryError.readError(reason: reason)
-            }
-            
-            guard let galleryFK = sqlite3_column_text(selectStatement, 39) else {
-                let reason = "Could not read column 39 with name \(imageTable.foreignKeys.galleryColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
-                Self.logger.error("\(reason)")
-                throw SQLQueryError.readError(reason: reason)
-            }
-            
-            guard let toolFK = sqlite3_column_text(selectStatement, 40) else {
-                let reason = "Could not read column 40 with name \(imageTable.foreignKeys.toolColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
-                Self.logger.error("\(reason)")
-                throw SQLQueryError.readError(reason: reason)
-            }
-            
-            guard let tabFK = sqlite3_column_text(selectStatement, 41) else {
-                let reason = "Could not read column 41 with name \(imageTable.foreignKeys.tabColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
-                Self.logger.error("\(reason)")
-                throw SQLQueryError.readError(reason: reason)
-            }
-            
-            guard let mapFK = sqlite3_column_text(selectStatement, 42) else {
-                let reason = "Could not read column 42 with name \(imageTable.foreignKeys.mapColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
-                Self.logger.error("\(reason)")
-                throw SQLQueryError.readError(reason: reason)
-            }
-
-            guard let gameFK = sqlite3_column_text(selectStatement, 43) else {
-                let reason = "Could not read column 43 with name \(imageTable.foreignKeys.gameColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
-                Self.logger.error("\(reason)")
-                throw SQLQueryError.readError(reason: reason)
-            }
-
-            
-            let imageName = String(cString: id)
-            
-            if imageDictionary[imageName] == nil {
-                guard let descrption = sqlite3_column_text(selectStatement, 1) else {
-                    let reason = "Could not read column 1 with name \(imageTable.descriptionColumn.template) of result as text in \(#function) @ \(#file):\(#line)"
-                    Self.logger.error("\(reason)")
-                    throw SQLQueryError.readError(reason: reason)
+                if variantsDictionary[imageID] == nil {
+                    variantsDictionary[imageID] = Set<SerializedImageVariantMetadataModel>()
                 }
                 
-                let imagePosition = sqlite3_column_int(selectStatement, 2)
-                guard imagePosition != SQLITE_NULL else {
-                    let reason = "Could not read column 2 with name \(imageTable.positionColumn.template) of result as int32 in \(#function) @ \(#file):\(#line)"
-                    Self.logger.error("\(reason)")
-                    throw SQLQueryError.readError(reason: reason)
+                variantsDictionary[imageID]?.insert(theVariant)
+            }
+        }
+        
+        var result: [ReadImageOption: [(any ReadImageOptional)?]] = [:]
+        
+        imageDictionary.keys.forEach { imageID in
+            guard let image = imageDictionary[image] else { fatalError() }
+            result[.images] = [image]
+            
+            if options.contains(.outlines) {
+                if let outline = outlinesDictionary[imageID] {
+                    result[.outlines] = [outline]
                 }
-                
-                let searchLabel = sqlite3_column_text(selectStatement, 3)
-                
-                imageDictionary[imageName] = SerializedImageModel(
-                    name: imageName,
-                    description: String(cString: descrption),
-                    position: Int(imagePosition),
-                    searchLabel: sqlite3_column_type(selectStatement, 3) != SQLITE_NULL ? String(cString: searchLabel!) : nil,
-                    gallery: String(cString: galleryFK),
-                    tool: String(cString: toolFK),
-                    tab: String(cString: tabFK),
-                    map: String(cString: mapFK),
-                    game: String(cString: gameFK)
-                )
             }
             
-            rc = sqlite3_step(selectStatement)
+            if options.contains(.boundingCircles) {
+                if let boundingCircle = boundingCircleDictionary[imageID] {
+                    result[.boundingCircles] = [boundingCircle]
+                }
+            }
+            
+            if options.contains(.labels) {
+                if let labels = labelsDictionary[imageID] {
+                    result[.labels] = [SerializedLabelsSet(labels: Array(labels))]
+                }
+            }
+            
+            if options.contains(.variantsMetadatas) {
+                if let variants = variantsDictionary[imageID] {
+                    result[.variantsMetadatas] = [SerializedImageVariantsMetadataSet(variants: Array(variants))]
+                }
+            }
+            
+            if options.contains(.masters) {
+                if result[.masters] == nil {
+                    result[.masters] = []
+                }
+                
+                result[.masters]?.append(masterDictionary[imageID])
+            }
+
         }
 
-        if rc != SQLITE_DONE {
-            let errmsg = String(cString: sqlite3_errmsg(dbHandle)!)
-            Self.logger.error("\(errmsg)")
-            throw SQLQueryError.readError(reason: errmsg)
-        }
-
+        assert(result[.images]?.count ?? 0 == 1)
+        assert(result[.outlines]?.count ?? 0 <= 1)
+        assert(result[.boundingCircles]?.count ?? 0 <= 1)
+        assert(result[.masters]?.count ?? 0 <= 1)
         
-        print(#function)
-        imageDictionary.keys.forEach { image in
-            Self.logger.error("""
-            \(imageDictionary[image]!.toString())
-            """)
-        }
-
-        // clean up when we're done
-        */
         return [:]
     }
     
@@ -796,6 +655,10 @@ extension DBMS.CRUD {
             assert(images.count == imagesWithOptionals[.variantsMetadatas]?.count)
         }
         
+        if options.contains(.masters) {
+            imagesWithOptionals[.masters] = [String?].init(repeating: nil, count: images.count)
+        }
+        
         imagesWithOptionals[.images] = images
         
         return imagesWithOptionals
@@ -900,6 +763,7 @@ public enum ReadImageOption: Sendable {
     case boundingCircles
     case labels
     case variantsMetadatas
+    case masters
 }
 
 public enum ReadGalleryOption: Sendable {
