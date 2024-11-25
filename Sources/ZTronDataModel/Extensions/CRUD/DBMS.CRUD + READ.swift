@@ -91,6 +91,252 @@ extension DBMS.CRUD {
         let boundingCircle = DBMS.boundingCircle
         let label = DBMS.label
         
+        let parentView = SQLite.View("parentView")
+        
+        try dbConnection.run(
+            parentView.create(
+                imageTable.table
+                    .join(
+                        .leftOuter,
+                        imageVariants.table,
+                        on: imageTable.nameColumn == imageVariants.slaveColumn &&
+                        imageTable.table[imageTable.foreignKeys.galleryColumn] == imageVariants.table[imageVariants.foreignKeys.galleryColumn] &&
+                        imageTable.table[imageTable.foreignKeys.toolColumn] == imageVariants.table[imageVariants.foreignKeys.toolColumn] &&
+                        imageTable.table[imageTable.foreignKeys.tabColumn] == imageVariants.table[imageVariants.foreignKeys.tabColumn] &&
+                        imageTable.table[imageTable.foreignKeys.mapColumn] == imageVariants.table[imageVariants.foreignKeys.mapColumn] &&
+                        imageTable.table[imageTable.foreignKeys.gameColumn] == imageVariants.table[imageVariants.foreignKeys.gameColumn]
+                    )
+                    .filter(
+                        imageTable.nameColumn == image &&
+                        imageTable.table[imageTable.foreignKeys.galleryColumn] == gallery &&
+                        imageTable.table[imageTable.foreignKeys.toolColumn] == tool &&
+                        imageTable.table[imageTable.foreignKeys.tabColumn] == tab &&
+                        imageTable.table[imageTable.foreignKeys.mapColumn] == map &&
+                        imageTable.table[imageTable.foreignKeys.gameColumn] == game
+                    )
+                    .select(
+                        [
+                            imageTable.nameColumn.alias(name: "childImage"),
+                            imageVariants.masterColumn.alias(name: "parent"),
+                            imageTable.table[imageTable.foreignKeys.galleryColumn],
+                            imageTable.table[imageTable.foreignKeys.toolColumn],
+                            imageTable.table[imageTable.foreignKeys.tabColumn],
+                            imageTable.table[imageTable.foreignKeys.mapColumn],
+                            imageTable.table[imageTable.foreignKeys.gameColumn]
+                        ]
+                    ),
+                    temporary: true,
+                    ifNotExists: true
+                )
+        )
+        
+        let parentViewChild = SQLite.Expression<String?>("childImage")
+        let parentViewParent = SQLite.Expression<String?>("parent")
+        
+        defer {
+            let _ = parentView.drop(ifExists: true)
+        }
+
+        
+        let sql = imageTable.table.join(
+            .leftOuter,
+            imageVariants.table,
+            on: imageTable.nameColumn == imageVariants.masterColumn &&
+            imageTable.table[imageTable.foreignKeys.galleryColumn] == imageVariants.table[imageVariants.foreignKeys.galleryColumn] &&
+            imageTable.table[imageTable.foreignKeys.toolColumn] == imageVariants.table[imageVariants.foreignKeys.toolColumn] &&
+            imageTable.table[imageTable.foreignKeys.tabColumn] == imageVariants.table[imageVariants.foreignKeys.tabColumn] &&
+            imageTable.table[imageTable.foreignKeys.mapColumn] == imageVariants.table[imageVariants.foreignKeys.mapColumn] &&
+            imageTable.table[imageTable.foreignKeys.gameColumn] == imageVariants.table[imageVariants.foreignKeys.gameColumn]
+        ).join(
+            .leftOuter,
+            parentView,
+            on: imageTable.nameColumn == parentView[parentViewChild] &&
+            imageTable.table[imageTable.foreignKeys.galleryColumn] == parentView[imageTable.foreignKeys.galleryColumn] &&
+            imageTable.table[imageTable.foreignKeys.toolColumn] == parentView[imageTable.foreignKeys.toolColumn] &&
+            imageTable.table[imageTable.foreignKeys.tabColumn] == parentView[imageTable.foreignKeys.tabColumn] &&
+            imageTable.table[imageTable.foreignKeys.mapColumn] == parentView[imageTable.foreignKeys.mapColumn] &&
+            imageTable.table[imageTable.foreignKeys.gameColumn] == parentView[imageTable.foreignKeys.gameColumn]
+        ).join(
+            .leftOuter,
+            outline.table,
+            on: imageTable.nameColumn == outline.table[outline.foreignKeys.imageColumn] &&
+            imageTable.table[imageTable.foreignKeys.galleryColumn] == outline.table[outline.foreignKeys.galleryColumn] &&
+            imageTable.table[imageTable.foreignKeys.toolColumn] == outline.table[outline.foreignKeys.toolColumn] &&
+            imageTable.table[imageTable.foreignKeys.tabColumn] == outline.table[outline.foreignKeys.tabColumn] &&
+            imageTable.table[imageTable.foreignKeys.mapColumn] == outline.table[outline.foreignKeys.mapColumn] &&
+            imageTable.table[imageTable.foreignKeys.gameColumn] == outline.table[outline.foreignKeys.gameColumn]
+        ).join(
+            .leftOuter,
+            boundingCircle.table,
+            on: imageTable.nameColumn == boundingCircle.table[boundingCircle.foreignKeys.imageColumn] &&
+            imageTable.table[imageTable.foreignKeys.galleryColumn] == boundingCircle.table[boundingCircle.foreignKeys.galleryColumn] &&
+            imageTable.table[imageTable.foreignKeys.toolColumn] == boundingCircle.table[boundingCircle.foreignKeys.toolColumn] &&
+            imageTable.table[imageTable.foreignKeys.tabColumn] == boundingCircle.table[boundingCircle.foreignKeys.tabColumn] &&
+            imageTable.table[imageTable.foreignKeys.mapColumn] == boundingCircle.table[boundingCircle.foreignKeys.mapColumn] &&
+            imageTable.table[imageTable.foreignKeys.gameColumn] == boundingCircle.table[boundingCircle.foreignKeys.gameColumn]
+        ).join(
+            .leftOuter,
+            label.table,
+            on: imageTable.nameColumn == label.table[label.foreignKeys.imageColumn] &&
+            imageTable.table[imageTable.foreignKeys.galleryColumn] == label.table[label.foreignKeys.galleryColumn] &&
+            imageTable.table[imageTable.foreignKeys.toolColumn] == label.table[label.foreignKeys.toolColumn] &&
+            imageTable.table[imageTable.foreignKeys.tabColumn] == label.table[label.foreignKeys.tabColumn] &&
+            imageTable.table[imageTable.foreignKeys.mapColumn] == label.table[label.foreignKeys.mapColumn] &&
+            imageTable.table[imageTable.foreignKeys.gameColumn] == label.table[label.foreignKeys.gameColumn]
+        ).filter(
+            imageTable.table[imageTable.nameColumn] == image &&
+            imageTable.table[imageTable.foreignKeys.galleryColumn] == gallery &&
+            imageTable.table[imageTable.foreignKeys.toolColumn] == tool &&
+            imageTable.table[imageTable.foreignKeys.tabColumn] == tab &&
+            imageTable.table[imageTable.foreignKeys.mapColumn] == map &&
+            imageTable.table[imageTable.foreignKeys.gameColumn] == game
+        ).select(
+            imageTable.nameColumn,
+            imageTable.descriptionColumn,
+            imageTable.positionColumn,
+            imageTable.searchLabelColumn,
+            imageVariants.masterColumn,
+            imageVariants.slaveColumn,
+            imageVariants.variantColumn,
+            imageVariants.bottomBarIconColumn,
+            imageVariants.goBackBottomBarIconColumn,
+            imageVariants.boundingFrameOriginXColumn,
+            imageVariants.boundingFrameOriginYColumn,
+            imageVariants.boundingFrameWidthColumn,
+            imageVariants.boundingFrameHeightColumn,
+            parentView[parentViewParent],
+            outline.resourceNameColumn,
+            outline.table[outline.colorHexColumn].alias(name: "outlineColorHex"),
+            outline.table[outline.opacityColumn].alias(name: "outlineOpacity"),
+            outline.table[outline.isActiveColumn].alias(name: "isOutlineActive"),
+            outline.table[outline.boundingBoxOriginXColumn].alias(name: "outlineBoundingBoxOriginX"),
+            outline.table[outline.boundingBoxOriginYColumn].alias(name: "outlineBoundingBoxOriginY"),
+            outline.table[outline.boundingBoxWidthColumn].alias(name: "outlineBoundingBoxWidth"),
+            outline.table[outline.boundingBoxHeightColumn].alias(name: "outlineBoundingBoxHeight"),
+            boundingCircle.table[boundingCircle.colorHexColumn].alias(name: "boundingCircleColorHex"),
+            boundingCircle.table[boundingCircle.opacityColumn].alias(name: "boundingCircleOpacity"),
+            boundingCircle.table[boundingCircle.isActiveColumn].alias(name: "isBoundingCircleActive"),
+            boundingCircle.table[boundingCircle.idleDiameterColumn],
+            boundingCircle.table[boundingCircle.normalizedCenterXColumn],
+            boundingCircle.table[boundingCircle.normalizedCenterYColumn],
+            label.table[label.labelColumn],
+            label.table[label.opacityColumn].alias(name: "labelOpacity"),
+            label.table[label.isActiveColumn].alias(name: "isLabelActive"),
+            label.table[label.iconColumn].alias(name: "labelIcon"),
+            label.table[label.assetsImageNameColumn].alias(name: "labelAssetsImageName"),
+            label.table[label.textColorHexColumn].alias(name: "labelTextColorHex"),
+            label.table[label.backgroundColorHexColumn].alias(name: "labelBackgroundColorHex"),
+            label.table[label.maxAABBOriginXColumn],
+            label.table[label.maxAABBOriginYColumn],
+            label.table[label.maxAABBWidthColumn],
+            label.table[label.maxAABBHeightColumn],
+            imageTable.table[imageTable.foreignKeys.galleryColumn],
+            imageTable.table[imageTable.foreignKeys.toolColumn],
+            imageTable.table[imageTable.foreignKeys.tabColumn],
+            imageTable.table[imageTable.foreignKeys.mapColumn],
+            imageTable.table[imageTable.foreignKeys.gameColumn]
+        )
+        
+        /*
+         SELECT "name",
+                "description",
+                "position",
+                "searchlabel",
+                "master",
+                "slave",
+                "variant",
+                "bottombaricon",
+                "gobackbottombaricon",
+                "boundingframeoriginx",
+                "boundingframeoriginy",
+                "boundingframewidth",
+                "boundingframeheight",
+                "parentview"."parent",
+                "resourcename",
+                "outline"."colorhex"           AS "outlineColorHex",
+                "outline"."opacity"            AS "outlineOpacity",
+                "outline"."isactive"           AS "isOutlineActive",
+                "outline"."boundingboxoriginx" AS "outlineBoundingBoxOriginX",
+                "outline"."boundingboxoriginy" AS "outlineBoundingBoxOriginY",
+                "outline"."boundingboxwidth"   AS "outlineBoundingBoxWidth",
+                "outline"."boundingboxheight"  AS "outlineBoundingBoxHeight",
+                "bounding_circle"."colorhex"   AS "boundingCircleColorHex",
+                "bounding_circle"."opacity"    AS "boundingCircleOpacity",
+                "bounding_circle"."isactive"   AS "isBoundingCircleActive",
+                "bounding_circle"."idlediameter",
+                "bounding_circle"."normalizedcenterx",
+                "bounding_circle"."normalizedcentery",
+                "label"."label",
+                "label"."opacity"              AS "labelOpacity",
+                "label"."isactive"             AS "isLabelActive",
+                "label"."icon"                 AS "labelIcon",
+                "label"."assetsimagename"      AS "labelAssetsImageName",
+                "label"."textcolorhex"         AS "labelTextColorHex",
+                "label"."backgroundcolorhex"   AS "labelBackgroundColorHex",
+                "label"."maxaabboriginx",
+                "label"."maxaabboriginy",
+                "label"."maxaabbwidth",
+                "label"."maxaabbheight",
+                "image"."gallery",
+                "image"."tool",
+                "image"."tab",
+                "image"."map",
+                "image"."game"
+         FROM   "image"
+                LEFT OUTER JOIN "image_variant"
+                             ON ( ( ( ( ( ( "name" = "master" )
+                                          AND ( "image"."gallery" =
+                                        "image_variant"."gallery" ) )
+                                        AND ( "image"."tool" = "image_variant"."tool" ) )
+                                      AND ( "image"."tab" = "image_variant"."tab" ) )
+                                    AND ( "image"."map" = "image_variant"."map" ) )
+                                  AND ( "image"."game" = "image_variant"."game" ) )
+                LEFT OUTER JOIN "parentview"
+                             ON ( ( ( ( ( ( "name" = "parentview"."childimage" )
+                                          AND ( "image"."gallery" =
+                                                "parentview"."gallery" ) )
+                                        AND ( "image"."tool" = "parentview"."tool" ) )
+                                      AND ( "image"."tab" = "parentview"."tab" ) )
+                                    AND ( "image"."map" = "parentview"."map" ) )
+                                  AND ( "image"."game" = "parentview"."game" ) )
+                LEFT OUTER JOIN "outline"
+                             ON ( ( ( ( ( ( "name" = "outline"."image" )
+                                          AND ( "image"."gallery" =
+                                        "outline"."gallery" ) )
+                                        AND ( "image"."tool" = "outline"."tool" ) )
+                                      AND ( "image"."tab" = "outline"."tab" ) )
+                                    AND ( "image"."map" = "outline"."map" ) )
+                                  AND ( "image"."game" = "outline"."game" ) )
+                LEFT OUTER JOIN "bounding_circle"
+                             ON ( ( ( ( ( ( "name" = "bounding_circle"."image" )
+                                          AND ( "image"."gallery" =
+                                              "bounding_circle"."gallery" ) )
+                                        AND ( "image"."tool" =
+                                      "bounding_circle"."tool" ) )
+                                      AND ( "image"."tab" = "bounding_circle"."tab" ) )
+                                    AND ( "image"."map" = "bounding_circle"."map" ) )
+                                  AND ( "image"."game" = "bounding_circle"."game" ) )
+                LEFT OUTER JOIN "label"
+                             ON ( ( ( ( ( ( "name" = "label"."image" )
+                                          AND ( "image"."gallery" = "label"."gallery" ) )
+                                        AND ( "image"."tool" = "label"."tool" ) )
+                                      AND ( "image"."tab" = "label"."tab" ) )
+                                    AND ( "image"."map" = "label"."map" ) )
+                                  AND ( "image"."game" = "label"."game" ) )
+         WHERE  ( ( ( ( ( ( "image"."name" = ? )
+                          AND ( "image"."gallery" = ? ) )
+                        AND ( "image"."tool" = ? ) )
+                      AND ( "image"."tab" = ? ) )
+                    AND ( "image"."map" = ? ) )
+                  AND ( "image"."game" = ? ) )
+         */
+       
+        try dbConnection.prepare(sql).forEach { result in
+            print("processed image: \(result[imageTable.nameColumn]), outlineColor: \(String(describing: result[SQLite.Expression<String?>("outlineColorHex")]))")
+        }
+
+        
+       /*
         let selectQueryStatement: String = """
         WITH parentImage AS (
         SELECT
@@ -311,7 +557,7 @@ extension DBMS.CRUD {
         }
 
         // clean up when we're done
-
+        */
         return [:]
     }
     
