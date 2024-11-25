@@ -242,7 +242,7 @@ extension DBMS.CRUD {
         )
         
         let boundingCircleExists = SQLite.Expression<String?>(
-            "\"\(boundingCircle.tableName)\".\"\(boundingCircle.colorHexColumn.template.droppingQuotes())\""
+            boundingCircle.colorHexColumn.template.droppingQuotes()
         )
 
         
@@ -269,7 +269,7 @@ extension DBMS.CRUD {
             }
             
 
-            if let boundingCircleHex = result[boundingCircleExists] {
+            if let boundingCircleHex = result[boundingCircle.table[boundingCircleExists]] {
                 let theBoundingCircle = SerializedBoundingCircleModel(
                     colorHex: result[boundingCircle.table[boundingCircle.colorHexColumn]],
                     isActive: result[boundingCircle.table[boundingCircle.isActiveColumn]],
