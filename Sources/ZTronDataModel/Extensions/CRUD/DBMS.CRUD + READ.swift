@@ -238,7 +238,7 @@ extension DBMS.CRUD {
         )
         
         try dbConnection.prepare(sql).forEach { result in
-            print("processed image: \(result[imageTable.nameColumn]), outlineColor: \(String(describing: result[outline.table[outline.colorHexColumn]]))")
+            print("processed image: \(result[imageTable.nameColumn]), outlineColor: \(String(describing: result[outline.table[outline.colorHexColumn]])), boundingCircleColor: \(String(describing: result[boundingCircle.table[boundingCircle.colorHexColumn]]))")
         }
 
         
