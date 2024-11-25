@@ -205,7 +205,7 @@ extension DBMS.CRUD {
             imageVariants.table[imageVariants.boundingFrameWidthColumn],
             imageVariants.table[imageVariants.boundingFrameHeightColumn],
             parentView[parentViewParent],
-            outline.resourceNameColumn,
+            outline.table[outline.resourceNameColumn],
             outline.table[outline.colorHexColumn]/*.alias(name: "outlineColorHex")*/,
             outline.table[outline.opacityColumn]/*.alias(name: "outlineOpacity")*/,
             outline.table[outline.isActiveColumn]/*.alias(name: "isOutlineActive")*/,
@@ -237,7 +237,10 @@ extension DBMS.CRUD {
             imageTable.table[imageTable.foreignKeys.gameColumn]
         )
         
-        let outlineExists = SQLite.Expression<String?>(outline.resourceNameColumn.template)
+        let outlineExists = SQLite.Expression<String?>(
+            outline.resourceNameColumn.template.droppingQuotes()
+        )
+        
         try dbConnection.prepare(sql).forEach { result in
             let image = SerializedImageModel(result, namespaceColumns: true)
             
