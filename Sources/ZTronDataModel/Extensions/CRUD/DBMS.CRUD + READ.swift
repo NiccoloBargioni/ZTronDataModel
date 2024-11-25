@@ -141,7 +141,7 @@ extension DBMS.CRUD {
         let sql = imageTable.table.join(
             .leftOuter,
             imageVariants.table,
-            on: imageTable.nameColumn == imageVariants.masterColumn &&
+            on: imageTable.table[imageTable.nameColumn] == imageVariants.table[imageVariants.masterColumn] &&
             imageTable.table[imageTable.foreignKeys.galleryColumn] == imageVariants.table[imageVariants.foreignKeys.galleryColumn] &&
             imageTable.table[imageTable.foreignKeys.toolColumn] == imageVariants.table[imageVariants.foreignKeys.toolColumn] &&
             imageTable.table[imageTable.foreignKeys.tabColumn] == imageVariants.table[imageVariants.foreignKeys.tabColumn] &&
@@ -150,7 +150,7 @@ extension DBMS.CRUD {
         ).join(
             .leftOuter,
             parentView,
-            on: imageTable.nameColumn == parentView[parentViewChild] &&
+            on: imageTable.table[imageTable.nameColumn] == parentView[parentViewChild] &&
             imageTable.table[imageTable.foreignKeys.galleryColumn] == parentView[imageTable.foreignKeys.galleryColumn] &&
             imageTable.table[imageTable.foreignKeys.toolColumn] == parentView[imageTable.foreignKeys.toolColumn] &&
             imageTable.table[imageTable.foreignKeys.tabColumn] == parentView[imageTable.foreignKeys.tabColumn] &&
@@ -159,7 +159,7 @@ extension DBMS.CRUD {
         ).join(
             .leftOuter,
             outline.table,
-            on: imageTable.nameColumn == outline.table[outline.foreignKeys.imageColumn] &&
+            on: imageTable.table[imageTable.nameColumn] == outline.table[outline.foreignKeys.imageColumn] &&
             imageTable.table[imageTable.foreignKeys.galleryColumn] == outline.table[outline.foreignKeys.galleryColumn] &&
             imageTable.table[imageTable.foreignKeys.toolColumn] == outline.table[outline.foreignKeys.toolColumn] &&
             imageTable.table[imageTable.foreignKeys.tabColumn] == outline.table[outline.foreignKeys.tabColumn] &&
@@ -168,7 +168,7 @@ extension DBMS.CRUD {
         ).join(
             .leftOuter,
             boundingCircle.table,
-            on: imageTable.nameColumn == boundingCircle.table[boundingCircle.foreignKeys.imageColumn] &&
+            on: imageTable.table[imageTable.nameColumn] == boundingCircle.table[boundingCircle.foreignKeys.imageColumn] &&
             imageTable.table[imageTable.foreignKeys.galleryColumn] == boundingCircle.table[boundingCircle.foreignKeys.galleryColumn] &&
             imageTable.table[imageTable.foreignKeys.toolColumn] == boundingCircle.table[boundingCircle.foreignKeys.toolColumn] &&
             imageTable.table[imageTable.foreignKeys.tabColumn] == boundingCircle.table[boundingCircle.foreignKeys.tabColumn] &&
@@ -177,7 +177,7 @@ extension DBMS.CRUD {
         ).join(
             .leftOuter,
             label.table,
-            on: imageTable.nameColumn == label.table[label.foreignKeys.imageColumn] &&
+            on: imageTable.table[imageTable.nameColumn] == label.table[label.foreignKeys.imageColumn] &&
             imageTable.table[imageTable.foreignKeys.galleryColumn] == label.table[label.foreignKeys.galleryColumn] &&
             imageTable.table[imageTable.foreignKeys.toolColumn] == label.table[label.foreignKeys.toolColumn] &&
             imageTable.table[imageTable.foreignKeys.tabColumn] == label.table[label.foreignKeys.tabColumn] &&
@@ -191,19 +191,19 @@ extension DBMS.CRUD {
             imageTable.table[imageTable.foreignKeys.mapColumn] == map &&
             imageTable.table[imageTable.foreignKeys.gameColumn] == game
         ).select(
-            imageTable.nameColumn,
-            imageTable.descriptionColumn,
-            imageTable.positionColumn,
-            imageTable.searchLabelColumn,
-            imageVariants.masterColumn,
-            imageVariants.slaveColumn,
-            imageVariants.variantColumn,
-            imageVariants.bottomBarIconColumn,
-            imageVariants.goBackBottomBarIconColumn,
-            imageVariants.boundingFrameOriginXColumn,
-            imageVariants.boundingFrameOriginYColumn,
-            imageVariants.boundingFrameWidthColumn,
-            imageVariants.boundingFrameHeightColumn,
+            imageTable.table[imageTable.nameColumn],
+            imageTable.table[imageTable.descriptionColumn],
+            imageTable.table[imageTable.positionColumn],
+            imageTable.table[imageTable.searchLabelColumn],
+            imageVariants.table[imageVariants.masterColumn],
+            imageVariants.table[imageVariants.slaveColumn],
+            imageVariants.table[imageVariants.variantColumn],
+            imageVariants.table[imageVariants.bottomBarIconColumn],
+            imageVariants.table[imageVariants.goBackBottomBarIconColumn],
+            imageVariants.table[imageVariants.boundingFrameOriginXColumn],
+            imageVariants.table[imageVariants.boundingFrameOriginYColumn],
+            imageVariants.table[imageVariants.boundingFrameWidthColumn],
+            imageVariants.table[imageVariants.boundingFrameHeightColumn],
             parentView[parentViewParent],
             outline.resourceNameColumn,
             outline.table[outline.colorHexColumn]/*.alias(name: "outlineColorHex")*/,
