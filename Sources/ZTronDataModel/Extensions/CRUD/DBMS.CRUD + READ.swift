@@ -7,41 +7,46 @@ extension String: ReadGalleryOptional {  }
 
 extension DBMS.CRUD {
     //MARK: - READ IMAGE VARIANTS
-    private static func readFirstLevelMasterImagesForGallery(
+    private static func _readFirstLevelMasterImagesForGallery(
         for dbConnection: Connection,
         game: String,
         map: String,
         tab: String,
         tool: String,
-        gallery: String
+        gallery: String?
     ) throws -> [SerializedImageModel] {
         let image = DBMS.image
         let imageVariant = DBMS.imageVariant
         
-        let findSlavesQuery = imageVariant.table
+        var findSlavesQuery = imageVariant.table
             .select(imageVariant.slaveColumn)
             .filter(
                 imageVariant.foreignKeys.gameColumn == game &&
                 imageVariant.foreignKeys.mapColumn == map &&
                 imageVariant.foreignKeys.tabColumn == tab &&
-                imageVariant.foreignKeys.toolColumn == tool &&
-                imageVariant.foreignKeys.galleryColumn == gallery
+                imageVariant.foreignKeys.toolColumn == tool
             )
+        
+        if let gallery = gallery {
+            findSlavesQuery = findSlavesQuery.filter(imageVariant.foreignKeys.galleryColumn == gallery)
+        }
         
         let slaves = try dbConnection.prepare(findSlavesQuery).map { result in
             return result[imageVariant.slaveColumn]
         }
         
-        let firstLevelMastersQuery = image.table.filter(
+        var firstLevelMastersQuery = image.table.filter(
             image.foreignKeys.gameColumn == game &&
             image.foreignKeys.mapColumn == map &&
             image.foreignKeys.tabColumn == tab &&
             image.foreignKeys.toolColumn == tool &&
-            image.foreignKeys.galleryColumn == gallery &&
             !slaves.contains(image.nameColumn)
         )
         .order(image.positionColumn)
         
+        if let gallery = gallery {
+            firstLevelMastersQuery = firstLevelMastersQuery.filter(image.foreignKeys.galleryColumn == gallery)
+        }
         
         return try dbConnection.prepare(firstLevelMastersQuery).map { imageRow in
             return SerializedImageModel(imageRow)
@@ -713,6 +718,7 @@ extension DBMS.CRUD {
     
     /// Returns from database the set of all the top level `master`s for the specified gallery, along with the requested optionals.
     ///
+    /// - Parameter gallery: The name of the gallery to load master images for. If `nil`, all the images for the tool are loaded instead
     /// - Optionals:
     ///     - **images**: This is always included. The images models are always included regardless of whether or not you explicitly include this option. Also,
     ///     the associated array never contains optionals, so it's safe to cast to `[SerializedImageModel]`.
@@ -737,12 +743,12 @@ extension DBMS.CRUD {
         map: String,
         tab: String,
         tool: String,
-        gallery: String,
+        gallery: String?,
         options: Set<ReadImageOption> = Set<ReadImageOption>([.images])
     ) throws -> [ReadImageOption: [(any ReadImageOptional)?]] {
         var imagesWithOptionals: [ReadImageOption: [(any ReadImageOptional)?]] = [:]
         
-        let images = try self.readFirstLevelMasterImagesForGallery(
+        let images = try self._readFirstLevelMasterImagesForGallery(
             for: dbConnection,
             game: game,
             map: map,
