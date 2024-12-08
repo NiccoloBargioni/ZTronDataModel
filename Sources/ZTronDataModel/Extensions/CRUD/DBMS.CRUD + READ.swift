@@ -523,7 +523,7 @@ extension DBMS.CRUD {
             gallery.table[gallery.foreignKeys.gameColumn] == searchToken.table[searchToken.foreignKeys.gameColumn]
         )
         .filter(
-            masterSlavesGalleriesView[gallery.table[gallery.nameColumn]] == gallery.table[gallery.nameColumn] &&
+            masterSlavesGalleriesView[gallery.nameColumn] == gallery.table[gallery.nameColumn] &&
             gallery.table[gallery.foreignKeys.toolColumn] == tool &&
             gallery.table[gallery.foreignKeys.tabColumn] == tab &&
             gallery.table[gallery.foreignKeys.mapColumn] == map &&
