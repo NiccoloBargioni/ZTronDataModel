@@ -2,9 +2,8 @@ import Foundation
 import SQLite3
 import SQLite
 
-extension String: ReadImageOptional {
-    
-}
+extension String: ReadImageOptional { }
+extension String: ReadGalleryOptional {  }
 
 extension DBMS.CRUD {
     //MARK: - READ IMAGE VARIANTS
@@ -464,6 +463,125 @@ extension DBMS.CRUD {
     }
     
     
+    public static func readAllGalleriesForTool(
+        for dbConnection: Connection,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        options: Set<ReadGalleryOption> = [.galleries]
+    ) throws -> [ReadGalleryOption: [(any ReadGalleryOptional)?]] {
+        
+        let masterSlavesGalleriesView: SQLite.View = .init("parentView")
+        let gallery = DBMS.gallery
+        let subgalleries = DBMS.subgallery
+        let searchToken = DBMS.gallerySearchToken
+        
+        try dbConnection.run(
+            masterSlavesGalleriesView.create(
+                gallery.table.join(
+                    .leftOuter,
+                    subgalleries.table,
+                    on: gallery.table[gallery.nameColumn] == subgalleries.table[subgalleries.slaveColumn] &&
+                    gallery.table[gallery.foreignKeys.toolColumn] == subgalleries.table[subgalleries.foreignKeys.toolColumn] &&
+                    gallery.table[gallery.foreignKeys.tabColumn] == subgalleries.table[subgalleries.foreignKeys.tabColumn] &&
+                    gallery.table[gallery.foreignKeys.mapColumn] == subgalleries.table[subgalleries.foreignKeys.mapColumn] &&
+                    gallery.table[gallery.foreignKeys.gameColumn] == subgalleries.table[subgalleries.foreignKeys.gameColumn]
+                )
+                .filter(
+                    gallery.table[gallery.foreignKeys.toolColumn] == tool &&
+                    gallery.table[gallery.foreignKeys.tabColumn] == tab &&
+                    gallery.table[gallery.foreignKeys.mapColumn] == map &&
+                    gallery.table[gallery.foreignKeys.gameColumn] == game
+                )
+                .select(
+                    gallery.table[*],
+                    subgalleries.table[subgalleries.masterColumn].alias(name: "master")
+                ),
+                temporary: true,
+                ifNotExists: true
+            )
+        )
+        
+        defer {
+            let _ = masterSlavesGalleriesView.drop(ifExists: true)
+        }
+        
+        let findGalleriesQuery = gallery.table.join(
+            masterSlavesGalleriesView,
+            on: masterSlavesGalleriesView[gallery.foreignKeys.toolColumn] == gallery.table[gallery.foreignKeys.toolColumn] &&
+            masterSlavesGalleriesView[gallery.foreignKeys.tabColumn] == gallery.table[gallery.foreignKeys.tabColumn] &&
+            masterSlavesGalleriesView[gallery.foreignKeys.mapColumn] == gallery.table[gallery.foreignKeys.mapColumn] &&
+            masterSlavesGalleriesView[gallery.foreignKeys.gameColumn] == gallery.table[gallery.foreignKeys.gameColumn]
+        ).join(
+            .leftOuter,
+            searchToken.table,
+            on: gallery.table[gallery.nameColumn] == searchToken.table[searchToken.foreignKeys.galleryColumn] &&
+            gallery.table[gallery.foreignKeys.toolColumn] == searchToken.table[searchToken.foreignKeys.toolColumn] &&
+            gallery.table[gallery.foreignKeys.tabColumn] == searchToken.table[searchToken.foreignKeys.tabColumn] &&
+            gallery.table[gallery.foreignKeys.mapColumn] == searchToken.table[searchToken.foreignKeys.mapColumn] &&
+            gallery.table[gallery.foreignKeys.gameColumn] == searchToken.table[searchToken.foreignKeys.gameColumn]
+        )
+        .filter(
+            gallery.table[gallery.foreignKeys.toolColumn] == tool &&
+            gallery.table[gallery.foreignKeys.tabColumn] == tab &&
+            gallery.table[gallery.foreignKeys.mapColumn] == map &&
+            gallery.table[gallery.foreignKeys.gameColumn] == game
+        )
+        .order(gallery.table[gallery.positionColumn])
+        .select(
+            gallery.table[*],
+            masterSlavesGalleriesView[SQLite.Expression<String?>("master")],
+            searchToken.table[searchToken.titleColumn],
+            searchToken.table[searchToken.iconColumn],
+            searchToken.table[searchToken.iconColorHexColumn]
+        )
+        
+        var result: [ReadGalleryOption: [(any ReadGalleryOptional)?]] = [
+            .galleries: [],
+            .master: [],
+            .searchToken: []
+        ]
+        
+        let searchTokenTitle = SQLite.Expression<String?>(
+            searchToken.titleColumn.template.droppingQuotes()
+        )
+                
+        try dbConnection.prepare(findGalleriesQuery).forEach { row in
+            let theGallery = SerializedGalleryModel(row, namespaceColumns: true)
+            result[.galleries]?.append(theGallery)
+        
+            if options.contains(.searchToken) {
+                if let searchTokenTitle = row[searchToken.table[searchTokenTitle]] {
+                    result[.searchToken]?.append(
+                        SerializedSearchTokenModel(
+                            title: searchTokenTitle,
+                            icon: row[searchToken.table[searchToken.iconColumn]],
+                            iconColorHex: row[searchToken.table[searchToken.iconColorHexColumn]],
+                            gallery: row[gallery.table[gallery.nameColumn]],
+                            tool: row[gallery.table[gallery.foreignKeys.toolColumn]],
+                            tab: row[gallery.table[gallery.foreignKeys.tabColumn]],
+                            map: row[gallery.table[gallery.foreignKeys.mapColumn]],
+                            game: row[gallery.table[gallery.foreignKeys.gameColumn]]
+                        )
+                    )
+                } else {
+                    result[.searchToken]?.append(nil)
+                }
+            }
+            
+            if options.contains(.master) {
+                result[.master]?.append(
+                    row[masterSlavesGalleriesView[SQLite.Expression<String?>("master")]]
+                )
+            }
+            
+        }
+        
+        return result
+    }
+    
+    
     private static func readOutlinesForImagesSet(for dbConnection: Connection, images: [SerializedImageModel]) throws -> [SerializedOutlineModel?] {
         let outline = DBMS.outline
         
@@ -701,7 +819,7 @@ extension DBMS.CRUD {
     }
     
     
-    
+    // FIXME: Add support for new ReadGalleryOption .master
     /// Returns from database the set of all the top level `master`s for the specified gallery, along with the requested optionals.
     ///
     /// - Optionals:
@@ -771,6 +889,7 @@ public enum ReadImageOption: Sendable {
 public enum ReadGalleryOption: Sendable {
     case galleries
     case searchToken
+    case master
 }
 
 extension Set where Element == ReadImageOption {

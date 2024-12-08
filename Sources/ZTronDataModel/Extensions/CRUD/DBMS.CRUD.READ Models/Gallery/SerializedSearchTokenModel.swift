@@ -12,19 +12,39 @@ public final class SerializedSearchTokenModel: ReadGalleryOptional {
     private let map: String
     private let game: String
     
-    internal init(_ fromRow: Row) {
+    internal init(
+        title: String,
+        icon: String,
+        iconColorHex: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) {
+        self.title = title
+        self.icon = icon
+        self.iconColorHex = iconColorHex
+        self.gallery = gallery
+        self.tool = tool
+        self.tab = tab
+        self.map = map
+        self.game = game
+    }
+    
+    internal convenience init(_ fromRow: Row) {
         let searchToken = DBMS.gallerySearchToken
         
-        self.title = fromRow[searchToken.titleColumn]
-        self.icon = fromRow[searchToken.iconColumn]
-        self.iconColorHex = fromRow[searchToken.iconColumn]
-        
-        
-        self.gallery = fromRow[searchToken.foreignKeys.galleryColumn]
-        self.tool = fromRow[searchToken.foreignKeys.toolColumn]
-        self.tab = fromRow[searchToken.foreignKeys.tabColumn]
-        self.map = fromRow[searchToken.foreignKeys.mapColumn]
-        self.game = fromRow[searchToken.foreignKeys.gameColumn]
+        self.init(
+            title: fromRow[searchToken.titleColumn],
+            icon: fromRow[searchToken.iconColumn],
+            iconColorHex: fromRow[searchToken.iconColorHexColumn],
+            gallery: fromRow[searchToken.foreignKeys.galleryColumn],
+            tool: fromRow[searchToken.foreignKeys.toolColumn],
+            tab: fromRow[searchToken.foreignKeys.tabColumn],
+            map: fromRow[searchToken.foreignKeys.mapColumn],
+            game: fromRow[searchToken.foreignKeys.gameColumn]
+        )        
     }
     
     public func hash(into hasher: inout Hasher) {
