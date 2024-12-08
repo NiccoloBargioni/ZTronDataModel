@@ -537,6 +537,8 @@ extension DBMS.CRUD {
             searchToken.table[searchToken.iconColorHexColumn]
         )
         
+        print(findGalleriesQuery.expression.template)
+        
         var result: [ReadGalleryOption: [(any ReadGalleryOptional)?]] = [
             .galleries: [],
             .master: [],
