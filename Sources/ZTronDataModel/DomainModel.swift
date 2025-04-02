@@ -9,7 +9,7 @@ internal class DomainModel {
     internal static let gallery = Gallery()
     internal static let subgallery = HasSubgallery()
     internal static let gallerySearchToken = GallerySearchToken()
-    internal static let image = Image()
+    internal static let visualMedia = VisualMedia()
     internal static let imageVariant = ImageVariant()
     internal static let outline = Outline()
     internal static let boundingCircle = BoundingCircle()
@@ -17,7 +17,7 @@ internal class DomainModel {
     
     internal static let allTablesCreators: [any DBTableCreator] = [
         DomainModel.studio, DomainModel.game, DomainModel.map, DomainModel.tab, DomainModel.tool,
-        DomainModel.gallery, DomainModel.subgallery, DomainModel.gallerySearchToken, DomainModel.image,
+        DomainModel.gallery, DomainModel.subgallery, DomainModel.gallerySearchToken, DomainModel.visualMedia,
         DomainModel.imageVariant, DomainModel.outline, DomainModel.boundingCircle, DomainModel.label
     ]
     

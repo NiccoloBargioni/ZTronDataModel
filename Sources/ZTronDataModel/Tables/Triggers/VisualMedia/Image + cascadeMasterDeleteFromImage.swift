@@ -1,8 +1,8 @@
 import Foundation
 
-extension Image {
+extension VisualMedia {
     
-    /// When a row from `IMAGE` is deleted, the matching gallery might or might not be a `slave`, a `master`, or both.
+    /// When a row from `VISUAL MEDIA` is deleted, the matching gallery might or might not be a `slave`, a `master`, or both.
     ///
     /// -  if the deleted image was a `slave`, there exists a single `image` that could be its `master`, by design, and the relationship must be disposed.
     /// - if the deleted image was a `master`, it might have been a `master` for a whole subhierarchy, whose `slave`s need to be removed from `IMAGE_VARIANT`
@@ -37,7 +37,7 @@ extension Image {
     /// `RITR_BelowTableFirstFloorRave` as a `master` would persist, as well as their matching records in `IMAGE`
     func makeCascadeMasterDeleteFromImageTrigger(for dbConnection: OpaquePointer) throws {
         let imageVariant = DomainModel.imageVariant
-        let image = DomainModel.image
+        let image = DomainModel.visualMedia
         
         let createTriggerQuery = """
             CREATE TRIGGER IF NOT EXISTS cascade_master_delete_from_image

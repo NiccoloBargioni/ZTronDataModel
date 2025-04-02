@@ -3,8 +3,8 @@ import SQLite3
 import SQLite
 
 
-/// - `IMAGE(name, description, position, searchLabel, gallery, tool, tab, map, game)`
-public final class SerializedImageModel: ReadImageOptional {
+/// - `VISUAL_MEDIA(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+public final class SerializedImageModel: SerializedVisualMediaModel {
     private let name: String
     private let description: String
     private let position: Int
@@ -16,7 +16,7 @@ public final class SerializedImageModel: ReadImageOptional {
     private let game: String
     
     internal init(_ fromRow: Row, namespaceColumns: Bool = false) {
-        let image = DBMS.image
+        let image = DBMS.visualMedia
         
         self.name = (namespaceColumns) ? fromRow[image.table[image.nameColumn]] : fromRow[image.nameColumn]
         self.description = (namespaceColumns) ? fromRow[image.table[image.descriptionColumn]] : fromRow[image.descriptionColumn]
@@ -97,9 +97,15 @@ public final class SerializedImageModel: ReadImageOptional {
         return self.game
     }
     
+    public func getType() -> VisualMediaType {
+        return .image
+    }
+    
     public func toString() -> String {
         return """
-        IMAGE(
+        VISUAL_MEDIA(
+            type: image,
+            extension: N.A,
             name: \(self.name),
             description: \(self.description),
             position: \(self.position),

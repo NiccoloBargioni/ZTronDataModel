@@ -4,7 +4,7 @@ import SQLite3
 
 /// - `IMAGE_VARIANT(master, slave, variant, bottomBarIcon, boundingFrameOriginX, boundingFrameOriginY, boundingFrameWidth, boundingFrameHeight, gallery, tool, tab, map, game)`
 /// - `PK(slave, gallery, tool, tab, map, game)`
-/// - `FK(slave, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+/// - `FK(slave, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
 ///
 /// Represents a master -> slave relationship between two images. An image for a specified tuple (`gallery`, `tool`, `tab`,  `map`, `game`)
 /// can appear at most once as a slave, but many times as a master. `IMAGE_VARIANT` is a N:1 master-slave relationship. The 0..1 participation constraint is enforced via
@@ -64,7 +64,7 @@ public final class ImageVariant: DBTableCreator {
     }
     
     func makeTable(for dbConnection: OpaquePointer) throws {
-        let imageModel = DomainModel.image
+        let imageModel = DomainModel.visualMedia
         
         let tableCreationStatement =
             """

@@ -256,7 +256,8 @@ extension DBMS {
         
         // MARK: IMAGE
         
-        /// - `IMAGE(name, description, position, searchLabel, gallery, tool, tab, map, game)`
+        @available(*, unavailable, renamed: "insertIntoVisualMedia")
+        /// - `REFERENCES VISUAL_MEDIA(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
         /// - `PK(name, gallery, tool, tab, map, game)`
         /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
         public static func insertIntoImage(
@@ -272,7 +273,7 @@ extension DBMS {
             tool: String,
             gallery: String
         ) throws {
-            let image = DBMS.image
+            let image = DBMS.visualMedia
             
             try dbConnection.run(
                 image.table.insert(
@@ -288,14 +289,52 @@ extension DBMS {
                     image.foreignKeys.galleryColumn <- gallery
                 )
             )
-            
         }
+        
+        /// - `REFERENCES VISUAL_MEDIA(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+        /// - `PK(name, gallery, tool, tab, map, game)`
+        /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+        public static func insertIntoVisualMedia(
+            or: OnConflict = .fail,
+            for dbConnection: Connection,
+            type: VisualMediaType,
+            format: String?,
+            name: String,
+            description: String,
+            position: Int,
+            searchLabel: String?,
+            game: String,
+            map: String,
+            tab: String,
+            tool: String,
+            gallery: String
+        ) throws {
+            let media = DBMS.visualMedia
+            
+            try dbConnection.run(
+                media.table.insert(
+                    or: or,
+                    media.typeColumn <- type == .image ? "image":"video",
+                    media.extensionColumn <- format,
+                    media.nameColumn <- name,
+                    media.descriptionColumn <- description,
+                    media.positionColumn <- position,
+                    media.searchLabelColumn <- searchLabel,
+                    media.foreignKeys.gameColumn <- game,
+                    media.foreignKeys.mapColumn <- map,
+                    media.foreignKeys.tabColumn <- tab,
+                    media.foreignKeys.toolColumn <- tool,
+                    media.foreignKeys.galleryColumn <- gallery
+                )
+            )
+        }
+
         
         // MARK: IMAGE_VARIANT
         
         /// - `IMAGE_VARIANT(master, slave, variant, bottomBarIcon, boundingFrameOriginX, boundingFrameOriginY, boundingFrameWidth, boundingFrameHeight, gallery, tool, tab, map, game)`
         /// - `PK(slave, gallery, tool, tab, map, game)`
-        /// - `FK(slave, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+        /// - `FK(slave, gallery, tool, tab, map, game) REFERENCES REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
         public static func insertIntoImageVariant(
             or: OnConflict = .fail,
             for dbConnection: Connection,
@@ -339,7 +378,7 @@ extension DBMS {
         
         /// - `OUTLINE(colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
         /// - `PK(image, gallery, tool, tab, map, game)`
-        /// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+        /// - `FK(image, gallery, tool, tab, map, game) REFERENCES REFERENCES VISUAL_MEDIA(type, extensionname, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
         public static func insertIntoOutline(
             or: OnConflict = .fail,
             for dbConnection: Connection,
@@ -382,7 +421,7 @@ extension DBMS {
         
         /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
         /// - `PK(image, gallery, tool, tab, map, game)`
-        /// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+        /// - `FK(image, gallery, tool, tab, map, game) REFERENCES REFERENCES VISUAL_MEDIA(type, extensionname, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
         public static func insertIntoBoundingCircle(
             or: OnConflict = .fail,
             for dbConnection: Connection,
@@ -424,7 +463,7 @@ extension DBMS {
         
         /// - `LABEL(label, isActive, icon, assetsImageName, textColorHex, backgroundColorHex, opacity, maxAABBOriginX, maxAABBOriginY, maxAABBWidth, maxAABBHeight, image, gallery, tool, tab, map, game)`
         /// - `PK(label, image, gallery, tool, tab, map, game)`
-        /// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+        /// - `FK(image, gallery, tool, tab, map, game) REFERENCES REFERENCES VISUAL_MEDIA(type, extensionname, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
         public static func insertIntoLabel(
             or: OnConflict = .fail,
             for dbConnection: Connection,

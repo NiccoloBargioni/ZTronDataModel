@@ -9,7 +9,7 @@ extension DBMS {
     public static let gallery = DomainModel.gallery
     public static let subgallery = DomainModel.subgallery
     public static let gallerySearchToken = DomainModel.gallerySearchToken
-    public static let image = DomainModel.image
+    public static let visualMedia = DomainModel.visualMedia
     public static let imageVariant = DomainModel.imageVariant
     public static let outline = DomainModel.outline
     public static let boundingCircle = DomainModel.boundingCircle
