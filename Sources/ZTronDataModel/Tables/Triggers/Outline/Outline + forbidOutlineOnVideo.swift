@@ -3,7 +3,7 @@ import Foundation
 extension Outline {
     func forbidOutlineOnVideo(for dbConnection: OpaquePointer) throws {
         let createTriggerQuery = """
-            CREATE TRIGGER forbid_outline_on_video
+            CREATE TRIGGER IF NOT EXISTS forbid_outline_on_video
             BEFORE INSERT ON \(DomainModel.outline.tableName)
             FOR EACH ROW
             WHEN (
