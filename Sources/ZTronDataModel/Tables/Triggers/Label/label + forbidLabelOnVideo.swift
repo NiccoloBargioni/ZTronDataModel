@@ -3,7 +3,7 @@ import Foundation
 extension Label {
     func forbidLabelOnVideo(for dbConnection: OpaquePointer) throws {
         let createTriggerQuery = """
-            CREATE TRIGGER forbid_label_on_video
+            CREATE TRIGGER IF NOT EXISTS forbid_label_on_video
             BEFORE INSERT ON \(DomainModel.outline.tableName)
             FOR EACH ROW
             WHEN (

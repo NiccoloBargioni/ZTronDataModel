@@ -3,7 +3,7 @@ import Foundation
 extension BoundingCircle {
     func forbidBoundingCircleOnVideo(for dbConnection: OpaquePointer) throws {        
         let createTriggerQuery = """
-            CREATE TRIGGER forbid_bounding_circle_on_video
+            CREATE TRIGGER IF NOT EXISTS forbid_bounding_circle_on_video
             BEFORE INSERT ON \(DomainModel.boundingCircle.tableName)
             FOR EACH ROW
             WHEN (

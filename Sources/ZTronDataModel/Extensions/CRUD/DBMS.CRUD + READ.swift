@@ -837,7 +837,6 @@ extension DBMS.CRUD {
         
         if options.contains(.outlines) {
             imagesWithOptionals[.outlines] = try self.readOutlinesForImagesSet(for: dbConnection, images: images)
-            assert(media.count == imagesWithOptionals[.outlines]?.count)
         }
         
         if options.contains(.boundingCircles) {
@@ -845,12 +844,10 @@ extension DBMS.CRUD {
                 for: dbConnection,
                 images: images
             )
-            assert(media.count == imagesWithOptionals[.boundingCircles]?.count)
         }
         
         if options.contains(.labels) {
             imagesWithOptionals[.labels] = try self.readLabelsForImagesSet(for: dbConnection, images: images)
-            assert(media.count == imagesWithOptionals[.labels]?.count)
         }
         
         if options.contains(.variantsMetadatas) {
@@ -858,7 +855,6 @@ extension DBMS.CRUD {
                 for: dbConnection,
                 images: images
             )
-            assert(media.count == imagesWithOptionals[.variantsMetadatas]?.count)
         }
         
         if options.contains(.masters) {
