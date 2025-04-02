@@ -13,7 +13,7 @@ extension BoundingCircle {
                 \(DomainModel.visualMedia.tableName).\(DomainModel.visualMedia.foreignKeys.galleryColumn.template) = \(DomainModel.boundingCircle.tableName).\(DomainModel.boundingCircle.foreignKeys.galleryColumn.template) AND
                 \(DomainModel.visualMedia.tableName).\(DomainModel.visualMedia.foreignKeys.toolColumn.template) = \(DomainModel.boundingCircle.tableName).\(DomainModel.boundingCircle.foreignKeys.toolColumn.template) AND
                 \(DomainModel.visualMedia.tableName).\(DomainModel.visualMedia.foreignKeys.tabColumn.template) = \(DomainModel.boundingCircle.tableName).\(DomainModel.boundingCircle.foreignKeys.tabColumn.template) AND
-                \(DomainModel.visualMedia.tableName).\(DomainModel.visualMedia.foreignKeys.mapColumn.template) = \(DomainModel.boundingCircle.foreignKeys.mapColumn.template) AND
+                \(DomainModel.visualMedia.tableName).\(DomainModel.visualMedia.foreignKeys.mapColumn.template) = \(DomainModel.boundingCircle.tableName).\(DomainModel.boundingCircle.foreignKeys.mapColumn.template) AND
                 \(DomainModel.visualMedia.tableName).\(DomainModel.visualMedia.foreignKeys.gameColumn.template) = \(DomainModel.boundingCircle.tableName).\(DomainModel.boundingCircle.foreignKeys.gameColumn.template)
             ) <> 'image'
             BEGIN
