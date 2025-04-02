@@ -79,11 +79,59 @@ extension DBMS.CRUD {
         return try dbConnection.scalar(countSearchTokenQuery) == 1
     }
     
-    // MARK: - IMAGE EXISTS
+    // MARK: - MEDIA EXISTS
     /// - `VISUAL_MEDIA(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
     public static func imageExists(
+        for dbConnection: Connection,
+        image: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String
+    ) throws -> Bool {
+        let imageModel = DBMS.visualMedia
+        
+        let countImageQuery = imageModel.table.where(
+            imageModel.nameColumn == image &&
+            imageModel.typeColumn == "image" &&
+            imageModel.foreignKeys.galleryColumn == gallery &&
+            imageModel.foreignKeys.toolColumn == tool &&
+            imageModel.foreignKeys.tabColumn == tab &&
+            imageModel.foreignKeys.mapColumn == map &&
+            imageModel.foreignKeys.gameColumn == game
+        ).count
+        
+        return try dbConnection.scalar(countImageQuery) == 1
+    }
+    
+    public static func videoExists(
+        for dbConnection: Connection,
+        image: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String
+    ) throws -> Bool {
+        let imageModel = DBMS.visualMedia
+        
+        let countImageQuery = imageModel.table.where(
+            imageModel.nameColumn == image &&
+            imageModel.typeColumn == "video" &&
+            imageModel.foreignKeys.galleryColumn == gallery &&
+            imageModel.foreignKeys.toolColumn == tool &&
+            imageModel.foreignKeys.tabColumn == tab &&
+            imageModel.foreignKeys.mapColumn == map &&
+            imageModel.foreignKeys.gameColumn == game
+        ).count
+        
+        return try dbConnection.scalar(countImageQuery) == 1
+    }
+
+    public static func mediaExists(
         for dbConnection: Connection,
         image: String,
         game: String,
