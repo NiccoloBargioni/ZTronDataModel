@@ -663,30 +663,34 @@ extension DBMS.CRUD {
     }
     
     
-    private static func readOutlinesForImagesSet(for dbConnection: Connection, images: [SerializedImageModel]) throws -> [SerializedOutlineModel?] {
+    private static func readOutlinesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedOutlineModel?] {
         let outline = DBMS.outline
         
         var outlines: [SerializedOutlineModel?] = []
         
-        for image in images {
-            let outlinesForThisImageQuery = outline.table.filter(
-                outline.foreignKeys.imageColumn == image.getName() &&
-                outline.foreignKeys.galleryColumn == image.getGallery() &&
-                outline.foreignKeys.toolColumn == image.getTool() &&
-                outline.foreignKeys.tabColumn == image.getTab() &&
-                outline.foreignKeys.mapColumn == image.getMap() &&
-                outline.foreignKeys.gameColumn == image.getGame()
-            )
-            
-            let outlinesForThisImage = try dbConnection.prepare(outlinesForThisImageQuery)
-            var countOutlines = 0
-            
-            for outlineRow in outlinesForThisImage {
-                countOutlines += 1
-                outlines.append(SerializedOutlineModel(outlineRow))
-            }
-            
-            if countOutlines <= 0 {
+        for media in medias {
+            if media.getType() == .image {
+                let outlinesForThisImageQuery = outline.table.filter(
+                    outline.foreignKeys.imageColumn == media.getName() &&
+                    outline.foreignKeys.galleryColumn == media.getGallery() &&
+                    outline.foreignKeys.toolColumn == media.getTool() &&
+                    outline.foreignKeys.tabColumn == media.getTab() &&
+                    outline.foreignKeys.mapColumn == media.getMap() &&
+                    outline.foreignKeys.gameColumn == media.getGame()
+                )
+                
+                let outlinesForThisImage = try dbConnection.prepare(outlinesForThisImageQuery)
+                var countOutlines = 0
+                
+                for outlineRow in outlinesForThisImage {
+                    countOutlines += 1
+                    outlines.append(SerializedOutlineModel(outlineRow))
+                }
+                
+                if countOutlines <= 0 {
+                    outlines.append(nil)
+                }
+            } else {
                 outlines.append(nil)
             }
         }
@@ -694,30 +698,34 @@ extension DBMS.CRUD {
         return outlines
     }
 
-    private static func readBoundingCirclesForImagesSet(for dbConnection: Connection, images: [SerializedImageModel]) throws -> [SerializedBoundingCircleModel?] {
+    private static func readBoundingCirclesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedBoundingCircleModel?] {
         let boundingCircle = DBMS.boundingCircle
         
         var boundingCircles: [SerializedBoundingCircleModel?] = []
         
-        for image in images {
-            let boundingCirclesForThisImageQuery = boundingCircle.table.filter(
-                boundingCircle.foreignKeys.imageColumn == image.getName() &&
-                boundingCircle.foreignKeys.galleryColumn == image.getGallery() &&
-                boundingCircle.foreignKeys.toolColumn == image.getTool() &&
-                boundingCircle.foreignKeys.tabColumn == image.getTab() &&
-                boundingCircle.foreignKeys.mapColumn == image.getMap() &&
-                boundingCircle.foreignKeys.gameColumn == image.getGame()
-            )
-            
-            let boundingCirclesForThisImage = try dbConnection.prepare(boundingCirclesForThisImageQuery)
-            var countBoundingCircles = 0
-            
-            for boundingCircle in boundingCirclesForThisImage {
-                countBoundingCircles += 1
-                boundingCircles.append(SerializedBoundingCircleModel(boundingCircle))
-            }
-            
-            if countBoundingCircles <= 0 {
+        for media in medias {
+            if media.getType() == .image {
+                let boundingCirclesForThisImageQuery = boundingCircle.table.filter(
+                    boundingCircle.foreignKeys.imageColumn == media.getName() &&
+                    boundingCircle.foreignKeys.galleryColumn == media.getGallery() &&
+                    boundingCircle.foreignKeys.toolColumn == media.getTool() &&
+                    boundingCircle.foreignKeys.tabColumn == media.getTab() &&
+                    boundingCircle.foreignKeys.mapColumn == media.getMap() &&
+                    boundingCircle.foreignKeys.gameColumn == media.getGame()
+                )
+                
+                let boundingCirclesForThisImage = try dbConnection.prepare(boundingCirclesForThisImageQuery)
+                var countBoundingCircles = 0
+                
+                for boundingCircle in boundingCirclesForThisImage {
+                    countBoundingCircles += 1
+                    boundingCircles.append(SerializedBoundingCircleModel(boundingCircle))
+                }
+                
+                if countBoundingCircles <= 0 {
+                    boundingCircles.append(nil)
+                }
+            } else {
                 boundingCircles.append(nil)
             }
         }
@@ -725,65 +733,73 @@ extension DBMS.CRUD {
         return boundingCircles
     }
     
-    private static func readLabelsForImagesSet(for dbConnection: Connection, images: [SerializedImageModel]) throws -> [SerializedLabelsSet?] {
+    private static func readLabelsForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedLabelsSet?] {
         let label = DBMS.label
         
         var labels: [SerializedLabelsSet?] = []
         
-        for image in images {
-            let labelsForThisImageQuery = label.table.filter(
-                label.foreignKeys.imageColumn == image.getName() &&
-                label.foreignKeys.galleryColumn == image.getGallery() &&
-                label.foreignKeys.toolColumn == image.getTool() &&
-                label.foreignKeys.tabColumn == image.getTab() &&
-                label.foreignKeys.mapColumn == image.getMap() &&
-                label.foreignKeys.gameColumn == image.getGame()
-            )
-            
-            let labelsForThisImage = try dbConnection.prepare(labelsForThisImageQuery)
-            
-            var iLabels = [SerializedLabelModel].init()
-            
-            for label in labelsForThisImage {
-                iLabels.append(SerializedLabelModel(label))
-            }
-            
-            if iLabels.count <= 0 {
-                labels.append(nil)
+        for media in medias {
+            if media.getType() == .image {
+                let labelsForThisImageQuery = label.table.filter(
+                    label.foreignKeys.imageColumn == media.getName() &&
+                    label.foreignKeys.galleryColumn == media.getGallery() &&
+                    label.foreignKeys.toolColumn == media.getTool() &&
+                    label.foreignKeys.tabColumn == media.getTab() &&
+                    label.foreignKeys.mapColumn == media.getMap() &&
+                    label.foreignKeys.gameColumn == media.getGame()
+                )
+                
+                let labelsForThisImage = try dbConnection.prepare(labelsForThisImageQuery)
+                
+                var iLabels = [SerializedLabelModel].init()
+                
+                for label in labelsForThisImage {
+                    iLabels.append(SerializedLabelModel(label))
+                }
+                
+                if iLabels.count <= 0 {
+                    labels.append(nil)
+                } else {
+                    labels.append(SerializedLabelsSet(labels: iLabels))
+                }
             } else {
-                labels.append(SerializedLabelsSet(labels: iLabels))
+                labels.append(nil)
             }
         }
         
         return labels
     }
     
-    private static func readVariantsMetadataForImagesSet(for dbConnection: Connection, images: [SerializedImageModel]) throws -> [SerializedImageVariantsMetadataSet?] {
+    private static func readVariantsMetadataForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedImageVariantsMetadataSet?] {
         let variant = DBMS.imageVariant
         
         var variants: [SerializedImageVariantsMetadataSet?] = []
         
-        for image in images.enumerated() {
-            let variantsForThisImageQuery = variant.table.filter(
-                variant.masterColumn == image.element.getName() &&
-                variant.foreignKeys.galleryColumn == image.element.getGallery() &&
-                variant.foreignKeys.toolColumn == image.element.getTool() &&
-                variant.foreignKeys.tabColumn == image.element.getTab() &&
-                variant.foreignKeys.mapColumn == image.element.getMap() &&
-                variant.foreignKeys.gameColumn == image.element.getGame()
-            )
-            
-            let variantsForThisImage = try dbConnection.prepare(variantsForThisImageQuery)
-            var iVariants: [SerializedImageVariantMetadataModel] = []
-            
-            for variant in variantsForThisImage {
-                iVariants.append(SerializedImageVariantMetadataModel(variant))
-            }
-            
-            if iVariants.count <= 0 {
-                variants.append(nil)
+        for media in medias.enumerated() {
+            if media.element.getType() == .image {
+                let variantsForThisImageQuery = variant.table.filter(
+                    variant.masterColumn == media.element.getName() &&
+                    variant.foreignKeys.galleryColumn == media.element.getGallery() &&
+                    variant.foreignKeys.toolColumn == media.element.getTool() &&
+                    variant.foreignKeys.tabColumn == media.element.getTab() &&
+                    variant.foreignKeys.mapColumn == media.element.getMap() &&
+                    variant.foreignKeys.gameColumn == media.element.getGame()
+                )
+                
+                let variantsForThisImage = try dbConnection.prepare(variantsForThisImageQuery)
+                var iVariants: [SerializedImageVariantMetadataModel] = []
+                
+                for variant in variantsForThisImage {
+                    iVariants.append(SerializedImageVariantMetadataModel(variant))
+                }
+                
+                if iVariants.count <= 0 {
+                    variants.append(nil)
+                } else {
+                    variants.append(SerializedImageVariantsMetadataSet(variants: iVariants))
+                }
             } else {
-                variants.append(SerializedImageVariantsMetadataSet(variants: iVariants))
+                variants.append(nil)
             }
         }
         
@@ -822,7 +838,7 @@ extension DBMS.CRUD {
     ) throws -> [ReadImageOption: [(any ReadImageOptional)?]] {
         var imagesWithOptionals: [ReadImageOption: [(any ReadImageOptional)?]] = [:]
         
-        let media = try self._readFirstLevelMasterImagesForGallery(
+        let medias = try self._readFirstLevelMasterImagesForGallery(
             for: dbConnection,
             game: game,
             map: map,
@@ -831,37 +847,33 @@ extension DBMS.CRUD {
             gallery: gallery
         )
         
-        let images = media.filter { media in
-            return media.getType() == .image
-        } as? [SerializedImageModel] ?? []
-        
         if options.contains(.outlines) {
-            imagesWithOptionals[.outlines] = try self.readOutlinesForImagesSet(for: dbConnection, images: images)
+            imagesWithOptionals[.outlines] = try self.readOutlinesForMediasSet(for: dbConnection, medias: medias)
         }
         
         if options.contains(.boundingCircles) {
-            imagesWithOptionals[.boundingCircles] = try self.readBoundingCirclesForImagesSet(
+            imagesWithOptionals[.boundingCircles] = try self.readBoundingCirclesForMediasSet(
                 for: dbConnection,
-                images: images
+                medias: medias
             )
         }
         
         if options.contains(.labels) {
-            imagesWithOptionals[.labels] = try self.readLabelsForImagesSet(for: dbConnection, images: images)
+            imagesWithOptionals[.labels] = try self.readLabelsForMediasSet(for: dbConnection, medias: medias)
         }
         
         if options.contains(.variantsMetadatas) {
-            imagesWithOptionals[.variantsMetadatas] = try self.readVariantsMetadataForImagesSet(
+            imagesWithOptionals[.variantsMetadatas] = try self.readVariantsMetadataForMediasSet(
                 for: dbConnection,
-                images: images
+                medias: medias
             )
         }
         
         if options.contains(.masters) {
-            imagesWithOptionals[.masters] = [String?].init(repeating: nil, count: media.count)
+            imagesWithOptionals[.masters] = [String?].init(repeating: nil, count: medias.count)
         }
         
-        imagesWithOptionals[.medias] = media
+        imagesWithOptionals[.medias] = medias
         
         return imagesWithOptionals
     }
