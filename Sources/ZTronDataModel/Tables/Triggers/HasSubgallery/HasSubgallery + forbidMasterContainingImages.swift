@@ -3,7 +3,7 @@ import Foundation
 extension HasSubgallery {
     func makeForbidMasterContainingImagesTrigger(for dbConnection: OpaquePointer) throws {
         let subgallery = DomainModel.subgallery
-        let image = DomainModel.image
+        let visualMedia = DomainModel.visualMedia
         let gallery = DomainModel.gallery
         
         let createTriggerQuery = """
@@ -14,12 +14,12 @@ extension HasSubgallery {
                 SELECT CASE
                     WHEN EXISTS (
                         SELECT 1
-                        FROM \(image.tableName) as I JOIN \(gallery.tableName) as G ON
-                            I.\(image.foreignKeys.galleryColumn.template) = G.\(gallery.nameColumn.template) AND
-                            I.\(image.foreignKeys.toolColumn.template) = G.\(gallery.foreignKeys.toolColumn.template) AND
-                            I.\(image.foreignKeys.tabColumn.template) = G.\(gallery.foreignKeys.tabColumn.template) AND
-                            I.\(image.foreignKeys.mapColumn.template) = G.\(gallery.foreignKeys.mapColumn.template) AND
-                            I.\(image.foreignKeys.gameColumn.template) = G.\(gallery.foreignKeys.gameColumn.template)
+                        FROM \(visualMedia.tableName) as I JOIN \(gallery.tableName) as G ON
+                            I.\(visualMedia.foreignKeys.galleryColumn.template) = G.\(gallery.nameColumn.template) AND
+                            I.\(visualMedia.foreignKeys.toolColumn.template) = G.\(gallery.foreignKeys.toolColumn.template) AND
+                            I.\(visualMedia.foreignKeys.tabColumn.template) = G.\(gallery.foreignKeys.tabColumn.template) AND
+                            I.\(visualMedia.foreignKeys.mapColumn.template) = G.\(gallery.foreignKeys.mapColumn.template) AND
+                            I.\(visualMedia.foreignKeys.gameColumn.template) = G.\(gallery.foreignKeys.gameColumn.template)
                         WHERE
                             G.\(gallery.nameColumn.template) = NEW.\(subgallery.masterColumn.template)
                     )

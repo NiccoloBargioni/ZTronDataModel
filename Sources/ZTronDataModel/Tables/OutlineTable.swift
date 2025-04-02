@@ -4,7 +4,7 @@ import SQLite3
 
 /// - `OUTLINE(resourceName, colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
 /// - `PK(image, gallery, tool, tab, map, game)`
-/// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+/// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
 ///
 /// Represents the outline for the image identified by the tuple (`image`, `gallery`, `tool`, `map`, `game`). The attribute `tab` is
 /// included to guarantee the referential integrity constraint with respect to ``IMAGE``.
@@ -19,7 +19,7 @@ import SQLite3
 ///     - `boundingBoxHeight BETWEEN 0 AND 1``
 ///
 /// - **ACTIVE TRIGGERS:**
-///     None
+///     - `forbid_outline_on_video`: Requires that the visual media referenced by the `image` field has `type`=`image`
 ///
 /// - **CONSTRAINTS NOT ENFORCED BY TRIGGERS:**
 ///     None
@@ -55,7 +55,7 @@ public final class Outline: DBTableCreator {
     
     
     func makeTable(for dbConnection: OpaquePointer) throws {
-        let imageModel = DomainModel.image
+        let imageModel = DomainModel.visualMedia
         
         let tableCreationStatement =
             """
@@ -101,6 +101,7 @@ public final class Outline: DBTableCreator {
             """
         
         try DBMS.performSQLStatement(for: dbConnection, query: tableCreationStatement)
+        try self.forbidOutlineOnVideo(for: dbConnection)
     }
     
     final class ForeignKeys: Sendable {

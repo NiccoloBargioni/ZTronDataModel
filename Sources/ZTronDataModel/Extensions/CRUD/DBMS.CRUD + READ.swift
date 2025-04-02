@@ -14,8 +14,8 @@ extension DBMS.CRUD {
         tab: String,
         tool: String,
         gallery: String?
-    ) throws -> [SerializedImageModel] {
-        let image = DBMS.image
+    ) throws -> [any SerializedVisualMediaModel] {
+        let media = DBMS.visualMedia
         let imageVariant = DBMS.imageVariant
         
         var findSlavesQuery = imageVariant.table
@@ -35,24 +35,27 @@ extension DBMS.CRUD {
             return result[imageVariant.slaveColumn]
         }
         
-        var firstLevelMastersQuery = image.table.filter(
-            image.foreignKeys.gameColumn == game &&
-            image.foreignKeys.mapColumn == map &&
-            image.foreignKeys.tabColumn == tab &&
-            image.foreignKeys.toolColumn == tool &&
-            !slaves.contains(image.nameColumn)
+        var firstLevelMastersQuery = media.table.filter(
+            media.foreignKeys.gameColumn == game &&
+            media.foreignKeys.mapColumn == map &&
+            media.foreignKeys.tabColumn == tab &&
+            media.foreignKeys.toolColumn == tool &&
+            !slaves.contains(media.nameColumn)
         )
-        .order(image.positionColumn)
+        .order(media.positionColumn)
         
         if let gallery = gallery {
-            firstLevelMastersQuery = firstLevelMastersQuery.filter(image.foreignKeys.galleryColumn == gallery)
+            firstLevelMastersQuery = firstLevelMastersQuery.filter(media.foreignKeys.galleryColumn == gallery)
         }
         
-        return try dbConnection.prepare(firstLevelMastersQuery).map { imageRow in
-            return SerializedImageModel(imageRow)
+        return try dbConnection.prepare(firstLevelMastersQuery).map { mediaRow in
+            if mediaRow[media.typeColumn] == "image" {
+                return SerializedImageModel(mediaRow)
+            } else {
+                return SerializedVideoModel(mediaRow)
+            }
         }
     }
-    
     
     public static func readImageByID(
         for dbConnection: Connection,
@@ -63,10 +66,11 @@ extension DBMS.CRUD {
         map: String,
         game: String
     ) throws -> SerializedImageModel {
-        let imageModel = DBMS.image
+        let imageModel = DBMS.visualMedia
         
         let findImageQuery = imageModel.table.filter(
             imageModel.nameColumn == image &&
+            imageModel.typeColumn == "image" &&
             imageModel.foreignKeys.galleryColumn == gallery &&
             imageModel.foreignKeys.toolColumn == tool &&
             imageModel.foreignKeys.tabColumn == tab &&
@@ -83,6 +87,76 @@ extension DBMS.CRUD {
         return theImage.first!
     }
     
+    public static func readVideoByID(
+        for dbConnection: Connection,
+        video: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> SerializedVideoModel {
+        let videoModel = DBMS.visualMedia
+        
+        let findVideoQuery = videoModel .table.filter(
+            videoModel.nameColumn == video &&
+            videoModel.typeColumn == "video" &&
+            videoModel.foreignKeys.galleryColumn == gallery &&
+            videoModel.foreignKeys.toolColumn == tool &&
+            videoModel.foreignKeys.tabColumn == tab &&
+            videoModel.foreignKeys.mapColumn == map &&
+            videoModel.foreignKeys.gameColumn == game
+        )
+        
+        let theVideo = try dbConnection.prepare(findVideoQuery).map { resultRow in
+            return SerializedVideoModel(resultRow)
+        }
+        
+        assert(theVideo.count == 1)
+        
+        return theVideo.first!
+    }
+    
+    public static func readMediaByID(
+        for dbConnection: Connection,
+        name: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> any SerializedVisualMediaModel {
+        let mediaModel = DBMS.visualMedia
+        
+        let findMediaQuery = mediaModel.table.filter(
+            mediaModel.nameColumn == name &&
+            mediaModel.foreignKeys.galleryColumn == gallery &&
+            mediaModel.foreignKeys.toolColumn == tool &&
+            mediaModel.foreignKeys.tabColumn == tab &&
+            mediaModel.foreignKeys.mapColumn == map &&
+            mediaModel.foreignKeys.gameColumn == game
+        )
+        
+        let theMedia: [any SerializedVisualMediaModel] = try dbConnection.prepare(findMediaQuery).map { resultRow in
+            switch resultRow[mediaModel.typeColumn] {
+            case "image":
+                return SerializedImageModel(resultRow)
+                
+            case "video":
+                return SerializedVideoModel(resultRow)
+                
+            default:
+                fatalError("Unexpectedly found media of type \(resultRow[mediaModel.typeColumn]). Expected type in [\"image\", \"video\"]")
+            }
+            
+            return SerializedVideoModel(resultRow)
+        }
+        assert(theMedia.count == 1)
+        
+        return theMedia.first!
+    }
+    
+    
     
     public static func readImageByIDWithOptions(
         for dbConnection: Connection,
@@ -92,9 +166,9 @@ extension DBMS.CRUD {
         tab: String,
         map: String,
         game: String,
-        options: Set<ReadImageOption> = Set<ReadImageOption>([.images])
+        options: Set<ReadImageOption> = Set<ReadImageOption>([.medias])
     ) throws -> [ReadImageOption: [(any ReadImageOptional)?]] {
-        let imageTable = DBMS.image
+        let visualMediasTable = DBMS.visualMedia
         let imageVariants = DBMS.imageVariant
         let outline = DBMS.outline
         let boundingCircle = DBMS.boundingCircle
@@ -104,34 +178,34 @@ extension DBMS.CRUD {
         
         try dbConnection.run(
             parentView.create(
-                imageTable.table
+                visualMediasTable.table
                     .join(
                         .leftOuter,
                         imageVariants.table,
-                        on: imageTable.nameColumn == imageVariants.slaveColumn &&
-                        imageTable.table[imageTable.foreignKeys.galleryColumn] == imageVariants.table[imageVariants.foreignKeys.galleryColumn] &&
-                        imageTable.table[imageTable.foreignKeys.toolColumn] == imageVariants.table[imageVariants.foreignKeys.toolColumn] &&
-                        imageTable.table[imageTable.foreignKeys.tabColumn] == imageVariants.table[imageVariants.foreignKeys.tabColumn] &&
-                        imageTable.table[imageTable.foreignKeys.mapColumn] == imageVariants.table[imageVariants.foreignKeys.mapColumn] &&
-                        imageTable.table[imageTable.foreignKeys.gameColumn] == imageVariants.table[imageVariants.foreignKeys.gameColumn]
+                        on: visualMediasTable.nameColumn == imageVariants.slaveColumn &&
+                        visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn] == imageVariants.table[imageVariants.foreignKeys.galleryColumn] &&
+                        visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn] == imageVariants.table[imageVariants.foreignKeys.toolColumn] &&
+                        visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == imageVariants.table[imageVariants.foreignKeys.tabColumn] &&
+                        visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == imageVariants.table[imageVariants.foreignKeys.mapColumn] &&
+                        visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == imageVariants.table[imageVariants.foreignKeys.gameColumn]
                     )
                     .filter(
-                        imageTable.nameColumn == image &&
-                        imageTable.table[imageTable.foreignKeys.galleryColumn] == gallery &&
-                        imageTable.table[imageTable.foreignKeys.toolColumn] == tool &&
-                        imageTable.table[imageTable.foreignKeys.tabColumn] == tab &&
-                        imageTable.table[imageTable.foreignKeys.mapColumn] == map &&
-                        imageTable.table[imageTable.foreignKeys.gameColumn] == game
+                        visualMediasTable.nameColumn == image &&
+                        visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn] == gallery &&
+                        visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn] == tool &&
+                        visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == tab &&
+                        visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == map &&
+                        visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == game
                     )
                     .select(
                         [
-                            imageTable.nameColumn.alias(name: "childImage"),
+                            visualMediasTable.nameColumn.alias(name: "childImage"),
                             imageVariants.masterColumn.alias(name: "parent"),
-                            imageTable.table[imageTable.foreignKeys.galleryColumn],
-                            imageTable.table[imageTable.foreignKeys.toolColumn],
-                            imageTable.table[imageTable.foreignKeys.tabColumn],
-                            imageTable.table[imageTable.foreignKeys.mapColumn],
-                            imageTable.table[imageTable.foreignKeys.gameColumn]
+                            visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn],
+                            visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn],
+                            visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn],
+                            visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn],
+                            visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn]
                         ]
                     ),
                     temporary: true,
@@ -147,63 +221,63 @@ extension DBMS.CRUD {
         }
 
         
-        let sql = imageTable.table.join(
+        let sql = visualMediasTable.table.join(
             .leftOuter,
             imageVariants.table,
-            on: imageTable.table[imageTable.nameColumn] == imageVariants.table[imageVariants.masterColumn] &&
-            imageTable.table[imageTable.foreignKeys.galleryColumn] == imageVariants.table[imageVariants.foreignKeys.galleryColumn] &&
-            imageTable.table[imageTable.foreignKeys.toolColumn] == imageVariants.table[imageVariants.foreignKeys.toolColumn] &&
-            imageTable.table[imageTable.foreignKeys.tabColumn] == imageVariants.table[imageVariants.foreignKeys.tabColumn] &&
-            imageTable.table[imageTable.foreignKeys.mapColumn] == imageVariants.table[imageVariants.foreignKeys.mapColumn] &&
-            imageTable.table[imageTable.foreignKeys.gameColumn] == imageVariants.table[imageVariants.foreignKeys.gameColumn]
+            on: visualMediasTable.table[visualMediasTable.nameColumn] == imageVariants.table[imageVariants.masterColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn] == imageVariants.table[imageVariants.foreignKeys.galleryColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn] == imageVariants.table[imageVariants.foreignKeys.toolColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == imageVariants.table[imageVariants.foreignKeys.tabColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == imageVariants.table[imageVariants.foreignKeys.mapColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == imageVariants.table[imageVariants.foreignKeys.gameColumn]
         ).join(
             .leftOuter,
             parentView,
-            on: imageTable.table[imageTable.nameColumn] == parentView[parentViewChild] &&
-            imageTable.table[imageTable.foreignKeys.galleryColumn] == parentView[imageTable.foreignKeys.galleryColumn] &&
-            imageTable.table[imageTable.foreignKeys.toolColumn] == parentView[imageTable.foreignKeys.toolColumn] &&
-            imageTable.table[imageTable.foreignKeys.tabColumn] == parentView[imageTable.foreignKeys.tabColumn] &&
-            imageTable.table[imageTable.foreignKeys.mapColumn] == parentView[imageTable.foreignKeys.mapColumn] &&
-            imageTable.table[imageTable.foreignKeys.gameColumn] == parentView[imageTable.foreignKeys.gameColumn]
+            on: visualMediasTable.table[visualMediasTable.nameColumn] == parentView[parentViewChild] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn] == parentView[visualMediasTable.foreignKeys.galleryColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn] == parentView[visualMediasTable.foreignKeys.toolColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == parentView[visualMediasTable.foreignKeys.tabColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == parentView[visualMediasTable.foreignKeys.mapColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == parentView[visualMediasTable.foreignKeys.gameColumn]
         ).join(
             .leftOuter,
             outline.table,
-            on: imageTable.table[imageTable.nameColumn] == outline.table[outline.foreignKeys.imageColumn] &&
-            imageTable.table[imageTable.foreignKeys.galleryColumn] == outline.table[outline.foreignKeys.galleryColumn] &&
-            imageTable.table[imageTable.foreignKeys.toolColumn] == outline.table[outline.foreignKeys.toolColumn] &&
-            imageTable.table[imageTable.foreignKeys.tabColumn] == outline.table[outline.foreignKeys.tabColumn] &&
-            imageTable.table[imageTable.foreignKeys.mapColumn] == outline.table[outline.foreignKeys.mapColumn] &&
-            imageTable.table[imageTable.foreignKeys.gameColumn] == outline.table[outline.foreignKeys.gameColumn]
+            on: visualMediasTable.table[visualMediasTable.nameColumn] == outline.table[outline.foreignKeys.imageColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn] == outline.table[outline.foreignKeys.galleryColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn] == outline.table[outline.foreignKeys.toolColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == outline.table[outline.foreignKeys.tabColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == outline.table[outline.foreignKeys.mapColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == outline.table[outline.foreignKeys.gameColumn]
         ).join(
             .leftOuter,
             boundingCircle.table,
-            on: imageTable.table[imageTable.nameColumn] == boundingCircle.table[boundingCircle.foreignKeys.imageColumn] &&
-            imageTable.table[imageTable.foreignKeys.galleryColumn] == boundingCircle.table[boundingCircle.foreignKeys.galleryColumn] &&
-            imageTable.table[imageTable.foreignKeys.toolColumn] == boundingCircle.table[boundingCircle.foreignKeys.toolColumn] &&
-            imageTable.table[imageTable.foreignKeys.tabColumn] == boundingCircle.table[boundingCircle.foreignKeys.tabColumn] &&
-            imageTable.table[imageTable.foreignKeys.mapColumn] == boundingCircle.table[boundingCircle.foreignKeys.mapColumn] &&
-            imageTable.table[imageTable.foreignKeys.gameColumn] == boundingCircle.table[boundingCircle.foreignKeys.gameColumn]
+            on: visualMediasTable.table[visualMediasTable.nameColumn] == boundingCircle.table[boundingCircle.foreignKeys.imageColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn] == boundingCircle.table[boundingCircle.foreignKeys.galleryColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn] == boundingCircle.table[boundingCircle.foreignKeys.toolColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == boundingCircle.table[boundingCircle.foreignKeys.tabColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == boundingCircle.table[boundingCircle.foreignKeys.mapColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == boundingCircle.table[boundingCircle.foreignKeys.gameColumn]
         ).join(
             .leftOuter,
             label.table,
-            on: imageTable.table[imageTable.nameColumn] == label.table[label.foreignKeys.imageColumn] &&
-            imageTable.table[imageTable.foreignKeys.galleryColumn] == label.table[label.foreignKeys.galleryColumn] &&
-            imageTable.table[imageTable.foreignKeys.toolColumn] == label.table[label.foreignKeys.toolColumn] &&
-            imageTable.table[imageTable.foreignKeys.tabColumn] == label.table[label.foreignKeys.tabColumn] &&
-            imageTable.table[imageTable.foreignKeys.mapColumn] == label.table[label.foreignKeys.mapColumn] &&
-            imageTable.table[imageTable.foreignKeys.gameColumn] == label.table[label.foreignKeys.gameColumn]
+            on: visualMediasTable.table[visualMediasTable.nameColumn] == label.table[label.foreignKeys.imageColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn] == label.table[label.foreignKeys.galleryColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn] == label.table[label.foreignKeys.toolColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == label.table[label.foreignKeys.tabColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == label.table[label.foreignKeys.mapColumn] &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == label.table[label.foreignKeys.gameColumn]
         ).filter(
-            imageTable.table[imageTable.nameColumn] == image &&
-            imageTable.table[imageTable.foreignKeys.galleryColumn] == gallery &&
-            imageTable.table[imageTable.foreignKeys.toolColumn] == tool &&
-            imageTable.table[imageTable.foreignKeys.tabColumn] == tab &&
-            imageTable.table[imageTable.foreignKeys.mapColumn] == map &&
-            imageTable.table[imageTable.foreignKeys.gameColumn] == game
+            visualMediasTable.table[visualMediasTable.nameColumn] == image &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn] == gallery &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn] == tool &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == tab &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == map &&
+            visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == game
         ).select(
-            imageTable.table[imageTable.nameColumn],
-            imageTable.table[imageTable.descriptionColumn],
-            imageTable.table[imageTable.positionColumn],
-            imageTable.table[imageTable.searchLabelColumn],
+            visualMediasTable.table[visualMediasTable.nameColumn],
+            visualMediasTable.table[visualMediasTable.descriptionColumn],
+            visualMediasTable.table[visualMediasTable.positionColumn],
+            visualMediasTable.table[visualMediasTable.searchLabelColumn],
             imageVariants.table[imageVariants.masterColumn],
             imageVariants.table[imageVariants.slaveColumn],
             imageVariants.table[imageVariants.variantColumn],
@@ -239,11 +313,11 @@ extension DBMS.CRUD {
             label.table[label.maxAABBOriginYColumn],
             label.table[label.maxAABBWidthColumn],
             label.table[label.maxAABBHeightColumn],
-            imageTable.table[imageTable.foreignKeys.galleryColumn],
-            imageTable.table[imageTable.foreignKeys.toolColumn],
-            imageTable.table[imageTable.foreignKeys.tabColumn],
-            imageTable.table[imageTable.foreignKeys.mapColumn],
-            imageTable.table[imageTable.foreignKeys.gameColumn]
+            visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn],
+            visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn],
+            visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn],
+            visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn],
+            visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn]
         )
         
         let outlineExists = SQLite.Expression<String?>(
@@ -288,12 +362,12 @@ extension DBMS.CRUD {
                         boundingBoxOriginYColumn: result[outline.table[outline.boundingBoxOriginYColumn]],
                         boundingBoxWidthColumn: result[outline.table[outline.boundingBoxWidthColumn]],
                         boundingBoxHeightColumn: result[outline.table[outline.boundingBoxHeightColumn]],
-                        image: result[imageTable.table[imageTable.nameColumn]],
-                        gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
-                        tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
-                        tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
-                        map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
-                        game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
+                        image: result[visualMediasTable.table[visualMediasTable.nameColumn]],
+                        gallery: result[visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn]],
+                        tool: result[visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn]],
+                        tab: result[visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn]],
+                        map: result[visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn]],
+                        game: result[visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn]]
                     )
                     
                     outlinesDictionary[imageID] = theOutline
@@ -307,12 +381,12 @@ extension DBMS.CRUD {
                         idleDiameter: result[boundingCircle.table[boundingCircle.idleDiameterColumn]],
                         normalizedCenterX: result[boundingCircle.table[boundingCircle.normalizedCenterXColumn]],
                         normalizedCenterY: result[boundingCircle.table[boundingCircle.normalizedCenterYColumn]],
-                        image: result[imageTable.table[imageTable.nameColumn]],
-                        gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
-                        tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
-                        tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
-                        map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
-                        game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
+                        image: result[visualMediasTable.table[visualMediasTable.nameColumn]],
+                        gallery: result[visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn]],
+                        tool: result[visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn]],
+                        tab: result[visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn]],
+                        map: result[visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn]],
+                        game: result[visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn]]
                     )
                     
                     boundingCircleDictionary[imageID] = theBoundingCircle
@@ -337,12 +411,12 @@ extension DBMS.CRUD {
                     maxAABBOriginY: result[label.table[label.maxAABBOriginYColumn]],
                     maxAABBWidth: result[label.table[label.maxAABBWidthColumn]],
                     maxAABBHeight: result[label.table[label.maxAABBHeightColumn]],
-                    image: result[imageTable.table[imageTable.nameColumn]],
-                    gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
-                    tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
-                    tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
-                    map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
-                    game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
+                    image: result[visualMediasTable.table[visualMediasTable.nameColumn]],
+                    gallery: result[visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn]],
+                    tool: result[visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn]],
+                    tab: result[visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn]],
+                    map: result[visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn]],
+                    game: result[visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn]]
                 )
                 
                 if labelsDictionary[imageID] == nil {
@@ -364,11 +438,11 @@ extension DBMS.CRUD {
                     boundingFrameOriginY: result[imageVariants.table[imageVariants.boundingFrameOriginYColumn]],
                     boundingFrameWidth: result[imageVariants.table[imageVariants.boundingFrameWidthColumn]],
                     boundingFrameHeight: result[imageVariants.table[imageVariants.boundingFrameHeightColumn]],
-                    gallery: result[imageTable.table[imageTable.foreignKeys.galleryColumn]],
-                    tool: result[imageTable.table[imageTable.foreignKeys.toolColumn]],
-                    tab: result[imageTable.table[imageTable.foreignKeys.tabColumn]],
-                    map: result[imageTable.table[imageTable.foreignKeys.mapColumn]],
-                    game: result[imageTable.table[imageTable.foreignKeys.gameColumn]]
+                    gallery: result[visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn]],
+                    tool: result[visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn]],
+                    tab: result[visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn]],
+                    map: result[visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn]],
+                    game: result[visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn]]
                 )
                 
                 if variantsDictionary[imageID] == nil {
@@ -383,7 +457,7 @@ extension DBMS.CRUD {
         
         imageDictionary.keys.forEach { imageID in
             guard let image = imageDictionary[image] else { fatalError() }
-            result[.images] = [image]
+            result[.medias] = [image]
             
             if options.contains(.outlines) {
                 if let outline = outlinesDictionary[imageID] {
@@ -419,7 +493,7 @@ extension DBMS.CRUD {
 
         }
 
-        assert(result[.images]?.count ?? 0 == 1)
+        assert(result[.medias]?.count ?? 0 == 1)
         assert(result[.outlines]?.count ?? 0 <= 1)
         assert(result[.boundingCircles]?.count ?? 0 <= 1)
         assert(result[.labels]?.count ?? 0 <= 1)
@@ -589,30 +663,34 @@ extension DBMS.CRUD {
     }
     
     
-    private static func readOutlinesForImagesSet(for dbConnection: Connection, images: [SerializedImageModel]) throws -> [SerializedOutlineModel?] {
+    private static func readOutlinesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedOutlineModel?] {
         let outline = DBMS.outline
         
         var outlines: [SerializedOutlineModel?] = []
         
-        for image in images {
-            let outlinesForThisImageQuery = outline.table.filter(
-                outline.foreignKeys.imageColumn == image.getName() &&
-                outline.foreignKeys.galleryColumn == image.getGallery() &&
-                outline.foreignKeys.toolColumn == image.getTool() &&
-                outline.foreignKeys.tabColumn == image.getTab() &&
-                outline.foreignKeys.mapColumn == image.getMap() &&
-                outline.foreignKeys.gameColumn == image.getGame()
-            )
-            
-            let outlinesForThisImage = try dbConnection.prepare(outlinesForThisImageQuery)
-            var countOutlines = 0
-            
-            for outlineRow in outlinesForThisImage {
-                countOutlines += 1
-                outlines.append(SerializedOutlineModel(outlineRow))
-            }
-            
-            if countOutlines <= 0 {
+        for media in medias {
+            if media.getType() == .image {
+                let outlinesForThisImageQuery = outline.table.filter(
+                    outline.foreignKeys.imageColumn == media.getName() &&
+                    outline.foreignKeys.galleryColumn == media.getGallery() &&
+                    outline.foreignKeys.toolColumn == media.getTool() &&
+                    outline.foreignKeys.tabColumn == media.getTab() &&
+                    outline.foreignKeys.mapColumn == media.getMap() &&
+                    outline.foreignKeys.gameColumn == media.getGame()
+                )
+                
+                let outlinesForThisImage = try dbConnection.prepare(outlinesForThisImageQuery)
+                var countOutlines = 0
+                
+                for outlineRow in outlinesForThisImage {
+                    countOutlines += 1
+                    outlines.append(SerializedOutlineModel(outlineRow))
+                }
+                
+                if countOutlines <= 0 {
+                    outlines.append(nil)
+                }
+            } else {
                 outlines.append(nil)
             }
         }
@@ -620,30 +698,34 @@ extension DBMS.CRUD {
         return outlines
     }
 
-    private static func readBoundingCirclesForImagesSet(for dbConnection: Connection, images: [SerializedImageModel]) throws -> [SerializedBoundingCircleModel?] {
+    private static func readBoundingCirclesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedBoundingCircleModel?] {
         let boundingCircle = DBMS.boundingCircle
         
         var boundingCircles: [SerializedBoundingCircleModel?] = []
         
-        for image in images {
-            let boundingCirclesForThisImageQuery = boundingCircle.table.filter(
-                boundingCircle.foreignKeys.imageColumn == image.getName() &&
-                boundingCircle.foreignKeys.galleryColumn == image.getGallery() &&
-                boundingCircle.foreignKeys.toolColumn == image.getTool() &&
-                boundingCircle.foreignKeys.tabColumn == image.getTab() &&
-                boundingCircle.foreignKeys.mapColumn == image.getMap() &&
-                boundingCircle.foreignKeys.gameColumn == image.getGame()
-            )
-            
-            let boundingCirclesForThisImage = try dbConnection.prepare(boundingCirclesForThisImageQuery)
-            var countBoundingCircles = 0
-            
-            for boundingCircle in boundingCirclesForThisImage {
-                countBoundingCircles += 1
-                boundingCircles.append(SerializedBoundingCircleModel(boundingCircle))
-            }
-            
-            if countBoundingCircles <= 0 {
+        for media in medias {
+            if media.getType() == .image {
+                let boundingCirclesForThisImageQuery = boundingCircle.table.filter(
+                    boundingCircle.foreignKeys.imageColumn == media.getName() &&
+                    boundingCircle.foreignKeys.galleryColumn == media.getGallery() &&
+                    boundingCircle.foreignKeys.toolColumn == media.getTool() &&
+                    boundingCircle.foreignKeys.tabColumn == media.getTab() &&
+                    boundingCircle.foreignKeys.mapColumn == media.getMap() &&
+                    boundingCircle.foreignKeys.gameColumn == media.getGame()
+                )
+                
+                let boundingCirclesForThisImage = try dbConnection.prepare(boundingCirclesForThisImageQuery)
+                var countBoundingCircles = 0
+                
+                for boundingCircle in boundingCirclesForThisImage {
+                    countBoundingCircles += 1
+                    boundingCircles.append(SerializedBoundingCircleModel(boundingCircle))
+                }
+                
+                if countBoundingCircles <= 0 {
+                    boundingCircles.append(nil)
+                }
+            } else {
                 boundingCircles.append(nil)
             }
         }
@@ -651,65 +733,73 @@ extension DBMS.CRUD {
         return boundingCircles
     }
     
-    private static func readLabelsForImagesSet(for dbConnection: Connection, images: [SerializedImageModel]) throws -> [SerializedLabelsSet?] {
+    private static func readLabelsForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedLabelsSet?] {
         let label = DBMS.label
         
         var labels: [SerializedLabelsSet?] = []
         
-        for image in images {
-            let labelsForThisImageQuery = label.table.filter(
-                label.foreignKeys.imageColumn == image.getName() &&
-                label.foreignKeys.galleryColumn == image.getGallery() &&
-                label.foreignKeys.toolColumn == image.getTool() &&
-                label.foreignKeys.tabColumn == image.getTab() &&
-                label.foreignKeys.mapColumn == image.getMap() &&
-                label.foreignKeys.gameColumn == image.getGame()
-            )
-            
-            let labelsForThisImage = try dbConnection.prepare(labelsForThisImageQuery)
-            
-            var iLabels = [SerializedLabelModel].init()
-            
-            for label in labelsForThisImage {
-                iLabels.append(SerializedLabelModel(label))
-            }
-            
-            if iLabels.count <= 0 {
-                labels.append(nil)
+        for media in medias {
+            if media.getType() == .image {
+                let labelsForThisImageQuery = label.table.filter(
+                    label.foreignKeys.imageColumn == media.getName() &&
+                    label.foreignKeys.galleryColumn == media.getGallery() &&
+                    label.foreignKeys.toolColumn == media.getTool() &&
+                    label.foreignKeys.tabColumn == media.getTab() &&
+                    label.foreignKeys.mapColumn == media.getMap() &&
+                    label.foreignKeys.gameColumn == media.getGame()
+                )
+                
+                let labelsForThisImage = try dbConnection.prepare(labelsForThisImageQuery)
+                
+                var iLabels = [SerializedLabelModel].init()
+                
+                for label in labelsForThisImage {
+                    iLabels.append(SerializedLabelModel(label))
+                }
+                
+                if iLabels.count <= 0 {
+                    labels.append(nil)
+                } else {
+                    labels.append(SerializedLabelsSet(labels: iLabels))
+                }
             } else {
-                labels.append(SerializedLabelsSet(labels: iLabels))
+                labels.append(nil)
             }
         }
         
         return labels
     }
     
-    private static func readVariantsMetadataForImagesSet(for dbConnection: Connection, images: [SerializedImageModel]) throws -> [SerializedImageVariantsMetadataSet?] {
+    private static func readVariantsMetadataForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedImageVariantsMetadataSet?] {
         let variant = DBMS.imageVariant
         
         var variants: [SerializedImageVariantsMetadataSet?] = []
         
-        for image in images.enumerated() {
-            let variantsForThisImageQuery = variant.table.filter(
-                variant.masterColumn == image.element.getName() &&
-                variant.foreignKeys.galleryColumn == image.element.getGallery() &&
-                variant.foreignKeys.toolColumn == image.element.getTool() &&
-                variant.foreignKeys.tabColumn == image.element.getTab() &&
-                variant.foreignKeys.mapColumn == image.element.getMap() &&
-                variant.foreignKeys.gameColumn == image.element.getGame()
-            )
-            
-            let variantsForThisImage = try dbConnection.prepare(variantsForThisImageQuery)
-            var iVariants: [SerializedImageVariantMetadataModel] = []
-            
-            for variant in variantsForThisImage {
-                iVariants.append(SerializedImageVariantMetadataModel(variant))
-            }
-            
-            if iVariants.count <= 0 {
-                variants.append(nil)
+        for media in medias.enumerated() {
+            if media.element.getType() == .image {
+                let variantsForThisImageQuery = variant.table.filter(
+                    variant.masterColumn == media.element.getName() &&
+                    variant.foreignKeys.galleryColumn == media.element.getGallery() &&
+                    variant.foreignKeys.toolColumn == media.element.getTool() &&
+                    variant.foreignKeys.tabColumn == media.element.getTab() &&
+                    variant.foreignKeys.mapColumn == media.element.getMap() &&
+                    variant.foreignKeys.gameColumn == media.element.getGame()
+                )
+                
+                let variantsForThisImage = try dbConnection.prepare(variantsForThisImageQuery)
+                var iVariants: [SerializedImageVariantMetadataModel] = []
+                
+                for variant in variantsForThisImage {
+                    iVariants.append(SerializedImageVariantMetadataModel(variant))
+                }
+                
+                if iVariants.count <= 0 {
+                    variants.append(nil)
+                } else {
+                    variants.append(SerializedImageVariantsMetadataSet(variants: iVariants))
+                }
             } else {
-                variants.append(SerializedImageVariantsMetadataSet(variants: iVariants))
+                variants.append(nil)
             }
         }
         
@@ -744,11 +834,11 @@ extension DBMS.CRUD {
         tab: String,
         tool: String,
         gallery: String?,
-        options: Set<ReadImageOption> = Set<ReadImageOption>([.images])
+        options: Set<ReadImageOption> = Set<ReadImageOption>([.medias])
     ) throws -> [ReadImageOption: [(any ReadImageOptional)?]] {
         var imagesWithOptionals: [ReadImageOption: [(any ReadImageOptional)?]] = [:]
         
-        let images = try self._readFirstLevelMasterImagesForGallery(
+        let medias = try self._readFirstLevelMasterImagesForGallery(
             for: dbConnection,
             game: game,
             map: map,
@@ -758,36 +848,32 @@ extension DBMS.CRUD {
         )
         
         if options.contains(.outlines) {
-            imagesWithOptionals[.outlines] = try self.readOutlinesForImagesSet(for: dbConnection, images: images)
-            assert(images.count == imagesWithOptionals[.outlines]?.count)
+            imagesWithOptionals[.outlines] = try self.readOutlinesForMediasSet(for: dbConnection, medias: medias)
         }
         
         if options.contains(.boundingCircles) {
-            imagesWithOptionals[.boundingCircles] = try self.readBoundingCirclesForImagesSet(
+            imagesWithOptionals[.boundingCircles] = try self.readBoundingCirclesForMediasSet(
                 for: dbConnection,
-                images: images
+                medias: medias
             )
-            assert(images.count == imagesWithOptionals[.boundingCircles]?.count)
         }
         
         if options.contains(.labels) {
-            imagesWithOptionals[.labels] = try self.readLabelsForImagesSet(for: dbConnection, images: images)
-            assert(images.count == imagesWithOptionals[.labels]?.count)
+            imagesWithOptionals[.labels] = try self.readLabelsForMediasSet(for: dbConnection, medias: medias)
         }
         
         if options.contains(.variantsMetadatas) {
-            imagesWithOptionals[.variantsMetadatas] = try self.readVariantsMetadataForImagesSet(
+            imagesWithOptionals[.variantsMetadatas] = try self.readVariantsMetadataForMediasSet(
                 for: dbConnection,
-                images: images
+                medias: medias
             )
-            assert(images.count == imagesWithOptionals[.variantsMetadatas]?.count)
         }
         
         if options.contains(.masters) {
-            imagesWithOptionals[.masters] = [String?].init(repeating: nil, count: images.count)
+            imagesWithOptionals[.masters] = [String?].init(repeating: nil, count: medias.count)
         }
         
-        imagesWithOptionals[.images] = images
+        imagesWithOptionals[.medias] = medias
         
         return imagesWithOptionals
     }
@@ -886,7 +972,7 @@ extension DBMS.CRUD {
 }
 
 public enum ReadImageOption: Sendable {
-    case images
+    case medias
     case outlines
     case boundingCircles
     case labels
@@ -902,6 +988,6 @@ public enum ReadGalleryOption: Sendable {
 
 extension Set where Element == ReadImageOption {
     public static let all = Set<Element>([
-        .images, .outlines, .boundingCircles, .labels, .variantsMetadatas
+        .medias, .outlines, .boundingCircles, .labels, .variantsMetadatas
     ])
 }

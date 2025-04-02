@@ -79,8 +79,8 @@ extension DBMS.CRUD {
         return try dbConnection.scalar(countSearchTokenQuery) == 1
     }
     
-    // MARK: - IMAGE EXISTS
-    /// - `IMAGE(name, description, position, searchLabel, gallery, tool, tab, map, game)`
+    // MARK: - MEDIA EXISTS
+    /// - `VISUAL_MEDIA(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
     public static func imageExists(
@@ -92,7 +92,55 @@ extension DBMS.CRUD {
         tool: String,
         gallery: String
     ) throws -> Bool {
-        let imageModel = DBMS.image
+        let imageModel = DBMS.visualMedia
+        
+        let countImageQuery = imageModel.table.where(
+            imageModel.nameColumn == image &&
+            imageModel.typeColumn == "image" &&
+            imageModel.foreignKeys.galleryColumn == gallery &&
+            imageModel.foreignKeys.toolColumn == tool &&
+            imageModel.foreignKeys.tabColumn == tab &&
+            imageModel.foreignKeys.mapColumn == map &&
+            imageModel.foreignKeys.gameColumn == game
+        ).count
+        
+        return try dbConnection.scalar(countImageQuery) == 1
+    }
+    
+    public static func videoExists(
+        for dbConnection: Connection,
+        image: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String
+    ) throws -> Bool {
+        let imageModel = DBMS.visualMedia
+        
+        let countImageQuery = imageModel.table.where(
+            imageModel.nameColumn == image &&
+            imageModel.typeColumn == "video" &&
+            imageModel.foreignKeys.galleryColumn == gallery &&
+            imageModel.foreignKeys.toolColumn == tool &&
+            imageModel.foreignKeys.tabColumn == tab &&
+            imageModel.foreignKeys.mapColumn == map &&
+            imageModel.foreignKeys.gameColumn == game
+        ).count
+        
+        return try dbConnection.scalar(countImageQuery) == 1
+    }
+
+    public static func mediaExists(
+        for dbConnection: Connection,
+        image: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String
+    ) throws -> Bool {
+        let imageModel = DBMS.visualMedia
         
         let countImageQuery = imageModel.table.where(
             imageModel.nameColumn == image &&
@@ -110,7 +158,7 @@ extension DBMS.CRUD {
     // MARK: - IMAGE VARIANT EXISTS
     /// - `IMAGE_VARIANT(master, slave, variant, bottomBarIcon, boundingFrameOriginX, boundingFrameOriginY, boundingFrameWidth, boundingFrameHeight, gallery, tool, tab, map, game)`
     /// - `PK(slave, gallery, tool, tab, map, game)`
-    /// - `FK(slave, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    /// - `FK(slave, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
     public static func imageVariantRelationshipExists(
         for dbConnection: Connection,
         master: String,
@@ -139,7 +187,7 @@ extension DBMS.CRUD {
     // MARK: - LABEL EXISTS
     /// - `LABEL(label, isActive, icon, assetsImageName, textColorHex, backgroundColorHex, opacity, maxAABBOriginX, maxAABBOriginY, maxAABBWidth, maxAABBHeight, image, gallery, tool, tab, map, game)`
     /// - `PK(label, image, gallery, tool, tab, map, game)`
-    /// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    /// - `FK(image, gallery, tool, tab, map, game) REFERENCES REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
     public static func labelExists(
         for dbConnection: Connection,
         label: String,

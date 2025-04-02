@@ -145,7 +145,7 @@ extension DBMS.CRUD {
         gallery: String
     ) throws -> Int {
         
-        let image = DBMS.image
+        let image = DBMS.visualMedia
         let countImagesAndVariantsForToolQuery = image.table.where(
             image.foreignKeys.gameColumn == game &&
             image.foreignKeys.mapColumn == map &&

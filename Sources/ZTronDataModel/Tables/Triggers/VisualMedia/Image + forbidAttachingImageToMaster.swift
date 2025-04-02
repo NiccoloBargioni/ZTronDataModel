@@ -1,9 +1,9 @@
 import Foundation
 
-extension Image {
+extension VisualMedia {
     func makeForbidAttachingImageToMasterTrigger(for dbConnection: OpaquePointer) throws {
         let subgallery = DomainModel.subgallery
-        let image = DomainModel.image
+        let image = DomainModel.visualMedia
         
         let createTriggerQuery = """
             CREATE TRIGGER IF NOT EXISTS forbid_attaching_image_to_master

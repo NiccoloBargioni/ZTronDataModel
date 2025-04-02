@@ -3,7 +3,7 @@ import Foundation
 extension ImageVariant {
     func makeMasterReferentialIntegrityConstraintTrigger(for dbConnection: OpaquePointer) throws {
         let imageVariant = DomainModel.imageVariant
-        let image = DomainModel.image
+        let image = DomainModel.visualMedia
         
         let createTriggerQuery = """
             CREATE TRIGGER IF NOT EXISTS master_referential_integrity_image_variant

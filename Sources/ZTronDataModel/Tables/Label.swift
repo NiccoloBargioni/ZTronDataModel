@@ -4,7 +4,7 @@ import SQLite3
 
 /// - `LABEL(label, isActive, icon, assetsImageName, textColorHex, backgroundColorHex, opacity, maxAABBOriginX, maxAABBOriginY, maxAABBWidth, maxAABBHeight, image, gallery, tool, tab, map, game)`
 /// - `PK(label, image, gallery, tool, tab, map, game)`
-/// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+/// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
 ///
 /// Represents a label associated to the image identified by the tuple (`image`, `gallery`, `tool`, `map`, `game`)
 ///
@@ -21,6 +21,8 @@ import SQLite3
 ///         - maxAABBOriginY BETWEEN 0 AND 1
 ///         - maxAABBWidth BETWEEN 0 AND 1
 ///         - maxAABBHeight BETWEEN 0 AND 1
+///
+///     - `forbid_label_on_video`: Forces the visual media referenced by the `image` field to have `type`=`image`
 ///
 /// - **CONSTRAINTS NOT ENFORCED BY TRIGGERS:**
 ///     None
@@ -61,7 +63,7 @@ public final class Label: DBTableCreator {
     }
     
     func makeTable(for dbConnection: OpaquePointer) throws {
-        let imageModel = DomainModel.image
+        let imageModel = DomainModel.visualMedia
         
         let tableCreationStatement =
             """
@@ -112,6 +114,7 @@ public final class Label: DBTableCreator {
         
         try DBMS.performSQLStatement(for: dbConnection, query: tableCreationStatement)
         try self.makeMaxAABBNotNullConstraint(for: dbConnection)
+        try self.forbidLabelOnVideo(for: dbConnection)
     }
     
     final class ForeignKeys: Sendable {

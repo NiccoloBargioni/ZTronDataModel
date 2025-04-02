@@ -4,7 +4,7 @@ import SQLite3
 
 /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
 /// - `PK(image, gallery, tool, tab, map, game)`
-/// - `FK(image, gallery, tool, tab, map, game) REFERENCES IMAGE(name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+/// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
 ///
 /// Represents the bounding circle for the image identified by the tuple (`image`, `gallery`, `tool`, `map`, `game`). The attribute `tab`
 /// is included to guarantee the referential integrity constraint with respect to `IMAGE`.
@@ -22,6 +22,8 @@ import SQLite3
 ///         - boundingBoxOriginY BETWEEN 0 AND 1
 ///         - boundingBoxWidth BETWEEN 0 AND 1
 ///         - boundingBoxHeight BETWEEN 0 AND 1
+///
+///     - `forbid_bounding_circle_on_video`: The visual media referenced by the `image` column must have type = 'image'
 ///
 /// - **CONSTRAINTS NOT ENFORCED BY TRIGGERS:**
 ///     -   When an image doesn't have an outline but it has a bounding circle, `normalizedCenterX`, `normalizedCenterY`
@@ -52,7 +54,7 @@ public final class BoundingCircle: DBTableCreator {
     }
     
     func makeTable(for dbConnection: OpaquePointer) throws {
-        let imageModel = DomainModel.image
+        let imageModel = DomainModel.visualMedia
         
         let tableCreationStatement =
             """
@@ -97,6 +99,7 @@ public final class BoundingCircle: DBTableCreator {
         
         try DBMS.performSQLStatement(for: dbConnection, query: tableCreationStatement)
         try self.makeNotNullTrigger(for: dbConnection)
+        try self.forbidBoundingCircleOnVideo(for: dbConnection)
     }
     
     final class ForeignKeys: Sendable {

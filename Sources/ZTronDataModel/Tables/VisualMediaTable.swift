@@ -3,7 +3,7 @@ import SQLite3
 @preconcurrency import SQLite
 
 
-/// - `IMAGE(name, description, position, searchLabel, gallery, tool, tab, map, game)`
+/// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
 /// - `PK(name, gallery, tool, tab, map, game)`
 /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
 ///
@@ -38,6 +38,7 @@ import SQLite3
 ///         Requires that the connection is opened with `PRAGMA recursive_triggers = 1`
 ///
 ///         Needs testing.
+///     - `forbid_empty_extension_for_video`: Forces all entries that have `type` = `video` to have a non-empty extension, and all entries that have `type`=`image` to not provide an extension.
 ///
 /// - **CONSTRAINTS NOT ENFORCED BY TRIGGERS:**
 ///     - The `position`s should be unique for each (gallery, tool, map, game, master); this constraint can be temporarily violated while sorting the images for a given (game, map, tool, gallery, master),
@@ -47,22 +48,26 @@ import SQLite3
 ///    -  An image should only be allowed to appear at the deepest level of the gallery hierarchy. A sophisticated
 ///       check to validate that images can only appear at maximum depth across the whole hierarchy starting with the same gallery root, and that every leaf
 ///       gallery has at least one child image is recommended.
-public final class Image: DBTableCreator {
-    let tableName: String = "IMAGE"
+public final class VisualMedia: DBTableCreator {
+    let tableName: String = "VISUAL_MEDIA"
+    let typeColumn: SQLite.Expression<String>
+    let extensionColumn: SQLite.Expression<String?>
     let nameColumn: SQLite.Expression<String>
     let descriptionColumn: SQLite.Expression<String>
     let positionColumn: SQLite.Expression<Int>
     let searchLabelColumn: SQLite.Expression<String?>
-    let foreignKeys: Image.ForeignKeys
+    let foreignKeys: VisualMedia.ForeignKeys
     let table: SQLite.Table
     
     internal init() {
         self.table = Table(tableName)
+        self.typeColumn = SQLite.Expression<String>("type")
+        self.extensionColumn = SQLite.Expression<String?>("extension")
         self.nameColumn = SQLite.Expression<String>("name")
         self.descriptionColumn = SQLite.Expression<String>("description")
         self.positionColumn = SQLite.Expression<Int>("position")
         self.searchLabelColumn = SQLite.Expression<String?>("searchLabel")
-        self.foreignKeys = Image.ForeignKeys()
+        self.foreignKeys = VisualMedia.ForeignKeys()
     }
     
     func makeTable(for dbConnection: OpaquePointer) throws {
@@ -71,6 +76,8 @@ public final class Image: DBTableCreator {
         let tableCreationStatement =
             """
                 CREATE TABLE IF NOT EXISTS \(self.tableName) (
+                    \(self.typeColumn.template) TEXT NOT NULL,
+                    \(self.extensionColumn.template) TEXT,
                     \(self.nameColumn.template) TEXT NOT NULL,
                     \(self.descriptionColumn.template) TEXT NOT NULL,
                     \(self.positionColumn.template) INT NOT NULL CHECK(\(self.positionColumn.template) >= 0),
@@ -107,6 +114,7 @@ public final class Image: DBTableCreator {
         try DBMS.performSQLStatement(for: dbConnection, query: tableCreationStatement)
         try self.makeForbidAttachingImageToMasterTrigger(for: dbConnection)
         try self.makeCascadeMasterDeleteFromImageTrigger(for: dbConnection)
+        try self.forbidEmptyExtensionForVideo(for: dbConnection)
     }
     
     final class ForeignKeys: Sendable {
@@ -124,4 +132,10 @@ public final class Image: DBTableCreator {
             self.gameColumn = SQLite.Expression<String>("game")
         }
     }
+}
+
+
+public enum VisualMediaType: String, CaseIterable, Sendable {
+    case video
+    case image
 }
