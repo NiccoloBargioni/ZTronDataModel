@@ -932,8 +932,8 @@ extension DBMS.CRUD {
         tab: String,
         tool: String,
         options: Set<ReadGalleryOption> = Set<ReadGalleryOption>([.searchToken])
-    ) throws -> [ReadGalleryOption: [(any ReadGalleryOptional)]] {
-        var galleriesWithOptions: [ReadGalleryOption: [(any ReadGalleryOptional)]] = [:]
+    ) throws -> [ReadGalleryOption: [(any ReadGalleryOptional)?]] {
+        var galleriesWithOptions: [ReadGalleryOption: [(any ReadGalleryOptional)?]] = [:]
         
         let galleries = try self.readFirstLevelOfGalleriesForTool(
             for: dbConnection,
@@ -967,6 +967,10 @@ extension DBMS.CRUD {
             galleriesWithOptions[.searchToken] = allTokens
         }
         
+        if options.contains(.master) {
+            galleriesWithOptions[.master] = .init(repeating: nil, count: galleries.count)
+        }
+
         return galleriesWithOptions
     }
     
@@ -1031,8 +1035,8 @@ extension DBMS.CRUD {
         tool: String,
         gallery: String,
         options: Set<ReadGalleryOption> = Set<ReadGalleryOption>([.searchToken])
-    ) throws -> [ReadGalleryOption: [(any ReadGalleryOptional)]] {
-        var galleriesWithOptions: [ReadGalleryOption: [(any ReadGalleryOptional)]] = [:]
+    ) throws -> [ReadGalleryOption: [(any ReadGalleryOptional)?]] {
+        var galleriesWithOptions: [ReadGalleryOption: [(any ReadGalleryOptional)?]] = [:]
         
         let galleries = try self.readFirstLevelOfSubgalleriesForGallery(
             for: dbConnection,
@@ -1065,6 +1069,25 @@ extension DBMS.CRUD {
             }
             
             galleriesWithOptions[.searchToken] = allTokens
+        }
+        
+        if options.contains(.master) {
+            let findGallery = DBMS.gallery.table
+                .filter(
+                    DBMS.gallery.foreignKeys.gameColumn == game &&
+                    DBMS.gallery.foreignKeys.mapColumn == map &&
+                    DBMS.gallery.foreignKeys.tabColumn == tab &&
+                    DBMS.gallery.foreignKeys.toolColumn == tool &&
+                    DBMS.gallery.nameColumn == gallery
+                )
+            
+            let thisGallery = try dbConnection.prepare(findGallery).map { galleryRow in
+                return SerializedGalleryModel(galleryRow)
+            }
+            
+            assert(thisGallery.count == 1)
+            
+            galleriesWithOptions[.master] = .init(repeating: thisGallery.first, count: galleries.count)
         }
         
         return galleriesWithOptions
