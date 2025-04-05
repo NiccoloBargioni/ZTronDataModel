@@ -969,6 +969,106 @@ extension DBMS.CRUD {
         
         return galleriesWithOptions
     }
+    
+    
+    
+    private static func readFirstLevelOfSubgalleriesForGallery(
+        for dbConnection: Connection,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        master: String
+    ) throws -> [SerializedGalleryModel] {
+        let gallery = DBMS.gallery
+        let subgallery = DBMS.subgallery
+        
+        let findSlavesQuery = subgallery.table
+            .select(subgallery.slaveColumn)
+            .filter(
+                subgallery.foreignKeys.gameColumn == game &&
+                subgallery.foreignKeys.mapColumn == map &&
+                subgallery.foreignKeys.tabColumn == tab &&
+                subgallery.foreignKeys.toolColumn == tool &&
+                subgallery.masterColumn == master
+            )
+        
+        let slaves = try dbConnection.prepare(findSlavesQuery).map { result in
+            return result[subgallery.slaveColumn]
+        }
+        
+        let firstLevelMastersQuery = gallery.table.filter(
+            gallery.foreignKeys.gameColumn == game &&
+            gallery.foreignKeys.mapColumn == map &&
+            gallery.foreignKeys.tabColumn == tab &&
+            gallery.foreignKeys.toolColumn == tool &&
+            slaves.contains(gallery.nameColumn)
+        )
+        .order(gallery.positionColumn)
+        
+        return try dbConnection.prepare(firstLevelMastersQuery).map { galleryRow in
+            return SerializedGalleryModel(galleryRow)
+        }
+    }
+    
+    // FIXME: Add support for new ReadGalleryOption .master
+    /// Returns from database the set of all the top level `master`s for the specified gallery, along with the requested optionals.
+    ///
+    /// - Optionals:
+    ///     - **galleries**: This is always included. The images models are always included regardless of whether or not you explicitly include this option. Also,
+    ///     the associated array never contains optionals, so it's safe to cast to `[SerializedGalleryModel]`
+    ///     - **searchTokens**: If included, all the search tokens for the loaded galleries will be included here. If this option is specified, the `.searchToken` key for the result will have a non-nil value,
+    ///     but such value might be an empty array if no search token was specified for any of the galleries.
+    ///
+    ///
+    /// The association between a gallery and its outline, bounding circle, label and so on, is by foreign key. In general, a gallery and a token that occupy the same index in the output arrays won't be associated
+    /// with one another.
+    public static func readFirstLevelOfSubgalleriesForGallery(
+        for dbConnection: Connection,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String,
+        options: Set<ReadGalleryOption> = Set<ReadGalleryOption>([.searchToken])
+    ) throws -> [ReadGalleryOption: [(any ReadGalleryOptional)]] {
+        var galleriesWithOptions: [ReadGalleryOption: [(any ReadGalleryOptional)]] = [:]
+        
+        let galleries = try self.readFirstLevelOfSubgalleriesForGallery(
+            for: dbConnection,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool,
+            master: gallery
+        )
+        
+        
+        galleriesWithOptions[.galleries] = galleries
+        
+        if options.contains(.searchToken) {
+            var allTokens: [SerializedSearchTokenModel] = []
+            
+            try galleries.forEach { gallery in
+                let theToken = try self.readSearchToken(
+                    for: dbConnection,
+                    game: game,
+                    map: map,
+                    tab: tab,
+                    tool: tool,
+                    gallery: gallery.getName()
+                )
+                
+                if let token = theToken {
+                    allTokens.append(token)
+                }
+            }
+            
+            galleriesWithOptions[.searchToken] = allTokens
+        }
+        
+        return galleriesWithOptions
+    }
 }
 
 public enum ReadImageOption: Sendable {
