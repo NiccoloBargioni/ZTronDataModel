@@ -54,6 +54,28 @@ extension DBMS.CRUD {
         return try dbConnection.scalar(countSubgalleryRelationshipQuery) == 1
     }
     
+    // - MARK:  SUBMAP RELATIONSHIP EXISTS
+    
+    /// - `HAS_SUBMAP(master, slave, game)`
+    /// - `PK(slave, game)`
+    /// - `FK(slave, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    public static func submapRelationshipExists(
+        for dbConnection: Connection,
+        master: String,
+        slave: String,
+        game: String
+    ) throws -> Bool {
+        let submap = DBMS.hasSubmap
+        
+        let countSubmapsRelationshipQuery = submap.table.where(
+            submap.masterColumn == master &&
+            submap.slaveColumn == slave &&
+            submap.foreignKeys.gameColumn == game
+        ).count
+        
+        return try dbConnection.scalar(countSubmapsRelationshipQuery) == 1
+    }
+    
     // MARK: - SEARCH TOKEN EXISTS
     /// - `GALLERY_SEARCH_TOKEN(title, icon, iconColorHex, gallery, tool, tab, map, game)`
     /// - `PK(gallery, tool, tab, map, game)`
