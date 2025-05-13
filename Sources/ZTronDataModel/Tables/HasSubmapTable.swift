@@ -35,14 +35,12 @@ public final class HasSubmapTable: DBTableCreator {
     }
     
     func makeTable(for dbConnection: OpaquePointer) throws {
-        let galleryModel = DomainModel.gallery
-        
         let tableCreationStatement =
             """
                 CREATE TABLE IF NOT EXISTS \(self.tableName) (
                     \(self.masterColumn.template) TEXT NOT NULL,
                     \(self.slaveColumn.template) TEXT NOT NULL,
-                    \(self.foreignKeys.gameColumn.template) TEXT NOT NULL
+                    \(self.foreignKeys.gameColumn.template) TEXT NOT NULL,
                     PRIMARY KEY (
                         \(self.slaveColumn.template),
                         \(self.foreignKeys.gameColumn.template)
