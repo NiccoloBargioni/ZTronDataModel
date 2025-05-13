@@ -14,4 +14,5 @@ extension DBMS {
     public static let outline = DomainModel.outline
     public static let boundingCircle = DomainModel.boundingCircle
     public static let label = DomainModel.label
+    public static let hasSubmap = DomainModel.hasSubmap
 }

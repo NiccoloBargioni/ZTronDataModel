@@ -14,11 +14,12 @@ internal class DomainModel {
     internal static let outline = Outline()
     internal static let boundingCircle = BoundingCircle()
     internal static let label = Label()
+    internal static let hasSubmap = HasSubmapTable()
     
     internal static let allTablesCreators: [any DBTableCreator] = [
         DomainModel.studio, DomainModel.game, DomainModel.map, DomainModel.tab, DomainModel.tool,
         DomainModel.gallery, DomainModel.subgallery, DomainModel.gallerySearchToken, DomainModel.visualMedia,
-        DomainModel.imageVariant, DomainModel.outline, DomainModel.boundingCircle, DomainModel.label
+        DomainModel.imageVariant, DomainModel.outline, DomainModel.boundingCircle, DomainModel.label, DomainModel.hasSubmap
     ]
     
     private init() { }

@@ -189,6 +189,30 @@ extension DBMS {
             
         }
         
+        // MARK: HAS SUBMAP
+        /// - `HAS_SUBMAP(master, slave, game)`
+        /// - `PK(slave, game)`
+        /// - `FK(slave, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+        public static func insertIntoHasSubmap(
+            or: OnConflict = .fail,
+            for dbConnection: Connection,
+            master: String,
+            slave: String,
+            game: String
+        ) throws {
+            let submap = DBMS.hasSubmap
+            
+            try dbConnection.run(
+                submap.table.insert(
+                    or: or,
+                    submap.masterColumn <- master,
+                    submap.slaveColumn <- slave,
+                    submap.foreignKeys.gameColumn <- game
+                )
+            )
+        }
+        
+        
         // MARK: HAS SUBGALLERY
         
         /// - `HAS_SUBGALLERY(master, slave, tool, tab, map, game)`

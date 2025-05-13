@@ -95,7 +95,6 @@ public final class HasSubgallery: DBTableCreator {
             self.tabColumn = SQLite.Expression<String>("tab")
             self.mapColumn = SQLite.Expression<String>("map")
             self.gameColumn = SQLite.Expression<String>("game")
-
         }
     }
 }
