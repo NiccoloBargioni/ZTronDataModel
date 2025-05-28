@@ -9,15 +9,15 @@ extension DBMS.CRUD {
     // MARK: - READ GAMES
     public static func readAllGames(
         for dbConnection: Connection,
-        options: Set<ReadGamesOptions> = Set<ReadGamesOptions>([.games])
-    ) throws -> [ReadGamesOptions: [(any ReadGameOptional)?]] {
+        options: Set<ReadGamesOption> = Set<ReadGamesOption>([.games])
+    ) throws -> [ReadGamesOption: [(any ReadGameOptional)?]] {
         let gameModel = DBMS.visualMedia
         
         let theGames = try dbConnection.prepare(gameModel.table.order(gameModel.positionColumn)).map { resultRow in
             return SerializedGameModel(resultRow)
         }
         
-        var result = [ReadGamesOptions: [(any ReadGameOptional)?]].init()
+        var result = [ReadGamesOption: [(any ReadGameOptional)?]].init()
         
         result[.games] = theGames
         
@@ -1121,7 +1121,7 @@ extension DBMS.CRUD {
 }
 
 
-public enum ReadGamesOptions: Sendable {
+public enum ReadGamesOption: Sendable {
     case games
     case numberOfMaps
 }
@@ -1149,6 +1149,13 @@ extension Set where Element == ReadImageOption {
 }
 
 
-public extension Int: ReadGameOptional {
+extension Set where Element == ReadGamesOption {
+    public static let all = Set<Element>([
+        .games, .numberOfMaps
+    ])
+}
+
+
+extension Int: ReadGameOptional {
     
 }
