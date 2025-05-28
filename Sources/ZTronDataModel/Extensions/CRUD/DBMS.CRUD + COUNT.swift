@@ -3,7 +3,6 @@ import SQLite3
 import SQLite
 
 extension DBMS.CRUD {
-    // MARK: - Count
     
     // MARK: STUDIOS
     public static func countStudios(for dbConnection: Connection) throws -> Int {
@@ -21,6 +20,7 @@ extension DBMS.CRUD {
         
         return try dbConnection.scalar(countGamesForStudioQuery)
     }
+
     
     // MARK: MAPS
     public static func countMapsForGame(for dbConnection: Connection, game: String) throws -> Int {

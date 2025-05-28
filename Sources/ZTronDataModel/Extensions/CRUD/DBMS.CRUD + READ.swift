@@ -6,6 +6,32 @@ extension String: ReadImageOptional { }
 extension String: ReadGalleryOptional {  }
 
 extension DBMS.CRUD {
+    // MARK: - READ GAMES
+    public static func readAllGames(
+        for dbConnection: Connection,
+        options: Set<ReadGamesOptions> = Set<ReadGamesOptions>([.games])
+    ) throws -> [ReadGamesOptions: [(any ReadGameOptional)?]] {
+        let gameModel = DBMS.visualMedia
+        
+        let theGames = try dbConnection.prepare(gameModel.table.order(gameModel.positionColumn)).map { resultRow in
+            return SerializedGameModel(resultRow)
+        }
+        
+        var result = [ReadGamesOptions: [(any ReadGameOptional)?]].init()
+        
+        result[.games] = theGames
+        
+        if options.contains(.numberOfMaps) {
+            result[.numberOfMaps] = []
+            for game in theGames {
+                try result[.numberOfMaps]?.append(DBMS.CRUD.countMapsForGame(for: dbConnection, game: game.getName()))
+            }
+        }
+        
+        return result
+    }
+
+    
     //MARK: - READ IMAGE VARIANTS
     private static func _readFirstLevelMasterImagesForGallery(
         for dbConnection: Connection,
@@ -1094,6 +1120,13 @@ extension DBMS.CRUD {
     }
 }
 
+
+public enum ReadGamesOptions: Sendable {
+    case games
+    case numberOfMaps
+}
+
+
 public enum ReadImageOption: Sendable {
     case medias
     case outlines
@@ -1113,4 +1146,9 @@ extension Set where Element == ReadImageOption {
     public static let all = Set<Element>([
         .medias, .outlines, .boundingCircles, .labels, .variantsMetadatas
     ])
+}
+
+
+public extension Int: ReadGameOptional {
+    
 }
