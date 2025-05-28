@@ -6,7 +6,7 @@ import SQLite
 /// - `GAME(name, position, assetsImageName, studio)`
 /// - `PK(name)`
 /// - `FK(studio) REFERENCES STUDIO(name) ON DELETE CASCADE ON UPDATE CASCADE`
-public final class SerializedGameModel: ReadGameOptional {
+public final class SerializedGameModel: ReadGameOptional, ObservableObject {
     private let name: String
     private let position: Int
     private let assetsImageName: String
@@ -52,7 +52,7 @@ public final class SerializedGameModel: ReadGameOptional {
         return self.position
     }
     
-    public func getAssetsImageName() -> String? {
+    public func getAssetsImageName() -> String {
         return self.assetsImageName
     }
     
@@ -71,4 +71,33 @@ public final class SerializedGameModel: ReadGameOptional {
         )
         """
     }
+    
+    public final func getMutableCopy() -> WritableDraft {
+        return Self.WritableDraft(from: self)
+    }
+    
+    public final class WritableDraft {
+        weak private var owner: SerializedGameModel?
+        private var position: Int
+        
+        internal init(from: SerializedGameModel) {
+            self.owner = from
+            self.position = from.getPosition()
+        }
+        
+        public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
+            self.position = newPosition
+            return self
+        }
+        
+        public final func getPosition() -> Int {
+            return self.position
+        }
+        
+        public final func getImmutableCopy() -> SerializedGameModel {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to mutable parent of type \(String(describing: SerializedGameModel.self))") }
+            return SerializedGameModel(name: owner.getName(), position: self.position, assetsImageName: owner.getAssetsImageName(), studio: owner.getStudio())
+        }
+    }
+
 }
