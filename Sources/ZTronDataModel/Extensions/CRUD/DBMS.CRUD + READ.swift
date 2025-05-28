@@ -11,7 +11,7 @@ extension DBMS.CRUD {
         for dbConnection: Connection,
         options: Set<ReadGamesOption> = Set<ReadGamesOption>([.games])
     ) throws -> [ReadGamesOption: [(any ReadGameOptional)?]] {
-        let gameModel = DBMS.visualMedia
+        let gameModel = DBMS.game
         
         let theGames = try dbConnection.prepare(gameModel.table.order(gameModel.positionColumn)).map { resultRow in
             return SerializedGameModel(resultRow)
