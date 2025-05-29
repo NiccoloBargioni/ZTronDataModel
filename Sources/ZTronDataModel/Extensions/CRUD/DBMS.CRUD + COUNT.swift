@@ -30,11 +30,39 @@ extension DBMS.CRUD {
         return try dbConnection.scalar(countMapsForGameQuery)
     }
     
+    // MARK: COUNT SUBMAPS FOR MAP
+    public static func countSubmapsForMap(
+        for dbConnection: Connection,
+        map: String,
+        game: String
+    ) throws -> Int {
+        let submap = DBMS.hasSubmap
+                
+        let countSubmapsQuery = submap.table.where(submap.masterColumn == map && submap.foreignKeys.gameColumn == game).count
+
+        return try dbConnection.scalar(countSubmapsQuery)
+    }
+
+    
+    // MARK: COUNT SUBMAPS FOR MAP
+    public static func countToolsForMap(
+        for dbConnection: Connection,
+        map: String,
+        game: String
+    ) throws -> Int {
+        let tools = DBMS.tool
+                
+        let countToolsQuery = tools.table.where(tools.foreignKeys.mapColumn == map && tools.foreignKeys.gameColumn == game).count
+
+        return try dbConnection.scalar(countToolsQuery)
+    }
+
+    
     // MARK: TABS
     public static func countTabsForMap(
         for dbConnection: Connection,
-        game: String,
-        map: String
+        map: String,
+        game: String
     ) throws -> Int {
         let tab = DBMS.tab
         let countTabsForMapQuery = tab.table.where(

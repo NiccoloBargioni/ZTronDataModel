@@ -32,6 +32,51 @@ extension DBMS.CRUD {
     }
 
     
+    // MARK: - READ MAPS
+    public static func readAllMaps(
+        for dbConnection: Connection,
+        game: String,
+        options: Set<ReadMapOptions> = Set<ReadMapOptions>([.maps])
+    ) throws -> [ReadMapOptions: [(any ReadMapOptional)?]] {
+        let mapModel = DBMS.map
+        
+        let findMapsQuery = mapModel.table.filter(mapModel.foreignKeys.gameColumn == game).order(mapModel.positionColumn)
+        
+        let theMaps = try dbConnection.prepare(findMapsQuery).map { resultRow in
+            return SerializedMapModel(resultRow)
+        }
+
+        var result = [ReadMapOptions: [(any ReadMapOptional)?]].init()
+        
+        result[.maps] = theMaps
+        
+        if options.contains(.numberOfSlaves) {
+            result[.numberOfSlaves] = []
+            for map in theMaps {
+                try result[.numberOfSlaves]?.append(DBMS.CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+            }
+        }
+        
+        
+        if options.contains(.numberOfTabs) {
+            result[.numberOfTabs] = []
+            for map in theMaps {
+                try result[.numberOfTabs]?.append(DBMS.CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+            }
+        }
+        
+        
+        if options.contains(.numberOfTools) {
+            result[.numberOfTools] = []
+            for map in theMaps {
+                try result[.numberOfTabs]?.append(DBMS.CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+            }
+        }
+        
+        return result
+    }
+
+    
     //MARK: - READ IMAGE VARIANTS
     private static func _readFirstLevelMasterImagesForGallery(
         for dbConnection: Connection,
@@ -1126,6 +1171,13 @@ public enum ReadGamesOption: Sendable {
     case numberOfMaps
 }
 
+public enum ReadMapOptions: Sendable {
+    case maps
+    case numberOfSlaves
+    case numberOfTabs
+    case numberOfTools
+}
+
 
 public enum ReadImageOption: Sendable {
     case medias
@@ -1142,6 +1194,7 @@ public enum ReadGalleryOption: Sendable {
     case master
 }
 
+
 extension Set where Element == ReadImageOption {
     public static let all = Set<Element>([
         .medias, .outlines, .boundingCircles, .labels, .variantsMetadatas
@@ -1155,7 +1208,13 @@ extension Set where Element == ReadGamesOption {
     ])
 }
 
+extension Set where Element == ReadMapOptions {
+    public static let all = Set<Element>([
+        .maps, .numberOfSlaves, .numberOfTabs, .numberOfTools
+    ])
+}
 
-extension Int: ReadGameOptional {
+
+extension Int: ReadGameOptional, ReadMapOptional {
     
 }
