@@ -69,7 +69,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTools) {
             result[.numberOfTools] = []
             for map in theMaps {
-                try result[.numberOfTabs]?.append(DBMS.CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTools]?.append(DBMS.CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
