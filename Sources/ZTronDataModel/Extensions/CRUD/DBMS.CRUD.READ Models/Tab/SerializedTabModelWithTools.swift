@@ -65,6 +65,10 @@ public final class SerializedTabModelWithTools: ObservableObject {
         return self.game
     }
     
+    public final func getTools() -> [SerializedToolModel] {
+        return self.tools
+    }
+    
     public func toString() -> String {
         return """
         TAB(
