@@ -5,7 +5,7 @@ import SQLite
 /// - `MAP(name, position, assetsImageName, game)`
 /// - `PK(name, game)`
 /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
-public final class SerializedMapModel: ReadMapOptional {
+public final class SerializedMapModel: ReadMapOptional, ObservableObject {
     private let name: String
     private let position: Int
     private let assetsImageName: String?
