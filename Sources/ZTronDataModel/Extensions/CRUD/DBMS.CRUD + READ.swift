@@ -1252,6 +1252,62 @@ extension DBMS.CRUD {
         
         return galleriesWithOptions
     }
+    
+    
+    /// - `TAB(name, position, iconName, map, game)`
+    public static func readTabsForMap(
+        for dbConnection: Connection,
+        game: String,
+        map: String
+    ) throws -> [SerializedTabModel] {
+        let tabs = DBMS.tab
+        
+        let findTabsQuery = tabs.table
+            .filter(
+                tabs.foreignKeys.gameColumn == game &&
+                tabs.foreignKeys.mapColumn == map
+            ).order(tabs.positionColumn)
+        
+        return try dbConnection.prepare(findTabsQuery).map { result in
+            return SerializedTabModel(result)
+        }
+    }
+    
+    
+    public static func readTabsWithToolsForMap(
+        for dbConnection: Connection,
+        game: String,
+        map: String
+    ) throws -> [SerializedTabModelWithTools] {
+        let tabs = try Self.readTabsForMap(for: dbConnection, game: game, map: map)
+        
+        return try tabs.map { tab in
+            let tools = try Self.readToolsForTab(for: dbConnection, game: game, map: map, tab: tab.getName())
+            return SerializedTabModelWithTools(tabModel: tab, tools: tools)
+        }
+    }
+    
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    public static func readToolsForTab(
+        for dbConnection: Connection,
+        game: String,
+        map: String,
+        tab: String
+    ) throws -> [SerializedToolModel] {
+        let tools = DBMS.tool
+        
+        let findToolsQuery = tools.table
+            .filter(
+                tools.foreignKeys.gameColumn == game &&
+                tools.foreignKeys.mapColumn == map &&
+                tools.foreignKeys.tabColumn == tab
+            ).order(tools.positionColumn)
+        
+        return try dbConnection.prepare(findToolsQuery).map { result in
+            return SerializedToolModel(result)
+        }
+    }
 }
 
 
