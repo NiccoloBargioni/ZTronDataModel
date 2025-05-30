@@ -36,11 +36,100 @@ extension DBMS.CRUD {
     public static func readAllMaps(
         for dbConnection: Connection,
         game: String,
-        options: Set<ReadMapOptions> = Set<ReadMapOptions>([.maps])
+        options: Set<ReadMapOptions> = Set<ReadMapOptions>([.maps]),
+        limitToFirstLevelMasters: Bool = false
     ) throws -> [ReadMapOptions: [(any ReadMapOptional)?]] {
         let mapModel = DBMS.map
+        let submapModel = DBMS.hasSubmap
         
-        let findMapsQuery = mapModel.table.filter(mapModel.foreignKeys.gameColumn == game).order(mapModel.positionColumn)
+        var slaves: [String]? = nil
+        
+        if limitToFirstLevelMasters {
+            let findSlavesQuery = submapModel.table
+                .select(submapModel.slaveColumn)
+                .filter(submapModel.foreignKeys.gameColumn == game)
+            
+            
+            slaves = try dbConnection.prepare(findSlavesQuery).map { result in
+                return result[submapModel.slaveColumn]
+            }
+        }
+        
+        var findMapsQuery: Table
+        
+        if let slaves = slaves {
+            findMapsQuery = mapModel.table.filter(mapModel.foreignKeys.gameColumn == game && !slaves.contains(mapModel.nameColumn)).order(mapModel.positionColumn)
+        } else {
+            findMapsQuery = mapModel.table.filter(mapModel.foreignKeys.gameColumn == game).order(mapModel.positionColumn)
+        }
+        
+        
+        let theMaps = try dbConnection.prepare(findMapsQuery).map { resultRow in
+            return SerializedMapModel(resultRow)
+        }
+
+        var result = [ReadMapOptions: [(any ReadMapOptional)?]].init()
+        
+        result[.maps] = theMaps
+        
+        if options.contains(.numberOfSlaves) {
+            result[.numberOfSlaves] = []
+            for map in theMaps {
+                try result[.numberOfSlaves]?.append(DBMS.CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+            }
+        }
+        
+        
+        if options.contains(.numberOfTabs) {
+            result[.numberOfTabs] = []
+            for map in theMaps {
+                try result[.numberOfTabs]?.append(DBMS.CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+            }
+        }
+        
+        
+        if options.contains(.numberOfTools) {
+            result[.numberOfTools] = []
+            for map in theMaps {
+                try result[.numberOfTools]?.append(DBMS.CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+            }
+        }
+        
+        return result
+    }
+
+    
+    // MARK: - READ MAPS
+    public static func readAllSubmaps(
+        for dbConnection: Connection,
+        master: String,
+        game: String,
+        options: Set<ReadMapOptions> = Set<ReadMapOptions>([.maps]),
+        limitToFirstLevelMasters: Bool = false
+    ) throws -> [ReadMapOptions: [(any ReadMapOptional)?]] {
+        let mapModel = DBMS.map
+        let submapModel = DBMS.hasSubmap
+        
+        var slaves: [String]
+        
+        let findSlavesQuery = submapModel.table
+            .select(submapModel.slaveColumn)
+            .filter(submapModel.foreignKeys.gameColumn == game && submapModel.masterColumn == master)
+        
+        
+        slaves = try dbConnection.prepare(findSlavesQuery).map { result in
+            return result[submapModel.slaveColumn]
+        }
+        
+        var findMapsQuery: Table =
+                mapModel.table
+                    .filter(
+                        mapModel.foreignKeys.gameColumn == game &&
+                        slaves.contains(mapModel.nameColumn)
+                    )
+                    .order(mapModel.positionColumn
+                )
+
         
         let theMaps = try dbConnection.prepare(findMapsQuery).map { resultRow in
             return SerializedMapModel(resultRow)
