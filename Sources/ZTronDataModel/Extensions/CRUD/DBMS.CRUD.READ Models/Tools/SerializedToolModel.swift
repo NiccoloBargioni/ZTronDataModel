@@ -3,7 +3,7 @@ import SQLite3
 import SQLite
 
 /// - `TOOL(name, position, assetsImageName, tab, map, game)`
-public final class SerializedToolModel: ObservableObject {
+public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
     private let name: String
     private let position: Int
     private let assetsImageName: String
