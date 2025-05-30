@@ -3,7 +3,7 @@ import SQLite3
 import SQLite
 
 /// - `TAB(name, position, iconName, map, game)`
-public final class SerializedTabModelWithTools: ObservableObject {
+public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableObject {
     private let name: String
     private let position: Int
     private let map: String
