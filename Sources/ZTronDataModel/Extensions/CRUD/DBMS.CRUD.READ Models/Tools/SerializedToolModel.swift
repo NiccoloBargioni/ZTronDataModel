@@ -63,7 +63,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         return self.position
     }
     
-    public func getAssetsImageName() -> String? {
+    public func getAssetsImageName() -> String {
         return self.assetsImageName
     }
     

@@ -28,7 +28,7 @@ public class DBMS {
 
     public static func make() throws {
         guard let dbConnection = try? self.openSQLite3DB(caller: #function) else {
-            fatalError("\(self.DB_NAME) doesn't exist and can't be created")
+            throw SQLQueryError.ioException(reason: "Could not open SQLite3 db connection")
         }
 
         do {
@@ -39,8 +39,7 @@ public class DBMS {
             }
         } catch {
             try self.performSQLStatement(for: dbConnection, query: "ROLLBACK TRANSACTION")
-
-            fatalError("Could not create DB schema")
+            throw SQLQueryError.tableCreationError(reason: "Could not create tables")
         }
         
         try self.performSQLStatement(for: dbConnection, query: "COMMIT TRANSACTION")
@@ -49,7 +48,7 @@ public class DBMS {
     #if DEBUG
     public static func mockInit(or: OnConflict = .abort) throws {
         guard let dbConnection = try? self.openSQLite3DB(caller: #function) else {
-            fatalError("Could not open a connection to database \(self.DB_NAME)")
+            throw SQLQueryError.ioException(reason: "Could not open SQLite3 db connection to \(Self.DB_NAME)")
         }
         
         defer {

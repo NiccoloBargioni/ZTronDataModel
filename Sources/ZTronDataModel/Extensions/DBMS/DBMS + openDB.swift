@@ -17,12 +17,15 @@ extension DBMS {
 
         let dbURL = documentsDirPath.appendingPathComponent(dbName).relativePath
         
-        print("dbConnection URL: \(dbURL) from \(caller)")
-        let dbConnection = try Connection(dbURL)
-        try dbConnection.run("PRAGMA recursive_triggers = 1")
-        try dbConnection.run("PRAGMA foreign_keys = 1")
-        
-        return dbConnection
+        do {
+            print("dbConnection URL: \(dbURL) from \(caller)")
+            let dbConnection = try Connection(dbURL)
+            try dbConnection.run("PRAGMA recursive_triggers = 1")
+            try dbConnection.run("PRAGMA foreign_keys = 1")
+            return dbConnection
+        } catch {
+            throw SQLQueryError.ioException(reason: "Could not open db at \(dbURL)")
+        }
     }
     
     internal static func openSQLite3DB(dbName: String, caller: String) throws -> OpaquePointer? {
@@ -49,7 +52,7 @@ extension DBMS {
             }
             return db
         } else {
-            fatalError("Unable to open SQLite3 db for \(dbURL)")
+            throw SQLQueryError.ioException(reason: "Unable to open SQLite3 db for \(dbURL)")
         }
     }
 }
