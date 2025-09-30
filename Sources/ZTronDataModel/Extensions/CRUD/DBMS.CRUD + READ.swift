@@ -121,7 +121,7 @@ extension DBMS.CRUD {
             return result[submapModel.slaveColumn]
         }
         
-        var findMapsQuery: Table =
+        let findMapsQuery: Table =
                 mapModel.table
                     .filter(
                         mapModel.foreignKeys.gameColumn == game &&

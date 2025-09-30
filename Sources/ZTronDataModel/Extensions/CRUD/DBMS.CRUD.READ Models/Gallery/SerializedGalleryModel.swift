@@ -12,6 +12,25 @@ public final class SerializedGalleryModel: ReadGalleryOptional {
     private let map: String
     private let game: String
     
+    #if DEBUG
+    public init(
+        name: String,
+        position: Int,
+        assetsImageName: String?,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) {
+        self.name = name
+        self.position = position
+        self.assetsImageName = assetsImageName
+        self.tool = tool
+        self.tab = tab
+        self.map = map
+        self.game = game
+    }
+    #else
     internal init(
         name: String,
         position: Int,
@@ -29,6 +48,10 @@ public final class SerializedGalleryModel: ReadGalleryOptional {
         self.map = map
         self.game = game
     }
+
+    #endif
+    
+    
     
     
     internal init(_ fromRow: Row, namespaceColumns: Bool = false) {
