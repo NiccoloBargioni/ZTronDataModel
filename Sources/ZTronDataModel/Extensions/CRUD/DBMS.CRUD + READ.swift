@@ -1334,11 +1334,11 @@ extension DBMS.CRUD {
             for (index, gallery) in galleries.enumerated() {
                 nestingLevels[index] = try DBMS.CRUD.readGalleryNestingDepth(
                     for: dbConnection,
+                    game: game,
+                    map: map,
+                    tab: tab,
+                    tool: tool,
                     gallery: gallery.getName(),
-                    tool: game,
-                    tab: map,
-                    map: tab,
-                    game: tool
                 ) ?? 0
             }
             
@@ -1405,13 +1405,13 @@ extension DBMS.CRUD {
         }
     }
     
-    public static func readGalleryNestingDepth(
+    private static func readGalleryNestingDepth(
         for dbConnection: Connection,
-        gallery: String,
-        tool: String,
-        tab: String,
-        map: String,
         game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String,
     ) throws -> Int? {
         let galleryTable = DBMS.gallery
         let slavesTable = DBMS.subgallery
@@ -1427,10 +1427,10 @@ extension DBMS.CRUD {
                 0 AS depth
             FROM \(galleryTable.tableName)
             WHERE \(galleryTable.tableName).\(galleryTable.nameColumn.template) = "\(gallery)"
-              AND \(galleryTable.foreignKeys.toolColumn.template) = "\(tool)"
-              AND \(galleryTable.foreignKeys.tabColumn.template) = "\(tab)"
-              AND \(galleryTable.foreignKeys.mapColumn.template) = "\(map)"
-              AND \(galleryTable.foreignKeys.gameColumn.template) = "\(game)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template) = "\(tool)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template) = "\(tab)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template) = "\(map)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template) = "\(game)"
 
             UNION ALL
 
@@ -1444,10 +1444,10 @@ extension DBMS.CRUD {
             FROM GALLERY_SLAVES
             JOIN \(slavesTable.tableName)
               ON \(slavesTable.tableName).\(slavesTable.slaveColumn.template) = GALLERY_SLAVES.\(galleryTable.nameColumn.template)
-             AND \(slavesTable.tableName).tool = GALLERY_SLAVES.\(galleryTable.foreignKeys.toolColumn.template)
-             AND \(slavesTable.tableName).tab = GALLERY_SLAVES.\(galleryTable.foreignKeys.tabColumn.template)
-             AND \(slavesTable.tableName).map = GALLERY_SLAVES.\(galleryTable.foreignKeys.mapColumn.template)
-             AND \(slavesTable.tableName).game = GALLERY_SLAVES.\(galleryTable.foreignKeys.gameColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template) = GALLERY_SLAVES.\(galleryTable.foreignKeys.toolColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template) = GALLERY_SLAVES.\(galleryTable.foreignKeys.tabColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template) = GALLERY_SLAVES.\(galleryTable.foreignKeys.mapColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template) = GALLERY_SLAVES.\(galleryTable.foreignKeys.gameColumn.template)
             JOIN \(galleryTable.tableName) GALLERY_MASTERS
               ON GALLERY_MASTERS.\(galleryTable.nameColumn.template) = \(slavesTable.tableName).\(slavesTable.masterColumn.template)
              AND GALLERY_MASTERS.\(galleryTable.foreignKeys.toolColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template)
