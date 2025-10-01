@@ -103,6 +103,54 @@ public extension DBMockup {
         public static let bonesSubgalleries: [SerializedGalleryModel] = [
             bonesFootGallery, bonesHandGallery, bonesLegGallery, bonesSkullGallery
         ]
+        
+        
+        // MARK: - METRICS
+        public final func getNumberOfImages(for gallery: String) -> Int {
+            switch gallery {
+                case "bo4.vod.side.quests.shield.upgrade.bones.skull",
+                    "bo4.vod.side.quests.shield.upgrade.bones.foot",
+                    "bo4.vod.side.quests.shield.upgrade.bones.leg",
+                    "bo4.vod.side.quests.shield.upgrade.bones.hand":
+                    return 2
+                    
+                case "bo4.vod.side.quests.shield.upgrade.pipes":
+                    return 5
+                    
+                case "bo4.vod.side.quests.shield.upgrade.pipes.pickup.locations":
+                    return 3
+                    
+                case "bo4.vod.side.quests.shield.upgrade.safes":
+                    return 4
+                    
+                default:
+                    return .zero
+            }
+        }
+        
+        
+        public final func getDepth(for gallery: String) -> Int {
+            switch gallery {
+                case "bo4.vod.side.quests.shield.upgrade.bones.skull",
+                    "bo4.vod.side.quests.shield.upgrade.bones.foot",
+                    "bo4.vod.side.quests.shield.upgrade.bones.leg",
+                    "bo4.vod.side.quests.shield.upgrade.bones.hand":
+                    return 1
+                                    
+                default:
+                    return .zero
+            }
+        }
+        
+        public final func getNumberOfSubgalleries(for gallery: String) -> Int {
+            switch gallery {
+                case "bo4.vod.side.quests.shield.upgrade.bones":
+                    return 4
+                                    
+                default:
+                    return .zero
+            }
+        }
     }
     
     
