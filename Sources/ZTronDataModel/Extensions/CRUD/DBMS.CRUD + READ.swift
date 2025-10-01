@@ -1081,6 +1081,9 @@ extension DBMS.CRUD {
     ///     the associated array never contains optionals, so it's safe to cast to `[SerializedGalleryModel]`
     ///     - **searchTokens**: If included, all the search tokens for the loaded galleries will be included here. If this option is specified, the `.searchToken` key for the result will have a non-nil value,
     ///     but such value might be an empty array if no search token was specified for any of the galleries.
+    ///     - **imagesCount:** The number of images directly associated with the specified gallery.
+    ///     - **master:** The id of the master of the specified image if exists, nil otherwise.
+    ///     - **subgalleriesCount:** The number slaves galleries for the specified gallery.
     ///
     ///
     /// The association between a gallery and its outline, bounding circle, label and so on, is by foreign key. In general, a gallery and a token that occupy the same index in the output arrays won't be associated
@@ -1102,7 +1105,6 @@ extension DBMS.CRUD {
             tab: tab,
             tool: tool
         )
-        
         
         galleriesWithOptions[.galleries] = galleries
         
@@ -1131,6 +1133,41 @@ extension DBMS.CRUD {
             galleriesWithOptions[.master] = .init(repeating: nil, count: galleries.count)
         }
 
+        if options.contains(.imagesCount) {
+            var imagesCounts: [Int] = .init(repeating: 0, count: galleries.count)
+            
+            for (index, gallery) in galleries.enumerated() {
+                imagesCounts[index] = try DBMS.CRUD.countImagesForGallery(
+                    includeVariants: false,
+                    for: dbConnection,
+                    game: game,
+                    map: map,
+                    tab: tab,
+                    tool: tool,
+                    gallery: gallery.getName()
+                )
+            }
+            
+            galleriesWithOptions[.imagesCount] = imagesCounts
+        }
+        
+        if options.contains(.subgalleriesCount) {
+            var subgalleriesCount: [Int] = .init(repeating: 0, count: galleries.count)
+            
+            for (index, gallery) in galleries.enumerated() {
+                subgalleriesCount[index] = try DBMS.CRUD.countSubgalleriesForGallery(
+                    for: dbConnection,
+                    master: gallery.getName(),
+                    game: game,
+                    map: map,
+                    tab: tab,
+                    tool: tool
+                )
+            }
+
+            galleriesWithOptions[.subgalleriesCount] = subgalleriesCount
+        }
+        
         return galleriesWithOptions
     }
     
@@ -1250,6 +1287,42 @@ extension DBMS.CRUD {
             galleriesWithOptions[.master] = .init(repeating: thisGallery.first, count: galleries.count)
         }
         
+        
+        if options.contains(.imagesCount) {
+            var imagesCounts: [Int] = .init(repeating: 0, count: galleries.count)
+            
+            for (index, gallery) in galleries.enumerated() {
+                imagesCounts[index] = try DBMS.CRUD.countImagesForGallery(
+                    includeVariants: false,
+                    for: dbConnection,
+                    game: game,
+                    map: map,
+                    tab: tab,
+                    tool: tool,
+                    gallery: gallery.getName()
+                )
+            }
+            
+            galleriesWithOptions[.imagesCount] = imagesCounts
+        }
+        
+        if options.contains(.subgalleriesCount) {
+            var subgalleriesCount: [Int] = .init(repeating: 0, count: galleries.count)
+            
+            for (index, gallery) in galleries.enumerated() {
+                subgalleriesCount[index] = try DBMS.CRUD.countSubgalleriesForGallery(
+                    for: dbConnection,
+                    master: gallery.getName(),
+                    game: game,
+                    map: map,
+                    tab: tab,
+                    tool: tool
+                )
+            }
+
+            galleriesWithOptions[.subgalleriesCount] = subgalleriesCount
+        }
+        
         return galleriesWithOptions
     }
     
@@ -1337,6 +1410,8 @@ public enum ReadGalleryOption: Sendable {
     case galleries
     case searchToken
     case master
+    case imagesCount
+    case subgalleriesCount
 }
 
 
@@ -1360,6 +1435,6 @@ extension Set where Element == ReadMapOptions {
 }
 
 
-extension Int: ReadGameOptional, ReadMapOptional {
+extension Int: ReadGameOptional, ReadMapOptional, ReadGalleryOptional {
     
 }

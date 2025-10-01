@@ -2,11 +2,14 @@ import XCTest
 @testable import ZTronDataModel
 
 final class ZTronDataModelTests: XCTestCase {
+    override public init() {
+        try? DBMS.make()
+        try? DBMS.mockInit(or: .ignore)
+        super.init()
+    }
+    
     func testTriggers() throws {
         let connection = try DBMS.openDB(caller: #function)
-        
-        try DBMS.make()
-        try DBMS.mockInit(or: .ignore)
         
         try DBMS.CRUD.insertIntoGallery(
             for: connection,

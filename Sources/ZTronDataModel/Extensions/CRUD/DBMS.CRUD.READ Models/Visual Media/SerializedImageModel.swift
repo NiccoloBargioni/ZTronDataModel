@@ -29,29 +29,7 @@ public final class SerializedImageModel: SerializedVisualMediaModel {
         self.game = (namespaceColumns) ? fromRow[image.table[image.foreignKeys.gameColumn]] : fromRow[image.foreignKeys.gameColumn]
     }
     
-    #if DEBUG
-    public init(
-        name: String,
-        description: String,
-        position: Int,
-        searchLabel: String?,
-        gallery: String,
-        tool: String,
-        tab: String,
-        map: String,
-        game: String
-    ) {
-        self.name = name
-        self.description = description
-        self.position = position
-        self.searchLabel = searchLabel
-        self.gallery = gallery
-        self.tool = tool
-        self.tab = tab
-        self.map = map
-        self.game = game
-    }
-    #else
+    
     internal init(
         name: String,
         description: String,
@@ -73,7 +51,6 @@ public final class SerializedImageModel: SerializedVisualMediaModel {
         self.map = map
         self.game = game
     }
-    #endif
     
     
     public func hash(into hasher: inout Hasher) {

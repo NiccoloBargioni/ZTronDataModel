@@ -139,6 +139,7 @@ extension DBMS.CRUD {
     }
     
     // MARK: GALLERIES' SLAVES
+    /// - Note: Only counts immediate slaves, not the length of the whole subtree rooted in `master`
     public static func countSubgalleriesForGallery (
         for dbConnection: Connection,
         master: String,
