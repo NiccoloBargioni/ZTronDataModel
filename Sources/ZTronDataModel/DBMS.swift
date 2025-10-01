@@ -118,6 +118,8 @@ public class DBMS {
         }
     }
     
+    
+    
     static func performCountStatement(for dbConnection: OpaquePointer, query: String) throws -> Int {
         var statement: OpaquePointer? = nil
 
