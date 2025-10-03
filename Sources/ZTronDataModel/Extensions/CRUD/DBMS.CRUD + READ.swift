@@ -1622,12 +1622,12 @@ extension DBMS.CRUD {
             SELECT child.\(galleryTable.nameColumn.template), child.\(galleryTable.foreignKeys.toolColumn.template), child.\(galleryTable.foreignKeys.tabColumn.template), child.\(galleryTable.foreignKeys.mapColumn.template), child.\(galleryTable.foreignKeys.gameColumn.template), gd.depth + 1
             FROM GalleryDepth gd
             JOIN \(slavesTable.tableName)
-              ON \(slavesTable.tableName).master = gd.\(galleryTable.nameColumn.template)
-             AND \(slavesTable.tableName).tool = gd.\(galleryTable.foreignKeys.toolColumn.template)
-             AND \(slavesTable.tableName).tab = gd.\(galleryTable.foreignKeys.tabColumn.template)
-             AND \(slavesTable.tableName).map = gd.\(galleryTable.foreignKeys.mapColumn.template)
-             AND \(slavesTable.tableName).game = gd.\(galleryTable.foreignKeys.gameColumn.template)
-            JOIN \(galleryTable.nameColumn) child
+              ON \(slavesTable.tableName).\(slavesTable.masterColumn.template) = gd.\(galleryTable.nameColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template) = gd.\(galleryTable.foreignKeys.toolColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template) = gd.\(galleryTable.foreignKeys.tabColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template) = gd.\(galleryTable.foreignKeys.mapColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template) = gd.\(galleryTable.foreignKeys.gameColumn.template)
+            JOIN \(galleryTable.tableName) child
               ON child.\(galleryTable.nameColumn.template) = \(slavesTable.tableName).\(slavesTable.slaveColumn.template)
              AND child.\(galleryTable.foreignKeys.toolColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template)
              AND child.\(galleryTable.foreignKeys.tabColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template)
