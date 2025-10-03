@@ -1085,7 +1085,7 @@ extension DBMS.CRUD {
     ///     - **master:** The id of the master of the specified image if exists, nil otherwise.
     ///     - **subgalleriesCount:** The number slaves galleries for the specified gallery.
     ///     - **nestedLevel:** The depth at which the specified gallery appears in the galleries graph.
-    ///
+    ///     - **maxDepth:** The maximum depth of a gallery for this tool. Returned as an array of a single element
     ///
     /// The association between a gallery and its outline, bounding circle, label and so on, is by foreign key. In general, a gallery and a token that occupy the same index in the output arrays won't be associated
     /// with one another.
@@ -1173,6 +1173,18 @@ extension DBMS.CRUD {
             galleriesWithOptions[.nestingLevel] = .init(repeating: 0, count: galleries.count)
         }
         
+        if options.contains(.maxDepth) {
+            let maxDepth = try Self.readMaxDepthOfGalleryForTool(
+                for: dbConnection,
+                game: game,
+                map: map,
+                tab: tab,
+                tool: tool,
+            )
+            
+            galleriesWithOptions[.maxDepth] = [maxDepth]
+        }
+        
         return galleriesWithOptions
     }
     
@@ -1248,7 +1260,6 @@ extension DBMS.CRUD {
             tool: tool,
             master: gallery
         )
-        
         
         galleriesWithOptions[.galleries] = galleries
         
@@ -1328,6 +1339,24 @@ extension DBMS.CRUD {
             galleriesWithOptions[.subgalleriesCount] = subgalleriesCount
         }
         
+        if options.contains(.maxDepth) {
+            var maxDepths: [Int?] = .init(repeating: 0, count: galleries.count)
+            
+            for (index, gallery) in galleries.enumerated() {
+                maxDepths[index] = try DBMS.CRUD.readMaxDepthOfSubgalleryRootedInGallery(
+                    for: dbConnection,
+                    master: gallery.getName(),
+                    game: game,
+                    map: map,
+                    tab: tab,
+                    tool: tool
+                )
+            }
+
+            
+            galleriesWithOptions[.subgalleriesCount] = maxDepths
+        }
+        
         if options.contains(.nestingLevel) {
             var nestingLevels: [Int] = .init(repeating: 0, count: galleries.count)
             
@@ -1405,7 +1434,7 @@ extension DBMS.CRUD {
         }
     }
     
-    private static func readGalleryNestingDepth(
+    public static func readGalleryNestingDepth(
         for dbConnection: Connection,
         game: String,
         map: String,
@@ -1470,8 +1499,160 @@ extension DBMS.CRUD {
         if sqlite3_prepare_v2(dbConnection.handle, query, -1, &statement, nil) == SQLITE_OK {
             var depths: [Int] = []
             while sqlite3_step(statement) == SQLITE_ROW {
-                let depth = sqlite3_column_int(statement, 0)
-                depths.append(Int(depth))
+                if sqlite3_column_type(statement, 0) == SQLITE_NULL {
+                    return nil
+                } else {
+                    let depth = sqlite3_column_int(statement, 0)
+                    depths.append(Int(depth))
+                }
+            }
+            
+            assert(depths.count == 1)
+            return depths.first
+        } else {
+            let errorMessage = String(cString: sqlite3_errmsg(dbConnection.handle))
+            throw SQLQueryError.genericError(reason: errorMessage)
+        }
+        
+    }
+    
+    
+    public static func readMaxDepthOfGalleryForTool(
+        for dbConnection: Connection,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String
+    ) throws -> Int? {
+        let galleryTable = DBMS.gallery
+        let slavesTable = DBMS.subgallery
+        
+        let maxDepthQuery: String = """
+        WITH RECURSIVE GalleryDepth(\(galleryTable.nameColumn.template), \(galleryTable.foreignKeys.toolColumn.template), \(galleryTable.foreignKeys.tabColumn.template), \(galleryTable.foreignKeys.mapColumn.template), \((galleryTable.foreignKeys.gameColumn.template)), depth) AS (
+            SELECT \(galleryTable.tableName).\(galleryTable.nameColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template),
+                   CASE
+                       WHEN (SELECT COUNT(*) 
+                             FROM \(galleryTable.tableName) g2
+                             WHERE g2.\(galleryTable.foreignKeys.toolColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template)
+                               AND g2.\(galleryTable.foreignKeys.tabColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template)
+                               AND g2.\(galleryTable.foreignKeys.mapColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template)
+                               AND g2.\(galleryTable.foreignKeys.gameColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template)
+                            ) = 1
+                       THEN 0
+                       ELSE 1
+                   END AS depth
+            FROM \(galleryTable.tableName)
+            WHERE \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template) = "\(tool)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template)  = "\(tab)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template)  = "\(map)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template)  = "\(game)"
+
+            UNION ALL
+
+            SELECT child.\(galleryTable.nameColumn.template), child.\(galleryTable.foreignKeys.toolColumn.template), child.\(galleryTable.foreignKeys.tabColumn.template), child.\(galleryTable.foreignKeys.mapColumn.template), child.\(galleryTable.foreignKeys.gameColumn.template), gd.depth + 1
+            FROM GalleryDepth gd
+            JOIN \(slavesTable.tableName)
+              ON \(slavesTable.tableName).\(slavesTable.masterColumn.template) = gd.\(galleryTable.nameColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template) = gd.\(galleryTable.foreignKeys.toolColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template) = gd.\(galleryTable.foreignKeys.tabColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template) = gd.\(galleryTable.foreignKeys.mapColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template) = gd.\(galleryTable.foreignKeys.gameColumn.template)
+            JOIN \(galleryTable.tableName) child
+              ON child.\(galleryTable.nameColumn.template) = \(slavesTable.tableName).\(slavesTable.slaveColumn.template)
+             AND child.\(galleryTable.foreignKeys.toolColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template)
+             AND child.\(galleryTable.foreignKeys.tabColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template)
+             AND child.\(galleryTable.foreignKeys.mapColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template)
+             AND child.\(galleryTable.foreignKeys.gameColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template)
+        )
+        SELECT MAX(depth) AS max_depth
+        FROM GalleryDepth;
+        """
+        
+        var statement: OpaquePointer?
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        if sqlite3_prepare_v2(dbConnection.handle, maxDepthQuery, -1, &statement, nil) == SQLITE_OK {
+            var depths: [Int] = []
+            while sqlite3_step(statement) == SQLITE_ROW {
+                if sqlite3_column_type(statement, 0) == SQLITE_NULL {
+                    return nil
+                } else {
+                    let depth = sqlite3_column_int(statement, 0)
+                    depths.append(Int(depth))
+                }
+            }
+            
+            assert(depths.count == 1)
+            return depths.first
+        } else {
+            let errorMessage = String(cString: sqlite3_errmsg(dbConnection.handle))
+            throw SQLQueryError.genericError(reason: errorMessage)
+        }
+        
+    }
+    
+    /// Returns the depth of a tree with root in the specified master gallery. It returns
+    public static func readMaxDepthOfSubgalleryRootedInGallery(
+        for dbConnection: Connection,
+        master: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+    ) throws -> Int? {
+        let galleryTable = DBMS.gallery
+        let slavesTable = DBMS.subgallery
+        
+        let maxDepthQuery: String = """
+        WITH RECURSIVE GalleryDepth(\(galleryTable.nameColumn), \(galleryTable.foreignKeys.toolColumn.template), \(galleryTable.foreignKeys.tabColumn.template), \(galleryTable.foreignKeys.mapColumn.template), \(galleryTable.foreignKeys.gameColumn.template), depth) AS (
+            SELECT \(galleryTable.tableName).\(galleryTable.nameColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template),
+                   0 AS depth
+            FROM GALLERY
+            WHERE \(galleryTable.tableName).\(galleryTable.nameColumn.template) = "\(master)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template) = "\(tool)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template) = "\(tab)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template) = "\(map)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template) =  "\(game)"
+
+            UNION ALL
+
+            SELECT child.\(galleryTable.nameColumn.template), child.\(galleryTable.foreignKeys.toolColumn.template), child.\(galleryTable.foreignKeys.tabColumn.template), child.\(galleryTable.foreignKeys.mapColumn.template), child.\(galleryTable.foreignKeys.gameColumn.template), gd.depth + 1
+            FROM GalleryDepth gd
+            JOIN \(slavesTable.tableName)
+              ON \(slavesTable.tableName).master = gd.\(galleryTable.nameColumn.template)
+             AND \(slavesTable.tableName).tool = gd.\(galleryTable.foreignKeys.toolColumn.template)
+             AND \(slavesTable.tableName).tab = gd.\(galleryTable.foreignKeys.tabColumn.template)
+             AND \(slavesTable.tableName).map = gd.\(galleryTable.foreignKeys.mapColumn.template)
+             AND \(slavesTable.tableName).game = gd.\(galleryTable.foreignKeys.gameColumn.template)
+            JOIN \(galleryTable.nameColumn) child
+              ON child.\(galleryTable.nameColumn.template) = \(slavesTable.tableName).\(slavesTable.slaveColumn.template)
+             AND child.\(galleryTable.foreignKeys.toolColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template)
+             AND child.\(galleryTable.foreignKeys.tabColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template)
+             AND child.\(galleryTable.foreignKeys.mapColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template)
+             AND child.\(galleryTable.foreignKeys.gameColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template)
+        )
+        SELECT MAX(depth) AS max_depth
+        FROM GalleryDepth;
+        """
+        
+        var statement: OpaquePointer?
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        if sqlite3_prepare_v2(dbConnection.handle, maxDepthQuery, -1, &statement, nil) == SQLITE_OK {
+            var depths: [Int] = []
+            while sqlite3_step(statement) == SQLITE_ROW {
+                if sqlite3_column_type(statement, 0) == SQLITE_NULL {
+                    return nil
+                } else {
+                    let depth = sqlite3_column_int(statement, 0)
+                    depths.append(Int(depth))
+                }
             }
             
             assert(depths.count == 1)
@@ -1483,6 +1664,8 @@ extension DBMS.CRUD {
         
     }
 }
+
+
 
 
 public enum ReadGamesOption: Sendable {
@@ -1514,6 +1697,7 @@ public enum ReadGalleryOption: Sendable {
     case imagesCount
     case subgalleriesCount
     case nestingLevel
+    case maxDepth
 }
 
 
