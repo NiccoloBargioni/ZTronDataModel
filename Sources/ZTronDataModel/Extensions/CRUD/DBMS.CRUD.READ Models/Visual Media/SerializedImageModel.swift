@@ -120,4 +120,80 @@ public final class SerializedImageModel: SerializedVisualMediaModel {
         )
         """
     }
+    
+    public final func getMutableCopy() -> SerializedImageModel.WritableDraft {
+        return Self.WritableDraft(fromParent: self)
+    }
+    
+    public final class WritableDraft: SerializedVisualMediaModelWritableDraft {
+        public typealias M = SerializedImageModel
+        
+        private var name: String
+        private var description: String
+        private var position: Int
+        private var searchLabel: String?
+        weak private var owner: SerializedImageModel?
+
+        private init(
+            name: String,
+            description: String,
+            position: Int,
+            searchLabel: String? = nil,
+            owner: SerializedImageModel
+        ) {
+            self.name = name
+            self.description = description
+            self.position = position
+            self.searchLabel = searchLabel
+            self.owner = owner
+        }
+        
+        fileprivate convenience init(fromParent: SerializedImageModel) {
+            self.init(
+                name: fromParent.name,
+                description: fromParent.description,
+                position: fromParent.position,
+                searchLabel: fromParent.searchLabel,
+                owner: fromParent
+            )
+        }
+        
+        public final func withName(_ name: String) -> WritableDraft {
+            self.name = name.lowercased()
+            return self
+        }
+        
+        public final func withDescription(_ description: String) -> WritableDraft {
+            self.description = description.lowercased()
+            return self
+        }
+        
+        public final func withPosition(_ position: Int) -> WritableDraft {
+            self.position = position
+            return self
+        }
+        
+        public final func withSearchLabel(_ searchLabel: String?) -> WritableDraft {
+            self.searchLabel = searchLabel?.lowercased()
+            return self
+        }
+        
+        public final func getImmutableCopy() -> SerializedImageModel {
+            guard let owner = self.owner else {
+                fatalError("Unexpectedly released reference to parent before returning immutable copy")
+            }
+            
+            return SerializedImageModel(
+                name: self.name,
+                description: self.description,
+                position: self.position,
+                searchLabel: self.searchLabel,
+                gallery: owner.gallery,
+                tool: owner.tool,
+                tab: owner.tab,
+                map: owner.map,
+                game: owner.game
+            )
+        }
+    }
 }

@@ -930,6 +930,7 @@ extension DBMS.CRUD {
         return labels
     }
     
+    
     private static func readVariantsMetadataForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedImageVariantsMetadataSet?] {
         let variant = DBMS.imageVariant
         
@@ -1036,6 +1037,37 @@ extension DBMS.CRUD {
         imagesWithOptionals[.medias] = medias
         
         return imagesWithOptionals
+    }
+    
+    
+    public static func readImagePosition(
+        for dbConnection: Connection,
+        image: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String
+    ) throws -> Int? {
+        let visualMediaTable = DBMS.visualMedia
+        
+        let findImageQuery = visualMediaTable.table.filter(
+            visualMediaTable.nameColumn == image.lowercased() &&
+            visualMediaTable.foreignKeys.gameColumn == game.lowercased() &&
+            visualMediaTable.foreignKeys.mapColumn == map.lowercased() &&
+            visualMediaTable.foreignKeys.tabColumn == tab.lowercased() &&
+            visualMediaTable.foreignKeys.toolColumn == tool.lowercased() &&
+            visualMediaTable.foreignKeys.galleryColumn == gallery.lowercased()
+        )
+        
+        
+        let positions = try dbConnection.prepare(findImageQuery).map { result in
+            return result[visualMediaTable.positionColumn]
+        }
+        
+        assert(positions.count <= 1)
+        
+        return positions.first
     }
     
     
