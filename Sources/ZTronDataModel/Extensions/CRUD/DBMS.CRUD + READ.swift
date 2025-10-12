@@ -1039,6 +1039,121 @@ extension DBMS.CRUD {
         return imagesWithOptionals
     }
     
+    /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+    /// - `PK(name, gallery, tool, tab, map, game)`
+    /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    internal static func readImageMaster(
+        for dbConnection: Connection,
+        slave: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String
+    ) throws -> (any SerializedVisualMediaModel)? {
+        let slavesTable = DBMS.imageVariant
+        let imagesTable = DBMS.visualMedia
+        
+        let findMasterQuery = imagesTable.table
+            .select(
+                imagesTable.nameColumn,
+                imagesTable.descriptionColumn,
+                imagesTable.positionColumn,
+                imagesTable.searchLabelColumn,
+                imagesTable.typeColumn,
+                imagesTable.extensionColumn,
+                imagesTable.foreignKeys.gameColumn,
+                imagesTable.foreignKeys.mapColumn,
+                imagesTable.foreignKeys.tabColumn,
+                imagesTable.foreignKeys.toolColumn,
+                imagesTable.foreignKeys.galleryColumn,
+            )
+            .join(
+                slavesTable.table,
+                on: slavesTable.slaveColumn == slave &&
+                slavesTable.masterColumn == imagesTable.nameColumn &&
+                slavesTable.foreignKeys.gameColumn == imagesTable.foreignKeys.gameColumn &&
+                slavesTable.foreignKeys.mapColumn == imagesTable.foreignKeys.mapColumn &&
+                slavesTable.foreignKeys.tabColumn == imagesTable.foreignKeys.tabColumn &&
+                slavesTable.foreignKeys.toolColumn == imagesTable.foreignKeys.toolColumn &&
+                slavesTable.foreignKeys.galleryColumn == imagesTable.foreignKeys.galleryColumn
+        )
+        
+        let masters: [any SerializedVisualMediaModel] = try dbConnection.prepare(findMasterQuery).map { result in
+            switch result[imagesTable.typeColumn] {
+            case "image":
+                return SerializedImageModel(result)
+                
+            case "video":
+                return SerializedVideoModel(result)
+                
+            default:
+                fatalError("Unable to make READ model for media of type \(result[imagesTable.typeColumn])")
+            }
+        }
+
+        assert(masters.count <= 0)
+        return masters.first
+    }
+    
+    /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+    /// - `PK(name, gallery, tool, tab, map, game)`
+    /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    internal static func readAllVariants(
+        for dbConnection: Connection,
+        master: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String
+    ) throws -> [any SerializedVisualMediaModel] {
+        let slavesTable = DBMS.imageVariant
+        let imagesTable = DBMS.visualMedia
+        
+        let findSlavesQuery = imagesTable.table
+            .select(
+                imagesTable.nameColumn,
+                imagesTable.descriptionColumn,
+                imagesTable.positionColumn,
+                imagesTable.searchLabelColumn,
+                imagesTable.typeColumn,
+                imagesTable.extensionColumn,
+                imagesTable.foreignKeys.gameColumn,
+                imagesTable.foreignKeys.mapColumn,
+                imagesTable.foreignKeys.tabColumn,
+                imagesTable.foreignKeys.toolColumn,
+                imagesTable.foreignKeys.galleryColumn,
+            )
+            .join(
+                slavesTable.table,
+                on: slavesTable.masterColumn == master &&
+                slavesTable.masterColumn == imagesTable.nameColumn &&
+                slavesTable.foreignKeys.gameColumn == imagesTable.foreignKeys.gameColumn &&
+                slavesTable.foreignKeys.mapColumn == imagesTable.foreignKeys.mapColumn &&
+                slavesTable.foreignKeys.tabColumn == imagesTable.foreignKeys.tabColumn &&
+                slavesTable.foreignKeys.toolColumn == imagesTable.foreignKeys.toolColumn &&
+                slavesTable.foreignKeys.galleryColumn == imagesTable.foreignKeys.galleryColumn
+            )
+            .order(imagesTable.positionColumn)
+        
+        
+        let variants: [any SerializedVisualMediaModel] = try dbConnection.prepare(findSlavesQuery).map { result in
+            switch result[imagesTable.typeColumn] {
+                case "image":
+                    return SerializedImageModel(result)
+                    
+                case "video":
+                    return SerializedVideoModel(result)
+                    
+                default:
+                    fatalError("Unable to create serialized READ model from type \(result[imagesTable.typeColumn])")
+                }
+        }
+        
+        return variants
+    }
+    
     
     public static func readImagePosition(
         for dbConnection: Connection,
@@ -1693,8 +1808,8 @@ extension DBMS.CRUD {
             let errorMessage = String(cString: sqlite3_errmsg(dbConnection.handle))
             throw SQLQueryError.genericError(reason: errorMessage)
         }
-        
     }
+    
 }
 
 

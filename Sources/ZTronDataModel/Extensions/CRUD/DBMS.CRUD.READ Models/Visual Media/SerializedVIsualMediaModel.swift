@@ -17,6 +17,12 @@ public protocol SerializedVisualMediaModel: ReadImageOptional {
     func getMutableCopy() -> WD
 }
 
+public extension SerializedVisualMediaModel {
+    func erasedToAnySerializedVisualMediaModel() -> AnySerializedVisualMediaModel {
+        return AnySerializedVisualMediaModel(self)
+    }
+}
+
 
 public protocol SerializedVisualMediaModelWritableDraft {
     associatedtype M: SerializedVisualMediaModel

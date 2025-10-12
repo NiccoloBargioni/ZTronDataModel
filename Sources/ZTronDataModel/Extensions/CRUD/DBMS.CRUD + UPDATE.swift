@@ -808,5 +808,51 @@ public extension DBMS.CRUD {
         )
     }
     
+    /// For all the first-level variants of `image` whose position isß in [`threshold + 1`..< `gallery.firstLevelImages.count`], this method decreases their position by one.
+    ///
+    /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+    /// - `PK(name, gallery, tool, tab, map, game)`
+    /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    internal static func decrementPositionsForVariantsOfMedia(
+        for dbConnection: Connection,
+        parent: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        threshold: Int = 0
+    ) throws -> Void {
+        let media = DBMS.visualMedia
+        let imageVariant = DBMS.imageVariant
+        
+        let findSlavesQuery = imageVariant.table
+            .select(imageVariant.slaveColumn)
+            .filter(
+                imageVariant.masterColumn == parent &&
+                imageVariant.foreignKeys.gameColumn == game &&
+                imageVariant.foreignKeys.mapColumn == map &&
+                imageVariant.foreignKeys.tabColumn == tab &&
+                imageVariant.foreignKeys.toolColumn == tool &&
+                imageVariant.foreignKeys.galleryColumn == gallery
+            )
+        
+        let slaves = try dbConnection.prepare(findSlavesQuery).map { result in
+            return result[imageVariant.slaveColumn]
+        }
+        
+        try dbConnection.run(
+            media.table.filter(
+                slaves.contains(media.nameColumn) &&
+                media.foreignKeys.gameColumn == gallery &&
+                media.foreignKeys.toolColumn == tool &&
+                media.foreignKeys.tabColumn == tab &&
+                media.foreignKeys.mapColumn == map &&
+                media.foreignKeys.gameColumn == game &&
+                media.positionColumn > threshold)
+            .update(media.positionColumn <- media.positionColumn - 1)
+        )
+    }
+    
     
 }
