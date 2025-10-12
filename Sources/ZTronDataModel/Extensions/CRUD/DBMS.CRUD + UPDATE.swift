@@ -1133,4 +1133,145 @@ public extension DBMS.CRUD {
             }
         }
     }
+    
+    // MARK: - TOOLS
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateToolName(
+        for dbConnection: Connection,
+        newToolName: String,
+        tool: String,
+        game: String,
+        map: String,
+        tab: String
+    ) throws -> Void {
+        let toolTable = DBMS.tool
+        
+        let updateToolQuery = toolTable.table.filter(
+            toolTable.nameColumn == tool &&
+            toolTable.foreignKeys.gameColumn == game &&
+            toolTable.foreignKeys.mapColumn == map &&
+            toolTable.foreignKeys.tabColumn == tab
+        ).update(toolTable.nameColumn <- newToolName.lowercased())
+                
+        try dbConnection.run(updateToolQuery)
+    }
+    
+    
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateToolPosition(
+        for dbConnection: Connection,
+        position: Int,
+        tool: String,
+        game: String,
+        map: String,
+        tab: String
+    ) throws -> Void {
+        let toolTable = DBMS.tool
+        
+        let updateToolQuery = toolTable.table.filter(
+            toolTable.nameColumn == tool &&
+            toolTable.foreignKeys.gameColumn == game &&
+            toolTable.foreignKeys.mapColumn == map &&
+            toolTable.foreignKeys.tabColumn == tab
+        ).update(toolTable.positionColumn <- position)
+                
+        try dbConnection.run(updateToolQuery)
+    }
+    
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateToolAssetsImageName(
+        for dbConnection: Connection,
+        newAssetsImageName: String,
+        tool: String,
+        game: String,
+        map: String,
+        tab: String
+    ) throws -> Void {
+        let toolTable = DBMS.tool
+        
+        let updateToolQuery = toolTable.table.filter(
+            toolTable.nameColumn == tool &&
+            toolTable.foreignKeys.gameColumn == game &&
+            toolTable.foreignKeys.mapColumn == map &&
+            toolTable.foreignKeys.tabColumn == tab
+        ).update(toolTable.assetsImageNameColumn <- newAssetsImageName)
+                
+        try dbConnection.run(updateToolQuery)
+    }
+    
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal func  batchUpdatePositionsForTools(
+        for dbConnection: Connection,
+        tab: String,
+        map: String,
+        game: String,
+        produce: @escaping (inout [SerializedToolModel.WritableDraft]) -> Void
+    ) throws -> Void {
+        var toolsDrafts = try Self.readToolsForTab(for: dbConnection, game: game, map: map, tab: tab).map { tool in
+            return tool.getMutableCopy()
+        }
+        
+        if toolsDrafts.count > 0 {
+            produce(&toolsDrafts)
+            
+            let updatedModels = toolsDrafts.map { draftModel in
+                return draftModel.getImmutableCopy()
+            }
+            
+            let positions = updatedModels.map { updatedModel in
+                return updatedModel.getPosition()
+            }.countingSorted()
+            
+            assert(positions.count == toolsDrafts.count)
+            assert(positions[0] == 0)
+            assert(positions[positions.count - 1] == positions.count - 1)
+            
+            try updatedModels.forEach { updatedToolModel in
+                try Self.updateToolPosition(
+                    for: dbConnection,
+                    position: updatedToolModel.getPosition(),
+                    tool: updatedToolModel.getName(),
+                    game: game,
+                    map: map,
+                    tab: tab
+                )
+            }
+        }
+    }
+    
+    /// For all the tools in the specified tab whose position is [`threshold + 1`..< `tab.tools.count`], this method decreases their position by one.
+    ///
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func decrementPositionForToolsOfTab(
+        for dbConnection: Connection,
+        tab: String,
+        map: String,
+        game: String,
+        threshold: Int = 0
+    ) throws -> Void {
+        let tools = DBMS.tool
+        
+        try dbConnection.run(
+            tools.table.filter(
+                tools.foreignKeys.tabColumn == tab &&
+                tools.foreignKeys.mapColumn == map &&
+                tools.foreignKeys.gameColumn == game &&
+                tools.positionColumn > threshold)
+            .update(tools.positionColumn <- tools.positionColumn - 1)
+        )
+    }
 }

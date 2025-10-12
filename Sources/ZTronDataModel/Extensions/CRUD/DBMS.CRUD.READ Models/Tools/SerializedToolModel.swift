@@ -101,14 +101,28 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
     public final class WritableDraft {
         weak private var owner: SerializedToolModel?
         private var position: Int
+        private var name: String
+        private var assetsImageName: String
         
         internal init(from: SerializedToolModel) {
             self.owner = from
             self.position = from.getPosition()
+            self.name = from.getName()
+            self.assetsImageName = from.getAssetsImageName()
         }
         
         public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
             self.position = newPosition
+            return self
+        }
+        
+        public final func withName(_ newName: String) -> Self {
+            self.name = newName.lowercased()
+            return self
+        }
+        
+        public final func withAssetsImageName(_ newAssetsImageName: String) -> Self {
+            self.assetsImageName = newAssetsImageName
             return self
         }
         

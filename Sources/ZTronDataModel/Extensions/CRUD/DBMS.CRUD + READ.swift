@@ -1991,6 +1991,36 @@ extension DBMS.CRUD {
         assert(masters.count <= 0)
         return masters.first
     }
+    
+    // MARK: - TOOLS
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func readToolPosition(
+        for dbConnection: Connection,
+        tool: String,
+        game: String,
+        map: String,
+        tab: String,
+    ) throws -> Int? {
+        let toolTable = DBMS.tool
+        
+        let findToolQuery = toolTable.table.filter(
+            toolTable.nameColumn == tool.lowercased() &&
+            toolTable.foreignKeys.gameColumn == game.lowercased() &&
+            toolTable.foreignKeys.mapColumn == map.lowercased() &&
+            toolTable.foreignKeys.tabColumn == tab.lowercased()
+        )
+        
+        
+        let positions = try dbConnection.prepare(findToolQuery).map { result in
+            return result[toolTable.positionColumn]
+        }
+        
+        assert(positions.count <= 1)
+        
+        return positions.first
+    }
 }
 
 

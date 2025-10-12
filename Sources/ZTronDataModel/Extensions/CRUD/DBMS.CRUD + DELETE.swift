@@ -531,7 +531,6 @@ public extension DBMS.CRUD {
     
     
     
-    
     /// Deletes the specified gallery from the subtree rooted in its master, along with all the subtree rooted in it. If `shouldDecreasePositions` is set to `true`, all the peer galleries whose position is greater than that of the deleted gallery
     ///
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
@@ -575,5 +574,90 @@ public extension DBMS.CRUD {
             fatalError("Attempted to read first level of subgalleries for \(master) in \(tool) but failed")
         }
     }
+    
+    // MARK: - TOOL
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func deleteTool(
+        for dbConnection: Connection,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        let toolTable = DBMS.tool
+        
+        func delete() throws {
+            let findToolQuery = toolTable.table.filter(
+                toolTable.nameColumn == tool.lowercased() &&
+                toolTable.foreignKeys.tabColumn == tab.lowercased() &&
+                toolTable.foreignKeys.mapColumn == map.lowercased() &&
+                toolTable.foreignKeys.gameColumn == game.lowercased()
+            )
+
+            try dbConnection.run(findToolQuery.delete())
+        }
+        
+        if shouldDecreasePositions {
+            guard let position = try Self.readToolPosition(
+                for: dbConnection,
+                tool: tool,
+                game: game,
+                map: map,
+                tab: tab
+            ) else {
+                fatalError("Attempted to delete a tool but could not find its position.")
+            }
+            
+            try Self.decrementPositionForToolsOfTab(
+                for: dbConnection,
+                tab: tab,
+                map: map,
+                game: game,
+                threshold: position
+            )
+            
+            try delete()
+        } else {
+            try delete()
+        }
+        
+    }
+    
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func batchDeleteToolsForTab(
+        for dbConnection: Connection,
+        tab: String,
+        map: String,
+        game: String,
+        shouldRemove: (SerializedToolModel) -> Bool,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        let toolsForThisTab = try Self.readToolsForTab(
+            for: dbConnection,
+            game: game,
+            map: map,
+            tab: tab
+        )
+        
+        try toolsForThisTab.forEach { toolModel in
+            if shouldRemove(toolModel) {
+                try Self.deleteTool(
+                    for: dbConnection,
+                    tool: toolModel.getName(),
+                    tab: tab,
+                    map: map,
+                    game: game,
+                    shouldDecreasePositions: shouldDecreasePositions
+                )
+            }
+        }
+    }
+    
 }
 #endif
