@@ -21,7 +21,57 @@ public extension DBMS.CRUD {
         )
     }
     
+    // MARK: - OUTLINE
+    static func deleteOutlineForImage(
+        for dbConnection: Connection,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+    ) throws -> Void {
+        let outlineTable = DBMS.outline
+        
+        try dbConnection.run(
+            outlineTable.table.filter(
+                outlineTable.foreignKeys.imageColumn == image.lowercased() &&
+                outlineTable.foreignKeys.gameColumn == game.lowercased() &&
+                outlineTable.foreignKeys.mapColumn == map.lowercased() &&
+                outlineTable.foreignKeys.tabColumn == tab.lowercased() &&
+                outlineTable.foreignKeys.toolColumn == tool.lowercased() &&
+                outlineTable.foreignKeys.galleryColumn == gallery.lowercased()
+            ).delete()
+        )
+    }
     
+    
+    // MARK: - BOUNDING CIRCLE
+    static func deleteBoundingCircleForImage(
+        for dbConnection: Connection,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+    ) throws -> Void {
+        let boundingCircleTable = DBMS.boundingCircle
+        
+        try dbConnection.run(
+            boundingCircleTable.table.filter(
+                boundingCircleTable.foreignKeys.imageColumn == image.lowercased() &&
+                boundingCircleTable.foreignKeys.gameColumn == game.lowercased() &&
+                boundingCircleTable.foreignKeys.mapColumn == map.lowercased() &&
+                boundingCircleTable.foreignKeys.tabColumn == tab.lowercased() &&
+                boundingCircleTable.foreignKeys.toolColumn == tool.lowercased() &&
+                boundingCircleTable.foreignKeys.galleryColumn == gallery.lowercased()
+            ).delete()
+        )
+    }
+    
+    
+    // MARK: - IMAGE
     /// Use this method only if you know what you're doing. This deletes the specified image from the first-level images of the specified gallery.
     ///
     /// - Parameter shouldDecreasePositions: If set to `true`, the positions of the images after the specified one are decreased by one, otherwise they're left untouched.
@@ -179,7 +229,7 @@ public extension DBMS.CRUD {
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false,
-        shouldRemove: @escaping (AnySerializedVisualMediaModel) -> Bool,
+        shouldRemove: @escaping (any SerializedVisualMediaModel) -> Bool,
     ) throws -> Void {
         if let firstLevelImages = try Self.readFirstLevelMasterImagesForGallery(
             for: dbConnection,
@@ -191,7 +241,7 @@ public extension DBMS.CRUD {
             options: [.medias]
         )[.medias] as? [any SerializedVisualMediaModel] {
             try firstLevelImages.forEach { firstLevelMedia in
-                if shouldRemove(firstLevelMedia.erasedToAnySerializedVisualMediaModel()) {
+                if shouldRemove(firstLevelMedia) {
                     try Self.deleteFirstLevelImageForGallery(
                         for: dbConnection,
                         image: firstLevelMedia.getName(),
@@ -224,7 +274,7 @@ public extension DBMS.CRUD {
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false,
-        shouldRemove: @escaping (AnySerializedVisualMediaModel) -> Bool,
+        shouldRemove: @escaping (any SerializedVisualMediaModel) -> Bool,
     ) throws -> Void {
         let slaveImages = try Self.readAllVariants(
             for: dbConnection,
@@ -237,7 +287,7 @@ public extension DBMS.CRUD {
         )
             
         try slaveImages.forEach { slaveMedia in
-            if shouldRemove(slaveMedia.erasedToAnySerializedVisualMediaModel()) {
+            if shouldRemove(slaveMedia) {
                 try Self.deleteFirstLevelImageForGallery(
                     for: dbConnection,
                     image: slaveMedia.getName(),
@@ -253,5 +303,277 @@ public extension DBMS.CRUD {
     }
     
     
+    // MARK: - GALLERIES
+    
+    private static func deleteGallery(
+        for dbConnection: Connection,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+    ) throws -> Void {
+        let galleryTable = DBMS.gallery
+        
+        let findGalleryQuery = galleryTable.table.filter(
+            galleryTable.nameColumn == gallery.lowercased() &&
+            galleryTable.foreignKeys.toolColumn == tool.lowercased() &&
+            galleryTable.foreignKeys.tabColumn == tab.lowercased() &&
+            galleryTable.foreignKeys.mapColumn == map.lowercased() &&
+            galleryTable.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        try dbConnection.run(findGalleryQuery.delete())
+    }
+
+    
+    /// Deletes the specified gallery from the tool, along with all the subtree rooted in it. If `shouldDecreasePositions` is set to `true`, all the peer galleries whose position is greater than that of the deleted gallery
+    ///
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func deleteFirstLevelGalleryForTool(
+        for dbConnection: Connection,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        guard !(try Self.galleryMasterExists(
+            for: dbConnection,
+            gallery: gallery,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool
+        )) else {
+            try Self.deleteSubgalleryFromTool(
+                for: dbConnection,
+                gallery: gallery,
+                tool: tool,
+                tab: tab,
+                map: map,
+                game: game
+            )
+            return
+        }
+        let subtreeOfGallery = try Self.readSubgalleryTree(
+            for: dbConnection,
+            master: gallery.lowercased(),
+            game: game.lowercased(),
+            map: map.lowercased(),
+            tab: tab.lowercased(),
+            tool: tool.lowercased()
+        )
+        
+        if shouldDecreasePositions {
+            if let posOfGalleryToDelete = try Self.readGalleryPosition(
+                for: dbConnection,
+                gallery: gallery,
+                game: game,
+                map: map,
+                tab: tab,
+                tool: tool
+            ) {
+                try Self.decrementPositionsForFirstLevelGalleriesInTool(
+                    for: dbConnection,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game,
+                    threshold: posOfGalleryToDelete
+                )
+            } else {
+                Self.logger.warning("Attempted to delete gallery named \(gallery) but no such gallery was found. Aborting")
+            }
+        }
+        
+        try subtreeOfGallery.forEach { galleryToDelete in
+            try deleteGallery(
+                for: dbConnection,
+                gallery: gallery,
+                tool: tool,
+                tab: tab,
+                map: map,
+                game: game
+            )
+        }
+    }
+    
+    /// Deletes the specified gallery from the subtree rooted in its master, along with all the subtree rooted in it. If `shouldDecreasePositions` is set to `true`, all the peer galleries whose position is greater than that of the deleted gallery
+    ///
+    /// - Parameter master: If the master is known you can provide it to save time complexity otherwise it is fetched from db.
+    ///
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func deleteSubgalleryFromTool(
+        for dbConnection: Connection,
+        master: String? = nil,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        
+        
+        let fetchedMasterModel: SerializedGalleryModel? = (master == nil) ? try Self.readMasterForGallery(
+            for: dbConnection,
+            gallery: gallery,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool
+        ) : nil
+        
+        if master == nil && fetchedMasterModel == nil {
+            try Self.deleteFirstLevelGalleryForTool(
+                for: dbConnection,
+                gallery: gallery,
+                tool: tool,
+                tab: tab,
+                map: map,
+                game: game,
+                shouldDecreasePositions: shouldDecreasePositions
+            )
+        } else {
+            
+            let subtreeOfGallery = try Self.readSubgalleryTree(
+                for: dbConnection,
+                master: gallery.lowercased(),
+                game: game.lowercased(),
+                map: map.lowercased(),
+                tab: tab.lowercased(),
+                tool: tool.lowercased()
+            )
+            
+            if shouldDecreasePositions {
+                if let posOfGalleryToDelete = try Self.readGalleryPosition(
+                    for: dbConnection,
+                    gallery: gallery,
+                    game: game,
+                    map: map,
+                    tab: tab,
+                    tool: tool
+                ) {
+                    try Self.decrementPositionsForImmediateSubgalleriesOfMaster(
+                        for: dbConnection,
+                        parent: master ?? fetchedMasterModel!.getName(),
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game,
+                        threshold: posOfGalleryToDelete
+                    )
+                } else {
+                    Self.logger.warning("Attempted to delete gallery named \(gallery) but no such gallery was found. Aborting")
+                }
+            }
+            
+            try subtreeOfGallery.forEach { galleryToDelete in
+                try deleteGallery(
+                    for: dbConnection,
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+        }
+    }
+    
+    
+    /// Deletes the specified gallery from the subtree rooted in its master, along with all the subtree rooted in it. If `shouldDecreasePositions` is set to `true`, all the peer galleries whose position is greater than that of the deleted gallery
+    ///
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func batchDeleteFirstLevelGalleryForTool(
+        for dbConnection: Connection,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        shouldRemove: (SerializedGalleryModel) -> Bool,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        
+        if let firstLevelOfGalleries = try Self.readFirstLevelOfGalleriesForTool(
+            for: dbConnection,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool,
+            options: [.galleries]
+        )[.galleries] as? [SerializedGalleryModel] {
+            try firstLevelOfGalleries.forEach { gallery in
+                if shouldRemove(gallery) {
+                    try Self.deleteFirstLevelGalleryForTool(
+                        for: dbConnection,
+                        gallery: gallery.getName(),
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game,
+                        shouldDecreasePositions: shouldDecreasePositions
+                    )
+                }
+            }
+        } else {
+            fatalError("Attempted to read first level of galleries for \(tool) but failed")
+        }
+    }
+    
+    
+    
+    
+    /// Deletes the specified gallery from the subtree rooted in its master, along with all the subtree rooted in it. If `shouldDecreasePositions` is set to `true`, all the peer galleries whose position is greater than that of the deleted gallery
+    ///
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func batchDeleteSubgalleriesOfMasterForTool(
+        for dbConnection: Connection,
+        master: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        shouldRemove: (SerializedGalleryModel) -> Bool,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        if let immediateSubgalleriesOfMaster = try Self.readFirstLevelOfSubgalleriesForGallery(
+            for: dbConnection,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool,
+            gallery: master,
+            options: [.galleries]
+        )[.galleries] as? [SerializedGalleryModel] {
+            
+            try immediateSubgalleriesOfMaster.forEach { gallery in
+                if shouldRemove(gallery) {
+                    try Self.deleteSubgalleryFromTool(
+                        for: dbConnection,
+                        master: master,
+                        gallery: gallery.getName(),
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game,
+                        shouldDecreasePositions: shouldDecreasePositions
+                    )
+                }
+            }
+        } else {
+            fatalError("Attempted to read first level of subgalleries for \(master) in \(tool) but failed")
+        }
+    }
 }
 #endif

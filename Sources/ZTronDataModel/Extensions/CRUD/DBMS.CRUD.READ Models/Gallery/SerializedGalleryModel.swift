@@ -80,4 +80,53 @@ public final class SerializedGalleryModel: ReadGalleryOptional {
     public func getGame() -> String {
         return self.game
     }
+    
+    public func getMutableCopy() -> SerializedGalleryModel.WritableDraft {
+        return .init(self)
+    }
+    
+    public final class WritableDraft {
+        private var name: String
+        private var position: Int
+        private var assetsImageName: String?
+        weak private var owner: SerializedGalleryModel?
+        
+        fileprivate init(_ parent: SerializedGalleryModel) {
+            self.name = parent.name
+            self.position = parent.position
+            self.assetsImageName = parent.assetsImageName
+            self.owner = parent
+        }
+        
+        public final func withName(_ name: String) -> Self {
+            self.name = name.lowercased()
+            return self
+        }
+        
+        public final func withPosition(_ position: Int) -> Self {
+            self.position = position
+            return self
+        }
+        
+        public final func withAssetsImageName(_ assetsImageName: String?) -> Self {
+            self.assetsImageName = assetsImageName
+            return self
+        }
+        
+        public final func getImmutableCopy() -> SerializedGalleryModel {
+            guard let owner = self.owner else {
+                fatalError("Attempted to create an immutable copy after parent was already released.")
+            }
+            
+            return SerializedGalleryModel(
+                name: self.name,
+                position: self.position,
+                assetsImageName: self.assetsImageName,
+                tool: owner.tool,
+                tab: owner.tab,
+                map: owner.map,
+                game: owner.game
+            )
+        }
+    }
 }

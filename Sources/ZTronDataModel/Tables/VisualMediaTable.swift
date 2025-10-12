@@ -5,7 +5,7 @@ import SQLite3
 
 /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
 /// - `PK(name, gallery, tool, tab, map, game)`
-/// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+/// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
 ///
 /// Situations may arise where images with the same apparent identity show up. By design choice, in those cases the repeating images actually have
 /// each their own identity, to facilitate disposing the subhierarchies and customizing them independently. For example:

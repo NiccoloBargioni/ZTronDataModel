@@ -798,7 +798,7 @@ public extension DBMS.CRUD {
         try dbConnection.run(
             media.table.filter(
                 !slaves.contains(media.nameColumn) &&
-                media.foreignKeys.gameColumn == gallery &&
+                media.foreignKeys.galleryColumn == gallery &&
                 media.foreignKeys.toolColumn == tool &&
                 media.foreignKeys.tabColumn == tab &&
                 media.foreignKeys.mapColumn == map &&
@@ -844,7 +844,7 @@ public extension DBMS.CRUD {
         try dbConnection.run(
             media.table.filter(
                 slaves.contains(media.nameColumn) &&
-                media.foreignKeys.gameColumn == gallery &&
+                media.foreignKeys.galleryColumn == gallery &&
                 media.foreignKeys.toolColumn == tool &&
                 media.foreignKeys.tabColumn == tab &&
                 media.foreignKeys.mapColumn == map &&
@@ -854,5 +854,283 @@ public extension DBMS.CRUD {
         )
     }
     
+    // MARK: - GALLERIES
+    /// For all the first-level galleries whose position is in [`threshold + 1`..< `firstLevelGalleries.count`], this method decreases their position by one.
+    ///
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func decrementPositionsForFirstLevelGalleriesInTool(
+        for dbConnection: Connection,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        threshold: Int = 0
+    ) throws -> Void {
+        let gallery = DBMS.gallery
+        let slaves = DBMS.subgallery
+        
+        let findSlavesQuery = slaves.table
+            .select(slaves.slaveColumn)
+            .filter(
+                slaves.foreignKeys.gameColumn == game &&
+                slaves.foreignKeys.mapColumn == map &&
+                slaves.foreignKeys.tabColumn == tab &&
+                slaves.foreignKeys.toolColumn == tool
+            )
+        
+        
+        let slavesQuery = try dbConnection.prepare(findSlavesQuery).map { result in
+            return result[slaves.slaveColumn]
+        }
+        
+        try dbConnection.run(
+            gallery.table.filter(
+                !slavesQuery.contains(gallery.nameColumn) &&
+                gallery.foreignKeys.toolColumn == tool &&
+                gallery.foreignKeys.tabColumn == tab &&
+                gallery.foreignKeys.mapColumn == map &&
+                gallery.foreignKeys.gameColumn == game &&
+                gallery.positionColumn > threshold)
+            .update(gallery.positionColumn <- gallery.positionColumn - 1)
+        )
+    }
     
+    
+    /// For all the first-level slaves of `master` gallery whose position is in [`threshold + 1`..< `gallery.firstLevelImages.count`], this method decreases their position by one.
+    ///
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func decrementPositionsForImmediateSubgalleriesOfMaster(
+        for dbConnection: Connection,
+        parent: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        threshold: Int = 0
+    ) throws -> Void {
+        let gallery = DBMS.gallery
+        let subgallery = DBMS.subgallery
+        
+        let findSlavesQuery = subgallery.table
+            .select(subgallery.slaveColumn)
+            .filter(
+                subgallery.masterColumn == parent &&
+                subgallery.foreignKeys.gameColumn == game &&
+                subgallery.foreignKeys.mapColumn == map &&
+                subgallery.foreignKeys.tabColumn == tab &&
+                subgallery.foreignKeys.toolColumn == tool
+            )
+        
+        let slaves = try dbConnection.prepare(findSlavesQuery).map { result in
+            return result[subgallery.slaveColumn]
+        }
+        
+        try dbConnection.run(
+            gallery.table.filter(
+                slaves.contains(gallery.nameColumn) &&
+                gallery.foreignKeys.toolColumn == tool &&
+                gallery.foreignKeys.tabColumn == tab &&
+                gallery.foreignKeys.mapColumn == map &&
+                gallery.foreignKeys.gameColumn == game &&
+                gallery.positionColumn > threshold)
+            .update(gallery.positionColumn <- gallery.positionColumn - 1)
+        )
+    }
+    
+    
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateGalleryName(
+        for dbConnection: Connection,
+        newGalleryName: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Void {
+        let galleryTable = DBMS.gallery
+        
+        let findGalleryQuery = galleryTable.table.filter(
+                galleryTable.nameColumn == gallery &&
+                galleryTable.foreignKeys.gameColumn == game &&
+                galleryTable.foreignKeys.mapColumn == map &&
+                galleryTable.foreignKeys.tabColumn == tab &&
+                galleryTable.foreignKeys.toolColumn == tool
+            ).update(galleryTable.nameColumn <- newGalleryName.lowercased())
+                
+        try dbConnection.run(findGalleryQuery)
+    }
+    
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func updateGalleryPosition(
+        for dbConnection: Connection,
+        position: Int,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Void {
+        let galleryTable = DBMS.gallery
+        
+        let findGalleryQuery = galleryTable.table.filter(
+                galleryTable.nameColumn == gallery &&
+                galleryTable.foreignKeys.gameColumn == game &&
+                galleryTable.foreignKeys.mapColumn == map &&
+                galleryTable.foreignKeys.tabColumn == tab &&
+                galleryTable.foreignKeys.toolColumn == tool
+            ).update(galleryTable.positionColumn <- position)
+                
+        try dbConnection.run(findGalleryQuery)
+    }
+    
+    
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal func updateAssetsImageName(
+        for dbConnection: Connection,
+        assetsImageName: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Void {
+        let galleryTable = DBMS.gallery
+        
+        let updateGalleryQuery = galleryTable.table.filter(
+                galleryTable.nameColumn == gallery &&
+                galleryTable.foreignKeys.gameColumn == game &&
+                galleryTable.foreignKeys.mapColumn == map &&
+                galleryTable.foreignKeys.tabColumn == tab &&
+                galleryTable.foreignKeys.toolColumn == tool
+            ).update(galleryTable.assetsImageNameColumn <- assetsImageName)
+                
+        try dbConnection.run(updateGalleryQuery)
+    }
+    
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal func batchUpdateFirstLevelGalleryPositions(
+        for dbConnection: Connection,
+        assetsImageName: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        produce: @escaping (inout [SerializedGalleryModel.WritableDraft]) -> Void
+    ) throws -> Void {
+        guard let galleries = try Self.readFirstLevelOfGalleriesForTool(
+            for: dbConnection,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool,
+            options: [.galleries]
+        )[.galleries] as? [SerializedGalleryModel] else {
+            fatalError("Attempted to read the first level of master galleries in \(tool) but failed.")
+        }
+        
+        if galleries.count > 0 {
+            
+            var drafts = galleries.map { galleryModel in
+                return galleryModel.getMutableCopy()
+            }
+            
+            produce(&drafts)
+            
+            let updatedModels = drafts.map { draftModel in
+                return draftModel.getImmutableCopy()
+            }
+            
+            let positions = updatedModels.map { updatedModel in
+                return updatedModel.getPosition()
+            }.countingSorted()
+            
+            assert(positions.count == galleries.count)
+            assert(positions[0] == 0)
+            assert(positions[positions.count - 1] == positions.count - 1)
+            
+            try updatedModels.forEach { updatedGalleryModel in
+                try Self.updateGalleryPosition(
+                    for: dbConnection,
+                    position: updatedGalleryModel.getPosition(),
+                    gallery: updatedGalleryModel.getName(),
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+        }
+    }
+    
+    
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal func batchUpdatePositionsForImmediateSubgalleriesOfMaster(
+        for dbConnection: Connection,
+        assetsImageName: String,
+        master: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        produce: @escaping (inout [SerializedGalleryModel.WritableDraft]) -> Void
+    ) throws -> Void {
+        guard let galleries = try Self.readFirstLevelOfSubgalleriesForGallery(
+            for: dbConnection,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool,
+            gallery: master,
+            options: [.galleries]
+        )[.galleries] as? [SerializedGalleryModel] else {
+            fatalError("Attempted to read the first level of master galleries in \(tool) but failed.")
+        }
+        
+        if galleries.count > 0 {
+            var drafts = galleries.map { galleryModel in
+                return galleryModel.getMutableCopy()
+            }
+            
+            produce(&drafts)
+            
+            let updatedModels = drafts.map { draftModel in
+                return draftModel.getImmutableCopy()
+            }
+            
+            let positions = updatedModels.map { updatedModel in
+                return updatedModel.getPosition()
+            }.countingSorted()
+            
+            assert(positions.count == galleries.count)
+            assert(positions[0] == 0)
+            assert(positions[positions.count - 1] == positions.count - 1)
+            
+            try updatedModels.forEach { updatedGalleryModel in
+                try Self.updateGalleryPosition(
+                    for: dbConnection,
+                    position: updatedGalleryModel.getPosition(),
+                    gallery: updatedGalleryModel.getName(),
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+        }
+    }
 }

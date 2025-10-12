@@ -28,6 +28,30 @@ extension DBMS.CRUD {
         return try dbConnection.scalar(countGalleryQuery) == 1
     }
 
+    
+    internal static func galleryMasterExists(
+        for dbConnection: Connection,
+        gallery: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String
+    ) throws -> Bool {
+        let subgallery = DBMS.subgallery
+        
+        let countMastersQuery = subgallery.table.where(
+            subgallery.slaveColumn == gallery &&
+            subgallery.foreignKeys.gameColumn == game &&
+            subgallery.foreignKeys.mapColumn == map &&
+            subgallery.foreignKeys.tabColumn == tab &&
+            subgallery.foreignKeys.toolColumn == tool
+        ).count
+        
+        return try dbConnection.scalar(countMastersQuery) >= 1
+
+    }
+    
+    
     /// - `HAS_SUBGALLERY(master, slave, tool, tab, map, game)`
     /// - `PK(slave, tool, tab, map, game)`
     /// - `FK(slave, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
