@@ -133,4 +133,148 @@ public final class SerializedOutlineModel: ReadImageOptional {
     public func getGame() -> String {
         return self.game
     }
+    
+    public final func getMutableCopy() -> SerializedOutlineModel.WritableDraft {
+        return .init(from: self)
+    }
+    
+    public final class WritableDraft {
+        private var resourceName: String
+        private var colorHex: String
+        private var _isActive: Bool
+        private var opacity: Double
+        private var boundingBox: CGRect
+        weak private var owner: SerializedOutlineModel?
+        
+        private var didResourceNameUpdate: Bool = false
+        private var didColorHexUpdate: Bool = false
+        private var didIsActiveUpdate: Bool = false
+        private var didOpacityUpdate: Bool = false
+        private var didBoundingBoxUpdate: Bool = false
+
+
+        
+        fileprivate init(from: SerializedOutlineModel) {
+            self.colorHex = from.colorHex
+            self._isActive = from._isActive
+            self.opacity = from.opacity
+            self.boundingBox = from.boundingBox
+            self.resourceName = from.resourceName
+            self.owner = from
+        }
+        
+        public final func withResourceName(_ resourceName: String) -> Self {
+            if self.resourceName != resourceName {
+                self.resourceName = resourceName.lowercased()
+                self.didResourceNameUpdate = true
+            }
+            
+            return self
+        }
+        
+        internal final func didResourceNameChange() -> Bool {
+            return self.didResourceNameUpdate
+        }
+        
+        public final func getResourceName() -> String {
+            return self.resourceName
+        }
+        
+        public final func withColorHex(_ colorHex: String) -> Self {
+            if self.colorHex != colorHex {
+                assert(isValidHexColor(colorHex))
+                self.colorHex = colorHex
+                self.didColorHexUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didColorHexChange() -> Bool {
+            return self.didColorHexUpdate
+        }
+        
+        public final func getColorHex() -> String {
+            return self.colorHex
+        }
+
+        public final func withIsActive(_ isActive: Bool) -> Self {
+            if self._isActive != isActive {
+                self._isActive = isActive
+                self.didIsActiveUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didIsActiveChange() -> Bool {
+            return self.didIsActiveUpdate
+        }
+        
+        public final func isActive() -> Bool {
+            return self._isActive
+        }
+
+        
+        public final func withOpacity(_ opacity: Double) -> Self {
+            if self.opacity != opacity {
+                assert(opacity >= 0 && opacity <= 1)
+                self.opacity = opacity
+                self.didOpacityUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didOpacityChange() -> Bool {
+            return self.didOpacityUpdate
+        }
+        
+        public final func getOpacity() -> Double {
+            return self.opacity
+        }
+
+        
+        public final func withBoundingBox(_ boundingBox: CGRect) -> Self {
+            if boundingBox.origin.x != self.boundingBox.origin.x ||
+                boundingBox.origin.y != self.boundingBox.origin.y ||
+                boundingBox.size.width != self.boundingBox.size.width ||
+                boundingBox.size.height != self.boundingBox.size.height {
+                
+                self.boundingBox = boundingBox
+                self.didBoundingBoxUpdate = true
+            }
+            
+            return self
+        }
+        
+        internal final func didBoundingBoxChange() -> Bool {
+            return self.didBoundingBoxUpdate
+        }
+        
+        public final func getBoundingBox() -> CGRect {
+            return self.boundingBox
+        }
+
+        
+        public final func getImmutableCopy() -> SerializedOutlineModel {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before committing draft.")
+            }
+            
+            return .init(
+                resourceName: self.resourceName,
+                colorHex: self.colorHex,
+                isActive: self._isActive,
+                opacity: self.opacity,
+                boundingBoxOriginXColumn: self.boundingBox.origin.x,
+                boundingBoxOriginYColumn: self.boundingBox.origin.y,
+                boundingBoxWidthColumn: self.boundingBox.size.width,
+                boundingBoxHeightColumn: self.boundingBox.size.height,
+                image: owner.image,
+                gallery: owner.game,
+                tool: owner.tool,
+                tab: owner.tab,
+                map: owner.map,
+                game: owner.game
+            )
+        }
+    }
 }

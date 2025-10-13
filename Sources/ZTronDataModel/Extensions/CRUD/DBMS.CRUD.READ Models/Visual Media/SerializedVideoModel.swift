@@ -146,6 +146,13 @@ public final class SerializedVideoModel: SerializedVisualMediaModel {
         private var searchLabel: String?
         weak private var owner: SerializedVideoModel?
 
+        
+        private(set) fileprivate var didNameChange: Bool = false
+        private(set) fileprivate var didDescriptionChange: Bool = false
+        private(set) fileprivate var didPositionChange: Bool = false
+        private(set) fileprivate var didSearchLabelChange: Bool = false
+
+        
         private init(
             name: String,
             description: String,
@@ -171,23 +178,72 @@ public final class SerializedVideoModel: SerializedVisualMediaModel {
         }
         
         public final func withName(_ name: String) -> WritableDraft {
-            self.name = name.lowercased()
+            if self.name != name {
+                self.name = name.lowercased()
+                self.didNameChange = true
+            }
             return self
+        }
+        
+        internal final func didNameUpdate() -> Bool {
+            return self.didNameChange
+        }
+        
+        public final func getName() -> String {
+            return self.name
+        }
+        
+        public final func getPreviousName() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getName()
         }
         
         public final func withDescription(_ description: String) -> WritableDraft {
-            self.description = description.lowercased()
+            if self.description != description {
+                self.description = description.lowercased()
+                self.didDescriptionChange = true
+            }
             return self
+        }
+        
+        internal final func didDescriptionUpdate() -> Bool {
+            return self.didDescriptionChange
+        }
+        
+        public final func getDescription() -> String {
+            return self.description
         }
         
         public final func withPosition(_ position: Int) -> WritableDraft {
-            self.position = position
+            if self.position != position {
+                self.position = position
+                self.didPositionChange = true
+            }
             return self
         }
         
+        internal final func didPositionUpdate() -> Bool {
+            return self.didPositionChange
+        }
+        
+        public final func getPosition() -> Int {
+            return self.position
+        }
+        
         public final func withSearchLabel(_ searchLabel: String?) -> WritableDraft {
-            self.searchLabel = searchLabel?.lowercased()
+            if self.searchLabel != searchLabel {
+                self.searchLabel = searchLabel?.lowercased()
+                self.didSearchLabelChange = true
+            }
             return self
+        }
+        
+        internal final func didSearchLabelUpdate() -> Bool {
+            return self.didSearchLabelChange
+        }
+        
+        public final func getSearchLabel() -> String? {
+            return self.searchLabel
         }
         
         public final func getImmutableCopy() -> SerializedVideoModel {
@@ -209,4 +265,10 @@ public final class SerializedVideoModel: SerializedVisualMediaModel {
             )
         }
     }
+    
+    
+}
+
+extension SerializedVideoModel.WritableDraft: SerializedVisualMediaModelWritableDraftUpdateBearer {
+    
 }

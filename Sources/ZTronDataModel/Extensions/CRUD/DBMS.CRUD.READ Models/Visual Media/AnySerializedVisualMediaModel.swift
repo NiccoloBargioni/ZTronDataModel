@@ -93,6 +93,7 @@ public final class AnySerializedVisualMediaModel: SerializedVisualMediaModel {
     }
  
     public final class AnyWritableDraft: SerializedVisualMediaModelWritableDraft {
+        
         public func getImmutableCopy() -> AnySerializedVisualMediaModel {
             guard let owner = self.owner else {
                 fatalError("Attempted to get immutable copy in \(String(describing: Self.self)) but owner referenced was released before immutable copy could be created.")
@@ -141,6 +142,12 @@ public final class AnySerializedVisualMediaModel: SerializedVisualMediaModel {
             return self
         }
         
+        public func getPreviousName() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getName()
+        }
+
+        
         public func withDescription(_ description: String) -> Self {
             self.description = description.lowercased()
             return self
@@ -156,7 +163,21 @@ public final class AnySerializedVisualMediaModel: SerializedVisualMediaModel {
             return self
         }
         
+        public func getName() -> String {
+            return self.name
+        }
         
+        public func getDescription() -> String {
+            return self.description
+        }
+        
+        public func getPosition() -> Int {
+            return self.position
+        }
+        
+        public func getSearchLabel() -> String? {
+            return self.searchLabel
+        }
     }
 }
 

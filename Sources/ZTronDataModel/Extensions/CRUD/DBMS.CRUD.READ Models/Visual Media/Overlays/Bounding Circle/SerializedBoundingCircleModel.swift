@@ -128,4 +128,173 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
     public func getGame() -> String {
         return self.game
     }
+    
+    public final func getMutableCopy() -> SerializedBoundingCircleModel.WritableDraft {
+        return .init(from: self)
+    }
+    
+    public final class WritableDraft {
+        private var colorHex: String
+        private var _isActive: Bool
+        private var opacity: Double
+        private var idleDiameter: Double?
+        private var normalizedCenter: CGPoint?
+        weak private var owner: SerializedBoundingCircleModel?
+        
+        private var didColorHexUpdate: Bool = false
+        private var didIsActiveUpdate: Bool = false
+        private var didOpacityUpdate: Bool = false
+        private var didIdleDiameterUpdate: Bool = false
+        private var didNormalizedCenterUpdate: Bool = false
+
+        
+        fileprivate init(from: SerializedBoundingCircleModel) {
+            self.colorHex = from.colorHex
+            self._isActive = from._isActive
+            self.opacity = from.opacity
+            self.idleDiameter = from.idleDiameter
+            self.normalizedCenter = from.normalizedCenter
+            self.owner = from
+        }
+        
+        public final func withColorHex(_ colorHex: String) -> Self {
+            if self.colorHex != colorHex {
+                assert(isValidHexColor(colorHex))
+                self.colorHex = colorHex
+                self.didColorHexUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didColorHexChange() -> Bool {
+            return self.didColorHexUpdate
+        }
+        
+        public final func getColorHex() -> String {
+            return self.colorHex
+        }
+
+        public final func withIsActive(_ isActive: Bool) -> Self {
+            if self._isActive != isActive {
+                self._isActive = isActive
+                self.didIsActiveUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didIsActiveChange() -> Bool {
+            return self.didIsActiveUpdate
+        }
+        
+        public final func isActive() -> Bool {
+            return self._isActive
+        }
+
+        
+        public final func withOpacity(_ opacity: Double) -> Self {
+            if self.opacity != opacity {
+                assert(opacity >= 0 && opacity <= 1)
+                self.opacity = opacity
+                self.didOpacityUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didOpacityChange() -> Bool {
+            return self.didOpacityUpdate
+        }
+        
+        public final func getOpacity() -> Double {
+            return self.opacity
+        }
+
+        
+        public final func withIdleDiameter(_ diameter: Double) -> Self {
+            if self.idleDiameter != idleDiameter {
+                assert(diameter >= 0 && diameter <= 1)
+                self.idleDiameter = diameter
+                self.didIdleDiameterUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didIdleDiameterChange() -> Bool {
+            return self.didIdleDiameterUpdate
+        }
+        
+        public final func getIdleDiameter() -> Double? {
+            return self.idleDiameter
+        }
+
+        
+        
+        public final func withNormalizedCenter(_ center: CGPoint?) -> Self {
+            if self.normalizedCenter?.x != center?.x || self.normalizedCenter?.y != center?.y {
+                assert(center?.x ?? 0 >= 0 && center?.x ?? 0 <= 1)
+                assert(center?.y ?? 0 >= 0 && center?.y ?? 0 <= 1)
+                
+                self.normalizedCenter = center
+                
+                self.didNormalizedCenterUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didNormalizedCenterChange() -> Bool {
+            return self.didNormalizedCenterUpdate
+        }
+        
+        public final func getNormalizedCenter() -> CGPoint? {
+            return self.normalizedCenter
+        }
+
+        public final func getImmutableCopy() -> SerializedBoundingCircleModel {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before committing draft.")
+            }
+            
+            return .init(
+                colorHex: self.colorHex,
+                isActive: self._isActive,
+                opacity: self.opacity,
+                idleDiameter: self.idleDiameter,
+                normalizedCenterX: self.normalizedCenter?.x,
+                normalizedCenterY: self.normalizedCenter?.y,
+                image: owner.image,
+                gallery: owner.game,
+                tool: owner.tool,
+                tab: owner.tab,
+                map: owner.map,
+                game: owner.game
+            )
+        }
+    }
+}
+
+
+
+
+
+/// Validates an String as an hex color.
+///
+/// A string is considered to be a valid color hex if it meets all the following conditions:
+/// - It starts with `#`
+/// - The `#` is followed by either 3 or 6 characters
+/// - All of the latter are valid hex digits.
+///
+/// - Returns: `true` if `hex` is a valid color hex string representation, `false` otherwise
+/// - Parameter hex: The string to validate
+/// - Complexity: O(hex.count) if `hex` is a valid
+internal func isValidHexColor(_ hex: String) -> Bool {
+    if hex.first != "#" {
+        return false
+    } else {
+        if hex.count != 4 && hex.count != 7 {
+            return false
+        } else {
+            var expectedFirstHexDigitIndex = hex.startIndex
+            _ = hex.formIndex(&expectedFirstHexDigitIndex, offsetBy: 1, limitedBy: hex.endIndex)
+            return hex.suffix(from: expectedFirstHexDigitIndex).allSatisfy(\.isHexDigit)
+        }
+    }
 }

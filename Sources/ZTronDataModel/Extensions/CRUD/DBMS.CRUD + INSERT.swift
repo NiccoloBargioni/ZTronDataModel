@@ -29,6 +29,7 @@ extension DBMS {
             position: Int,
             assetsImageName: String
         ) throws {
+            assert(position >= 0)
             let studio = DBMS.studio
             
             try dbConnection.run(
@@ -55,6 +56,7 @@ extension DBMS {
             assetsImageName: String,
             studio: String
         ) throws {
+            assert(position >= 0)
             let game = DBMS.game
             
             try dbConnection.run(
@@ -82,6 +84,7 @@ extension DBMS {
             assetsImageName: String,
             game: String
         ) throws {
+            assert(position >= 0)
             let map = DBMS.map
             
             try dbConnection.run(
@@ -110,6 +113,7 @@ extension DBMS {
             game: String,
             map: String
         ) throws {
+            assert(position >= 0)
             let tab = DBMS.tab
             
             try dbConnection.run(
@@ -140,8 +144,9 @@ extension DBMS {
             map: String,
             tab: String
         ) throws {
+            assert(position >= 0)
             let tool = DBMS.tool
-            
+
             try dbConnection.run(
                 tool.table.insert(
                     or: or,
@@ -172,6 +177,7 @@ extension DBMS {
             tab: String,
             tool: String
         ) throws {
+            assert(position >= 0)
             let gallery = DBMS.gallery
             
             try dbConnection.run(
@@ -297,6 +303,7 @@ extension DBMS {
             tool: String,
             gallery: String
         ) throws {
+            assert(position >= 0)
             let image = DBMS.visualMedia
             
             try dbConnection.run(
@@ -333,6 +340,7 @@ extension DBMS {
             tool: String,
             gallery: String
         ) throws {
+            assert(position >= 0)
             let media = DBMS.visualMedia
             
             try dbConnection.run(

@@ -105,6 +105,11 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         private var assetsImageName: String
         private var tab: String
         
+        private var didPositionUpdate: Bool = false
+        private var didNameUpdate: Bool = false
+        private var didAssetsImageNameUpdate: Bool = false
+        private var didTabUpdate: Bool = false
+        
         internal init(from: SerializedToolModel) {
             self.owner = from
             self.position = from.getPosition()
@@ -114,23 +119,56 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         }
         
         public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
-            self.position = newPosition
+            if self.position != newPosition {
+                self.position = newPosition
+                self.didPositionUpdate = true
+            }
             return self
+        }
+        
+        internal final func didPositionChange() -> Bool {
+            return self.didPositionUpdate
         }
         
         public final func withName(_ newName: String) -> Self {
-            self.name = newName.lowercased()
+            if self.name != newName {
+                self.name = newName.lowercased()
+                self.didNameUpdate = true
+            }
             return self
+        }
+        
+        internal final func didNameChange() -> Bool {
+            return self.didNameUpdate
         }
         
         public final func withAssetsImageName(_ newAssetsImageName: String) -> Self {
-            self.assetsImageName = newAssetsImageName
+            if self.assetsImageName != newAssetsImageName {
+                self.assetsImageName = newAssetsImageName
+                self.didAssetsImageNameUpdate = true
+            }
             return self
         }
         
+        internal final func didAssetsImageNameChange() -> Bool {
+            return self.didAssetsImageNameUpdate
+        }
+        
         public final func withTab(_ newTab: String) -> Self {
-            self.tab = newTab.lowercased()
+            if self.tab != newTab {
+                self.tab = newTab.lowercased()
+                self.didTabUpdate = true
+            }
             return self
+        }
+        
+        internal final func didTabChange() -> Bool {
+            return self.didTabUpdate
+        }
+        
+        internal final func getPreviousTab() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getTab()
         }
         
         public final func getTab() -> String {
@@ -141,12 +179,25 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
             return self.position
         }
         
+        public final func getName() -> String {
+            return self.name
+        }
+        
+        public final func getPreviousName() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getName()
+        }
+        
+        public final func getAssetsImageName() -> String {
+            return self.assetsImageName
+        }
+        
         public final func getImmutableCopy() -> SerializedToolModel {
             guard let owner = self.owner else { fatalError("Failed to retain reference to mutable parent of type \(String(describing: SerializedToolModel.self))") }
             return SerializedToolModel(
-                name: owner.name,
-                position: owner.position,
-                assetsImageName: owner.assetsImageName,
+                name: self.name,
+                position: self.position,
+                assetsImageName: self.assetsImageName,
                 tab: self.tab,
                 map: owner.map,
                 game: owner.game

@@ -89,6 +89,11 @@ public final class SerializedGalleryModel: ReadGalleryOptional {
         private var name: String
         private var position: Int
         private var assetsImageName: String?
+        
+        private var didNameChange: Bool = false
+        private var didPositionChange: Bool = false
+        private var didAssetsImageNameChange: Bool = false
+        
         weak private var owner: SerializedGalleryModel?
         
         fileprivate init(_ parent: SerializedGalleryModel) {
@@ -99,18 +104,56 @@ public final class SerializedGalleryModel: ReadGalleryOptional {
         }
         
         public final func withName(_ name: String) -> Self {
-            self.name = name.lowercased()
+            if self.name != name {
+                self.name = name.lowercased()
+                self.didNameChange = true
+            }
             return self
+        }
+        
+        internal final func didNameUpdate() -> Bool {
+            return self.didNameChange
+        }
+        
+        public final func getName() -> String {
+            return self.name
+        }
+        
+        public final func getPreviousName() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getName()
         }
         
         public final func withPosition(_ position: Int) -> Self {
-            self.position = position
+            if self.position != position {
+                self.position = position
+                self.didPositionChange = true
+            }
             return self
         }
         
+        internal final func didPositionUpdate() -> Bool {
+            return self.didPositionChange
+        }
+        
+        public final func getPosition() -> Int {
+            return self.position
+        }
+        
         public final func withAssetsImageName(_ assetsImageName: String?) -> Self {
-            self.assetsImageName = assetsImageName
+            if self.assetsImageName != assetsImageName {
+                self.assetsImageName = assetsImageName
+                self.didAssetsImageNameChange = true
+            }
             return self
+        }
+        
+        public final func didAssetsImageNameUpdate() -> Bool {
+            return self.didAssetsImageNameChange
+        }
+        
+        public final func getAssetsImageName() -> String? {
+            return self.assetsImageName
         }
         
         public final func getImmutableCopy() -> SerializedGalleryModel {

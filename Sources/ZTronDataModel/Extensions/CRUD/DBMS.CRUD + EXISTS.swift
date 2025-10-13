@@ -291,7 +291,7 @@ extension DBMS.CRUD {
     /// - `TOOL(name, position, assetsImageName, tab, map, game)`
     /// - `PK(name, tab, map, game)`
     /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func toolExistsInDifferentTab(
+    public static func toolExistsInDifferentTab(
         for dbConnection: Connection,
         tool: String,
         tab: String,

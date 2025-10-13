@@ -698,7 +698,7 @@ extension DBMS.CRUD {
         return outlines
     }
 
-    private static func readBoundingCirclesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedBoundingCircleModel?] {
+    internal static func readBoundingCirclesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedBoundingCircleModel?] {
         let boundingCircle = DBMS.boundingCircle
         
         var boundingCircles: [SerializedBoundingCircleModel?] = []
@@ -771,7 +771,7 @@ extension DBMS.CRUD {
     }
     
     
-    private static func readVariantsMetadataForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedImageVariantsMetadataSet?] {
+    internal static func readVariantsMetadataForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedImageVariantsMetadataSet?] {
         let variant = DBMS.imageVariant
         
         var variants: [SerializedImageVariantsMetadataSet?] = []
@@ -936,6 +936,8 @@ extension DBMS.CRUD {
         return masters.first
     }
     
+    /// Reads the first level of slave visual medias for the specified master
+    ///
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`

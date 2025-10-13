@@ -32,4 +32,17 @@ public protocol SerializedVisualMediaModelWritableDraft {
     func withPosition(_: Int) -> Self
     func withSearchLabel(_: String?) -> Self
     func getImmutableCopy() -> M
+    
+    func getName() -> String
+    func getPreviousName() -> String
+    func getDescription() -> String
+    func getPosition() -> Int
+    func getSearchLabel() -> String?
+}
+
+internal protocol SerializedVisualMediaModelWritableDraftUpdateBearer {    
+    func didNameUpdate() -> Bool
+    func didDescriptionUpdate() -> Bool
+    func didPositionUpdate() -> Bool
+    func didSearchLabelUpdate() -> Bool
 }

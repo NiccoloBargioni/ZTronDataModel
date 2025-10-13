@@ -140,4 +140,204 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
         return self.game
     }
     
+    public final func getMutableCopy() -> SerializedImageVariantMetadataModel.WritableDraft {
+        return .init(self)
+    }
+    
+    public final class WritableDraft {
+        private var bottomBarIcon: String
+        private var goBackBottomBarIcon: String?
+        private var boundingFrameOriginX: Double?
+        private var boundingFrameOriginY: Double?
+        private var boundingFrameWidth: Double?
+        private var boundingFrameHeight: Double?
+        weak private var owner: SerializedImageVariantMetadataModel?
+        
+        private var didBottomBarIconChange: Bool = false
+        private var didGoBackBottomBarIconChange: Bool = false
+        private var didBoundingFrameOriginXChange: Bool = false
+        private var didBoundingFrameOriginYChange: Bool = false
+        private var didBoundingFrameWidthChange: Bool = false
+        private var didBoundingFrameHeightChange: Bool = false
+        
+        fileprivate init(_ owner: SerializedImageVariantMetadataModel) {
+            self.bottomBarIcon = owner.bottomBarIcon
+            self.goBackBottomBarIcon = owner.goBackBottomBarIcon
+            self.boundingFrameOriginX = owner.boundingFrame?.origin.x
+            self.boundingFrameOriginY = owner.boundingFrame?.origin.y
+            self.boundingFrameWidth = owner.boundingFrame?.size.width
+            self.boundingFrameHeight = owner.boundingFrame?.size.height
+        }
+
+        public final func withBottomBarIcon(_ newBottomBarIcon: String) -> Self {
+            self.bottomBarIcon = newBottomBarIcon.lowercased()
+            self.didBottomBarIconChange = true
+            return self
+        }
+        
+        internal final func didBottomBarIconUpdate() -> Bool {
+            return self.didBottomBarIconChange
+        }
+        
+        public final func withGoBackBottomBarIcon(_ newGoBackBottomBarIcon: String?) -> Self {
+            self.goBackBottomBarIcon = newGoBackBottomBarIcon
+            self.didGoBackBottomBarIconChange = true
+            return self
+        }
+        
+        internal final func didGoBackBottomBarIconUpdate() -> Bool {
+            return self.didGoBackBottomBarIconChange
+        }
+        
+        public final func withOriginX(_ newOriginX: Double) -> Self {
+            assert(newOriginX >= 0 && newOriginX <= 1)
+            self.boundingFrameOriginX = newOriginX
+            self.didBoundingFrameOriginXChange = true
+            return self
+        }
+        
+        internal final func didOriginXUpdate() -> Bool {
+            return self.didBoundingFrameOriginXChange
+        }
+        
+        public final func withOriginY(_ newOriginY: Double) -> Self {
+            assert(newOriginY >= 0 && newOriginY <= 1)
+            self.boundingFrameOriginY = newOriginY
+            self.didBoundingFrameOriginYChange = true
+            return self
+        }
+        
+        public final func withOrigin(_ origin: CGPoint) -> Self {
+            assert(origin.x >= 0 && origin.x <= 1)
+            assert(origin.y >= 0 && origin.y <= 1)
+            
+            self.boundingFrameOriginX = origin.x
+            self.boundingFrameOriginY = origin.y
+            
+            self.didBoundingFrameOriginXChange = true
+            self.didBoundingFrameOriginYChange = true
+            
+            return self
+        }
+        
+        internal final func didOriginUpdate() -> Bool {
+            return self.didBoundingFrameOriginXChange || self.didBoundingFrameOriginYChange
+        }
+
+        public final func withWidth(_ newWidth: Double) -> Self {
+            assert(newWidth >= 0 && newWidth <= 1)
+            self.boundingFrameWidth = newWidth
+            self.didBoundingFrameWidthChange = true
+            return self
+        }
+        
+        internal final func didWidthUpdate() -> Bool {
+            return self.didBoundingFrameWidthChange
+        }
+        
+        public final func withHeight(_ newHeight: Double) -> Self {
+            assert(newHeight >= 0 && newHeight <= 1)
+            self.boundingFrameHeight = newHeight
+            self.didBoundingFrameHeightChange = true
+            return self
+        }
+        
+        internal final func didHeightUpdate() -> Bool {
+            return self.didBoundingFrameHeightChange
+        }
+        
+        public final func withSize(_ size: CGSize) -> Self {
+            assert(size.width >= 0 && size.width <= 1)
+            assert(size.height >= 0 && size.height <= 1)
+            
+            self.boundingFrameWidth = size.width
+            self.boundingFrameHeight = size.height
+            
+            self.didBoundingFrameWidthChange = true
+            self.didBoundingFrameHeightChange = true
+            
+            return self
+        }
+        
+        internal final func didSizeUpdate() -> Bool {
+            return self.didBoundingFrameWidthChange || self.didBoundingFrameHeightChange
+        }
+        
+        public final func getBottomBarIcon() -> String {
+            return self.bottomBarIcon
+        }
+        
+        public final func getGoBackBottomBarIcon() -> String? {
+            return self.goBackBottomBarIcon
+        }
+        
+        public final func getOrigin() -> CGPoint? {
+            guard let boundingFrameOriginX = self.boundingFrameOriginX else { return nil }
+            guard let boundingFrameOriginY = self.boundingFrameOriginY else { return nil }
+            
+            return CGPoint(
+                x: boundingFrameOriginX,
+                y: boundingFrameOriginY
+            )
+        }
+        
+        public final func getOriginX() -> Double? {
+            return self.boundingFrameOriginX
+        }
+        
+        public final func getOriginY() -> Double? {
+            return self.boundingFrameOriginY
+        }
+        
+        public final func getSize() -> CGSize? {
+            guard let boundingFrameWidth = self.boundingFrameWidth else { return nil }
+            guard let boundingFrameHeight = self.boundingFrameHeight else { return nil }
+            
+            return CGSize(
+                width: boundingFrameWidth,
+                height: boundingFrameHeight
+            )
+        }
+        
+        public final func getWidth() -> Double? {
+            return self.boundingFrameWidth
+        }
+        
+        public final func getHeight() -> Double? {
+            return self.boundingFrameHeight
+        }
+        
+        public final func getSlave() -> String {
+            guard let owner = self.owner else {
+                fatalError("Failed to retain reference to owner before committing the draft.")
+            }
+            
+            return owner.slave
+        }
+        
+        public final func getImmutableCopy() -> SerializedImageVariantMetadataModel {
+            guard let owner = self.owner else {
+                fatalError("Failed to retain reference to owner before committing the draft.")
+            }
+            
+            assert((self.boundingFrameOriginX == nil && self.boundingFrameOriginY == nil && self.boundingFrameWidth == nil && self.boundingFrameHeight == nil) || (self.boundingFrameOriginX != nil && self.boundingFrameOriginY != nil && self.boundingFrameWidth != nil && self.boundingFrameHeight != nil))
+            
+            return .init(
+                master: owner.master,
+                slave: owner.slave,
+                variant: owner.variant,
+                bottomBarIcon: self.bottomBarIcon,
+                goBackBottomBarIcon: self.goBackBottomBarIcon,
+                boundingFrameOriginX: self.boundingFrameOriginX,
+                boundingFrameOriginY: self.boundingFrameOriginY,
+                boundingFrameWidth: self.boundingFrameWidth,
+                boundingFrameHeight: self.boundingFrameHeight,
+                gallery: owner.gallery,
+                tool: owner.tool,
+                tab: owner.tab,
+                map: owner.map,
+                game: owner.game
+            )
+        }
+    }
 }

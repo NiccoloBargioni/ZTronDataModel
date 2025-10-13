@@ -159,7 +159,6 @@ public extension DBMS.CRUD {
         for dbConnection: Connection,
         newOrigin: CGPoint,
         newSize: CGSize,
-        opacity: Double?,
         image: String,
         gallery: String,
         tool: String,
@@ -204,7 +203,6 @@ public extension DBMS.CRUD {
     static func updateOutlineResourceName(
         for dbConnection: Connection,
         newResourceName: String,
-        opacity: Double?,
         image: String,
         gallery: String,
         tool: String,
@@ -295,6 +293,117 @@ public extension DBMS.CRUD {
                 outline.foreignKeys.tabColumn <- newTab.lowercased()
             )
         )
+    }
+    
+    /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
+    /// - `PK(image, gallery, tool, tab, map, game)`
+    /// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateOutlinesForImage(
+        for dbConnection: Connection,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        produce: @escaping (inout SerializedOutlineModel.WritableDraft) -> Void,
+        validate: @escaping ([SerializedOutlineModel]) -> Bool
+    ) throws -> Void {
+        let outlineTable = DBMS.outline
+        
+        let findBoundingCirclesForImage = outlineTable.table.filter(
+            outlineTable.foreignKeys.imageColumn == image &&
+            outlineTable.foreignKeys.galleryColumn == gallery &&
+            outlineTable.foreignKeys.toolColumn == tool &&
+            outlineTable.foreignKeys.tabColumn == tab &&
+            outlineTable.foreignKeys.mapColumn == map &&
+            outlineTable.foreignKeys.gameColumn == game
+        )
+        
+        var outlinesModelsDrafts = try dbConnection.prepare(findBoundingCirclesForImage).map { outlineRow in
+            return SerializedOutlineModel(outlineRow).getMutableCopy()
+        }
+                
+        
+        for i in 0..<outlinesModelsDrafts.count {
+            produce(&outlinesModelsDrafts[i])
+        }
+        
+        guard validate(outlinesModelsDrafts.map ({ draft in
+            return draft.getImmutableCopy()
+        })) else { fatalError("Unable to validate models. Aborting") }
+        
+        
+        try outlinesModelsDrafts.forEach { outlineDraft in
+            if outlineDraft.didOpacityChange() {
+                try Self.updateOutlineOpacity(
+                    for: dbConnection,
+                    opacity: outlineDraft.getOpacity(),
+                    image: image,
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if outlineDraft.didColorHexChange() {
+                try Self.updateOutlineColor(
+                    for: dbConnection,
+                    colorHex: outlineDraft.getColorHex(),
+                    opacity: outlineDraft.getOpacity(),
+                    image: image,
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if outlineDraft.didIsActiveChange() {
+                try Self.updateIsOutlineActive(
+                    for: dbConnection,
+                    isActive: outlineDraft.isActive(),
+                    image: image,
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if outlineDraft.didBoundingBoxChange() {
+                let newBoundingBox = outlineDraft.getBoundingBox()
+                
+                try Self.updateOutlineBoundingBox(
+                    for: dbConnection,
+                    newOrigin: newBoundingBox.origin,
+                    newSize: newBoundingBox.size,
+                    image: image,
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if outlineDraft.didResourceNameChange() {
+                try Self.updateOutlineResourceName(
+                    for: dbConnection,
+                    newResourceName: outlineDraft.getResourceName(),
+                    image: image,
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+        }
     }
     
     // MARK: - BOUNDING CIRCLE
@@ -616,6 +725,318 @@ public extension DBMS.CRUD {
             )
         )
     }
+    
+    
+    /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
+    /// - `PK(image, gallery, tool, tab, map, game)`
+    /// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateBoundingCirclesForImage(
+        for dbConnection: Connection,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        produce: @escaping (inout SerializedBoundingCircleModel.WritableDraft) -> Void,
+        validate: @escaping ([SerializedBoundingCircleModel]) -> Bool
+    ) throws -> Void {
+        let boundingCircleTable = DBMS.boundingCircle
+        
+        let findBoundingCirclesForImage = boundingCircleTable.table.filter(
+            boundingCircleTable.foreignKeys.imageColumn == image &&
+            boundingCircleTable.foreignKeys.galleryColumn == gallery &&
+            boundingCircleTable.foreignKeys.toolColumn == tool &&
+            boundingCircleTable.foreignKeys.tabColumn == tab &&
+            boundingCircleTable.foreignKeys.mapColumn == map &&
+            boundingCircleTable.foreignKeys.gameColumn == game
+        )
+        
+        var boundingCirclesModelsDrafts = try dbConnection.prepare(findBoundingCirclesForImage).map { boundingCircleRow in
+            return SerializedBoundingCircleModel(boundingCircleRow).getMutableCopy()
+        }
+                
+        
+        for i in 0..<boundingCirclesModelsDrafts.count {
+            produce(&boundingCirclesModelsDrafts[i])
+        }
+        
+        guard validate(boundingCirclesModelsDrafts.map ({ draft in
+            return draft.getImmutableCopy()
+        })) else { fatalError("Unable to validate models. Aborting") }
+        
+        try boundingCirclesModelsDrafts.forEach { boundingCircleDraft in
+            if boundingCircleDraft.didOpacityChange() {
+                try Self.updateBoundingCircleOpacity(
+                    for: dbConnection,
+                    opacity: boundingCircleDraft.getOpacity(),
+                    image: image,
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if boundingCircleDraft.didColorHexChange() {
+                try Self.updateBoundingCircleColor(
+                    for: dbConnection,
+                    colorHex: boundingCircleDraft.getColorHex(),
+                    opacity: boundingCircleDraft.getOpacity(),
+                    image: image,
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if boundingCircleDraft.didIsActiveChange() {
+                try Self.updateIsBoundingCircleActive(
+                    for: dbConnection,
+                    isActive: boundingCircleDraft.isActive(),
+                    image: image,
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if boundingCircleDraft.didIdleDiameterChange() {
+                try Self.updateBoundingCircleIdleDiameter(
+                    for: dbConnection,
+                    newDiameter: boundingCircleDraft.getIdleDiameter(),
+                    image: image,
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if boundingCircleDraft.didNormalizedCenterChange() {
+                try Self.updateBoundingCircleCenter(
+                    for: dbConnection,
+                    newCenter: boundingCircleDraft.getNormalizedCenter(),
+                    image: image,
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+        }
+    }
+    
+    // MARK: - IMAGE VARIANT
+    /// - `IMAGE_VARIANT(master, slave, variant, bottomBarIcon, boundingFrameOriginX, boundingFrameOriginY, boundingFrameWidth, boundingFrameHeight, gallery, tool, tab, map, game)`
+    /// - `PK(slave, gallery, tool, tab, map, game)`
+    /// - `FK(slave, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func updateImageVariantBottomBarIcon(
+        for dbConnection: Connection,
+        bottomBarIcon: String,
+        master: String,
+        slave: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Void {
+        let imageVariant = DBMS.imageVariant
+
+        let variantToUpdate = imageVariant.table.filter(
+            imageVariant.masterColumn == master &&
+            imageVariant.slaveColumn == slave &&
+            imageVariant.foreignKeys.galleryColumn == gallery.lowercased() &&
+            imageVariant.foreignKeys.toolColumn == tool.lowercased() &&
+            imageVariant.foreignKeys.tabColumn == tab.lowercased() &&
+            imageVariant.foreignKeys.mapColumn == map.lowercased() &&
+            imageVariant.foreignKeys.gameColumn == game.lowercased()
+        ).update(
+            imageVariant.bottomBarIconColumn <- bottomBarIcon.lowercased()
+        )
+        
+        try dbConnection.run(variantToUpdate)
+    }
+    
+    
+    /// - `IMAGE_VARIANT(master, slave, variant, bottomBarIcon, boundingFrameOriginX, boundingFrameOriginY, boundingFrameWidth, boundingFrameHeight, gallery, tool, tab, map, game)`
+    /// - `PK(slave, gallery, tool, tab, map, game)`
+    /// - `FK(slave, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func updateImageVariantGoBackBottomBarIcon(
+        for dbConnection: Connection,
+        goBackBottomBarIcon: String?,
+        master: String,
+        slave: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Void {
+        let imageVariant = DBMS.imageVariant
+
+        let variantToUpdate = imageVariant.table.filter(
+            imageVariant.masterColumn == master &&
+            imageVariant.slaveColumn == slave &&
+            imageVariant.foreignKeys.galleryColumn == gallery.lowercased() &&
+            imageVariant.foreignKeys.toolColumn == tool.lowercased() &&
+            imageVariant.foreignKeys.tabColumn == tab.lowercased() &&
+            imageVariant.foreignKeys.mapColumn == map.lowercased() &&
+            imageVariant.foreignKeys.gameColumn == game.lowercased()
+        ).update(
+            imageVariant.goBackBottomBarIconColumn <- goBackBottomBarIcon?.lowercased()
+        )
+        
+        try dbConnection.run(variantToUpdate)
+    }
+    
+    /// - `IMAGE_VARIANT(master, slave, variant, bottomBarIcon, boundingFrameOriginX, boundingFrameOriginY, boundingFrameWidth, boundingFrameHeight, gallery, tool, tab, map, game)`
+    /// - `PK(slave, gallery, tool, tab, map, game)`
+    /// - `FK(slave, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func updateImageVariantBoundingFrame(
+        for dbConnection: Connection,
+        origin: CGPoint?,
+        size: CGSize?,
+        master: String,
+        slave: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Void {
+        assert(origin?.x ?? 0 >= 0 && origin?.x ?? 0 <= 1)
+        assert(origin?.y ?? 0 >= 0 && origin?.y ?? 0 <= 1)
+        assert(size?.width ?? 0 >= 0 && size?.width ?? 0 <= 1)
+        assert(size?.height ?? 0 >= 0 && size?.height ?? 0 <= 1)
+        assert(size != nil && origin != nil || size == nil && origin == nil)
+        
+        let imageVariant = DBMS.imageVariant
+
+        let variantToUpdate = imageVariant.table.filter(
+            imageVariant.masterColumn == master &&
+            imageVariant.slaveColumn == slave &&
+            imageVariant.foreignKeys.galleryColumn == gallery.lowercased() &&
+            imageVariant.foreignKeys.toolColumn == tool.lowercased() &&
+            imageVariant.foreignKeys.tabColumn == tab.lowercased() &&
+            imageVariant.foreignKeys.mapColumn == map.lowercased() &&
+            imageVariant.foreignKeys.gameColumn == game.lowercased()
+        ).update(
+            imageVariant.boundingFrameOriginXColumn <- origin?.x,
+            imageVariant.boundingFrameOriginYColumn <- origin?.y,
+            imageVariant.boundingFrameWidthColumn <- size?.width,
+            imageVariant.boundingFrameHeightColumn <- size?.height,
+        )
+        
+        try dbConnection.run(variantToUpdate)
+    }
+    
+    
+    static func updateVisualMediaMasterSlaveRelationshipsForMaster(
+        for dbConnection: Connection,
+        master: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        produce: @escaping (inout SerializedImageVariantMetadataModel.WritableDraft) -> Void,
+        validate: @escaping ([SerializedImageVariantMetadataModel]) -> Bool
+    ) throws -> Void {
+        let masterModel = try Self.readImageByID(
+            for: dbConnection,
+            image: master,
+            gallery: gallery,
+            tool: tool,
+            tab: tab,
+            map: map,
+            game: game
+        )
+        
+        guard let variantsForThisMaster = try Self.readVariantsMetadataForMediasSet(
+            for: dbConnection,
+            medias: [masterModel]
+        ).first else {
+            Self.logger.error("No variant found for this master. Aborting")
+            return
+        }
+    
+        guard var variantsDrafts = variantsForThisMaster?.getVariants().map ({ variantModel in
+            return variantModel.getMutableCopy()
+        }) else {
+            Self.logger.error("Unable to make variants drafts for \(tool)/\(gallery)/\(master)")
+            return
+        }
+        
+        for i in 0..<variantsDrafts.count {
+            produce(&variantsDrafts[i])
+        }
+        
+        guard validate(variantsDrafts.map({ model in
+            return model.getImmutableCopy()
+        })) else {
+            fatalError("Failed to validate variants drafts model")
+        }
+        
+        try variantsDrafts.forEach { variantDraftModel in
+            if variantDraftModel.didBottomBarIconUpdate() {
+                try Self.updateImageVariantBottomBarIcon(
+                    for: dbConnection,
+                    bottomBarIcon: variantDraftModel.getBottomBarIcon(),
+                    master: master,
+                    slave: variantDraftModel.getSlave(),
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if variantDraftModel.didGoBackBottomBarIconUpdate() {
+                try Self.updateImageVariantGoBackBottomBarIcon(
+                    for: dbConnection,
+                    goBackBottomBarIcon: variantDraftModel.getGoBackBottomBarIcon(),
+                    master: master,
+                    slave: variantDraftModel.getSlave(),
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if variantDraftModel.didOriginUpdate() || variantDraftModel.didSizeUpdate() {
+                let updatedOrigin = variantDraftModel.getOrigin()
+                let updatedSize = variantDraftModel.getSize()
+                
+                assert(updatedSize != nil && updatedOrigin != nil || updatedSize == nil && updatedOrigin == nil)
+                
+                try Self.updateImageVariantBoundingFrame(
+                    for: dbConnection,
+                    origin: updatedOrigin,
+                    size: updatedSize,
+                    master: master,
+                    slave: variantDraftModel.getSlave(),
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+        }
+    }
+    
     // MARK: - VISUAL MEDIA (FORMER IMAGE)
     
     /// Updates the name of the resource associated with this image in the assets folder. Coincidentially, it updates the media identity on database, cascading
@@ -771,6 +1192,7 @@ public extension DBMS.CRUD {
         map: String,
         game: String
     ) throws {
+        assert(position >= 0)
         let visualMediaTable = DBMS.visualMedia
                 
         let imageToUpdate = visualMediaTable.table.filter(
@@ -976,6 +1398,199 @@ public extension DBMS.CRUD {
         try dbConnection.run(tabUpdateQuery)
     }
     
+
+    
+    /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+    /// - `PK(name, gallery, tool, tab, map, game)`
+    /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    static func updateFirstLevelVariantsOfImageForGallery(
+        for dbConnection: Connection,
+        master: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        produce: @escaping (inout any SerializedVisualMediaModelWritableDraft) -> Void,
+        validate: @escaping ([any SerializedVisualMediaModel]) -> Bool
+    ) throws -> Void {
+        let masterVariantsForThisImage = (try Self.readAllVariants(
+            for: dbConnection,
+            master: master,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool,
+            gallery: gallery
+        ))
+        
+        var draftForMasterMedia: [any SerializedVisualMediaModelWritableDraft] = masterVariantsForThisImage.map { media in
+            return media.getMutableCopy()
+        }
+        
+        for i in 0..<draftForMasterMedia.count {
+            produce(&draftForMasterMedia[i])
+        }
+        
+        guard validate(draftForMasterMedia.map ({ draft in
+            return draft.getImmutableCopy()
+        })) else { fatalError("Unable to validate models. Aborting") }
+        
+        try draftForMasterMedia.forEach { mediaModelDraft in
+            guard let neededUpdates = mediaModelDraft as? SerializedVisualMediaModelWritableDraftUpdateBearer else {
+                fatalError("Cannot fetch requested updates info from visual media model.")
+            }
+            
+            if neededUpdates.didPositionUpdate() {
+                try Self.updateVisualMediaPosition(
+                    for: dbConnection,
+                    position: mediaModelDraft.getPosition(),
+                    image: mediaModelDraft.getPreviousName(),
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if neededUpdates.didDescriptionUpdate() {
+                try Self.updateVisualMediaCaption(
+                    for: dbConnection,
+                    caption: mediaModelDraft.getDescription(),
+                    image: mediaModelDraft.getPreviousName(),
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if neededUpdates.didSearchLabelUpdate() {
+                try Self.updateVisualMediaSearchLabel(
+                    for: dbConnection,
+                    searchLabel: mediaModelDraft.getSearchLabel(),
+                    image: mediaModelDraft.getPreviousName(),
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if neededUpdates.didNameUpdate() {
+                try Self.updateVisualMediaName(
+                    for: dbConnection,
+                    newName: mediaModelDraft.getName(),
+                    currentName: mediaModelDraft.getPreviousName(),
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+        }
+    }
+    
+    /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+    /// - `PK(name, gallery, tool, tab, map, game)`
+    /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    static func updateMasterVisualMediasForGallery(
+        for dbConnection: Connection,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        produce: @escaping (inout any SerializedVisualMediaModelWritableDraft) -> Void,
+        validate: @escaping ([any SerializedVisualMediaModel]) -> Bool
+    ) throws -> Void {
+        guard let masterImagesForThisGallery = (try Self.readFirstLevelMasterImagesForGallery(
+            for: dbConnection,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool,
+            gallery: gallery,
+            options: [.medias]
+        )[.medias] as? [any SerializedVisualMediaModel]) else {
+            fatalError("Unable to fetch visual media models for gallery \(tool)/\(gallery))")
+        }
+        
+        var draftForMasterMedia: [any SerializedVisualMediaModelWritableDraft] = masterImagesForThisGallery.map { media in
+            return media.getMutableCopy()
+        }
+        
+        for i in 0..<draftForMasterMedia.count {
+            produce(&draftForMasterMedia[i])
+        }
+        
+        guard validate(draftForMasterMedia.map ({ draft in
+            return draft.getImmutableCopy()
+        })) else { fatalError("Unable to validate models. Aborting") }
+        
+        try draftForMasterMedia.forEach { mediaModelDraft in
+            guard let neededUpdates = mediaModelDraft as? SerializedVisualMediaModelWritableDraftUpdateBearer else {
+                fatalError("Cannot fetch requested updates info from visual media model.")
+            }
+            
+            if neededUpdates.didPositionUpdate() {
+                try Self.updateVisualMediaPosition(
+                    for: dbConnection,
+                    position: mediaModelDraft.getPosition(),
+                    image: mediaModelDraft.getPreviousName(),
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if neededUpdates.didDescriptionUpdate() {
+                try Self.updateVisualMediaCaption(
+                    for: dbConnection,
+                    caption: mediaModelDraft.getDescription(),
+                    image: mediaModelDraft.getPreviousName(),
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if neededUpdates.didSearchLabelUpdate() {
+                try Self.updateVisualMediaSearchLabel(
+                    for: dbConnection,
+                    searchLabel: mediaModelDraft.getSearchLabel(),
+                    image: mediaModelDraft.getPreviousName(),
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if neededUpdates.didNameUpdate() {
+                try Self.updateVisualMediaName(
+                    for: dbConnection,
+                    newName: mediaModelDraft.getName(),
+                    currentName: mediaModelDraft.getPreviousName(),
+                    gallery: gallery,
+                    tool: tool,
+                    tab: tab,
+                    map: map,
+                    game: game
+                )
+            }
+        }
+    }
+    
     // MARK: - GALLERIES
     /// For all the first-level galleries whose position is in [`threshold + 1`..< `firstLevelGalleries.count`], this method decreases their position by one.
     ///
@@ -1101,6 +1716,7 @@ public extension DBMS.CRUD {
         map: String,
         game: String
     ) throws -> Void {
+        assert(position >= 0)
         let galleryTable = DBMS.gallery
         
         let findGalleryQuery = galleryTable.table.filter(
@@ -1118,9 +1734,9 @@ public extension DBMS.CRUD {
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal func updateGalleryAssetsImageName(
+    internal static func updateGalleryAssetsImageName(
         for dbConnection: Connection,
-        assetsImageName: String,
+        assetsImageName: String?,
         gallery: String,
         tool: String,
         tab: String,
@@ -1295,9 +1911,9 @@ public extension DBMS.CRUD {
     ///
     /// - Note: Since `VISUAL_MEDIA` references `GALLERY.tab` as foreign keys and `GALLERY` specified `UPDATE CASCADE` policy, it's expected that all the `VISUAL_MEDIA` in the updated `GALLERY` cascading update their `tab` column to match the new `targetTab`, which in turn should `UPDATE CASCADE` all the overlays and variants' `tab` column.
     ///
-    /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
-    /// - `PK(name, gallery, tool, tab, map, game)`
-    /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
     internal static func updateTabForAllGalleriesInTool(
         for dbConnection: Connection,
         targetTab: String,
@@ -1316,8 +1932,161 @@ public extension DBMS.CRUD {
         try dbConnection.run(tabUpdateQuery)
     }
     
-    // MARK: - TOOLS
     
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateFirstLevelGalleriesForTab(
+        for dbConnection: Connection,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        produce: @escaping (inout SerializedGalleryModel.WritableDraft) -> Void,
+        validate: @escaping ([SerializedGalleryModel]) -> Bool
+    ) throws -> Void {
+        if let firstLevelGalleriesForThisTool = (try Self.readFirstLevelOfGalleriesForTool(
+            for: dbConnection,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool,
+            options: [.galleries]
+        )[.galleries] as? [SerializedGalleryModel]) {
+            var galleryDraft = firstLevelGalleriesForThisTool.map { galleryModel in
+                return galleryModel.getMutableCopy()
+            }
+            
+            for i in 0..<firstLevelGalleriesForThisTool.count {
+                produce(&galleryDraft[i])
+            }
+
+            guard validate(galleryDraft.map ({ draft in
+                return draft.getImmutableCopy()
+            })) else { fatalError("Unable to validate models. Aborting") }
+            
+            try galleryDraft.forEach { galleryDraftModel in
+                if galleryDraftModel.didPositionUpdate() {
+                    try Self.updateGalleryPosition(
+                        for: dbConnection,
+                        position: galleryDraftModel.getPosition(),
+                        gallery: galleryDraftModel.getPreviousName(),
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
+                
+                if galleryDraftModel.didAssetsImageNameUpdate() {
+                    try Self.updateGalleryAssetsImageName(
+                        for: dbConnection,
+                        assetsImageName: galleryDraftModel.getAssetsImageName(),
+                        gallery: galleryDraftModel.getPreviousName(),
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
+                
+                if galleryDraftModel.didNameUpdate() {
+                    try Self.updateGalleryName(
+                        for: dbConnection,
+                        newGalleryName: galleryDraftModel.getName(),
+                        gallery: galleryDraftModel.getPreviousName(),
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
+            }
+        } else {
+            fatalError("Unable to read first level galleries for tool \(tool)")
+        }
+    }
+    
+    
+    
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateFirstLevelSlaveGalleriesForMaster(
+        for dbConnection: Connection,
+        master: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+        produce: @escaping (inout SerializedGalleryModel.WritableDraft) -> Void,
+        validate: @escaping ([SerializedGalleryModel]) -> Bool
+    ) throws -> Void {
+        if let firstLevelMasters = (try Self.readFirstLevelOfSubgalleriesForGallery(
+            for: dbConnection,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool,
+            gallery: master,
+            options: [.galleries]
+        )[.galleries] as? [SerializedGalleryModel]) {
+            var galleryDraft = firstLevelMasters.map { galleryModel in
+                return galleryModel.getMutableCopy()
+            }
+            
+            for i in 0..<firstLevelMasters.count {
+                produce(&galleryDraft[i])
+            }
+
+            guard validate(galleryDraft.map ({ draft in
+                return draft.getImmutableCopy()
+            })) else { fatalError("Unable to validate models. Aborting") }
+            
+            try galleryDraft.forEach { galleryDraftModel in
+                if galleryDraftModel.didPositionUpdate() {
+                    try Self.updateGalleryPosition(
+                        for: dbConnection,
+                        position: galleryDraftModel.getPosition(),
+                        gallery: galleryDraftModel.getPreviousName(),
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
+                
+                if galleryDraftModel.didAssetsImageNameUpdate() {
+                    try Self.updateGalleryAssetsImageName(
+                        for: dbConnection,
+                        assetsImageName: galleryDraftModel.getAssetsImageName(),
+                        gallery: galleryDraftModel.getPreviousName(),
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
+                
+                if galleryDraftModel.didNameUpdate() {
+                    try Self.updateGalleryName(
+                        for: dbConnection,
+                        newGalleryName: galleryDraftModel.getName(),
+                        gallery: galleryDraftModel.getPreviousName(),
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
+            }
+        } else {
+            fatalError("Unable to read first level galleries for tool \(tool)")
+        }
+    }
+    
+    
+    // MARK: - TOOLS
     /// - `TOOL(name, position, assetsImageName, tab, map, game)`
     /// - `PK(name, tab, map, game)`
     /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
@@ -1354,6 +2123,7 @@ public extension DBMS.CRUD {
         map: String,
         tab: String
     ) throws -> Void {
+        assert(position >= 0)
         let toolTable = DBMS.tool
         
         let updateToolQuery = toolTable.table.filter(
@@ -1488,7 +2258,9 @@ public extension DBMS.CRUD {
         )
     }
     
-    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
     private static func updateTabForTool(
         for dbConnection: Connection,
         newTab: String,
@@ -1515,23 +2287,26 @@ public extension DBMS.CRUD {
     /// - Update indices for tools of the former tab, if appropriate
     /// - Update indices for tools of the new tab, if appropriate
     /// - Update indices for the migrated tool.
+    ///
+    /// - Note: Expects that the new tab already exists on db.
     static func migrateToolToNewTab(
         for dbConnection: Connection,
         updatedPosition: Int? = nil,
         tool: String,
         map: String,
         game: String,
-        produce: @escaping (SerializedTabModel) -> OnTabConflictStrategy,
         sourceIndicesStrategy: TabMigrationSourcePositionStrategy = .preserveSourceIndices,
-        targetIndicesStrategy: TabMigrationTargetPositionStrategy = .preserveTargetIndices
+        targetIndicesStrategy: TabMigrationTargetPositionStrategy = .preserveTargetIndices,
+        produce: @escaping (SerializedTabModel) -> OnTabConflictStrategy,
     ) throws -> Void {
         guard let previousTab = try? Self.readTabForTool(for: dbConnection, tool: tool, game: game, map: map) else {
             Self.logger.warning("Attempted to migrate tool to new tab but could not acquire info about previous tab.")
             return
         }
         
+        #if DEBUG
         assert((try? Self.tabExists(for: dbConnection, tab: previousTab.getName(), map: map, game: game)) != nil)
-
+        #endif
         
         guard (try? Self.toolExistsInDifferentTab(
             for: dbConnection,
@@ -1651,18 +2426,185 @@ public extension DBMS.CRUD {
                     }
                 }
             }
-            
+            /*To be fair, galleries for a tool reference `Tool.tab` and therefore updating such column cascade updates all of that's under that tool/**/
             try Self.updateTabForAllGalleriesInTool(
                 for: dbConnection,
                 targetTab: target.getName(),
                 tool: tool,
                 map: map,
                 game: game
-            )
+            )*/
         } else {
             fatalError("Unable to find target tab. 0/\(allTabsForThisTool.count) tabs were accepted.")
-        }   
+        }
     }
+    
+    
+    /// - `TAB(name, position, iconName, map, game)`
+    /// - `PK(name, map, game)`
+    /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateToolsForTab(
+        for dbConnection: Connection,
+        game: String,
+        map: String,
+        tab: String,
+        produce: @escaping (inout SerializedToolModel.WritableDraft) -> Void,
+        validate: @escaping ([SerializedToolModel]) -> Bool
+    ) throws -> Void {
+        var toolsForThisTab = try Self.readToolsForTab(for: dbConnection, game: game, map: map, tab: tab).map { tabModel in
+            return tabModel.getMutableCopy()
+        }
+        
+        for i in 0..<toolsForThisTab.count {
+            produce(&toolsForThisTab[i])
+        }
+        
+        guard validate(toolsForThisTab.map ({ draft in
+            return draft.getImmutableCopy()
+        })) else { fatalError("Unable to validate models. Aborting") }
+        
+        try toolsForThisTab.forEach { toolDraftModel in
+            if toolDraftModel.didPositionChange() {
+                try Self.updateToolPosition(
+                    for: dbConnection,
+                    position: toolDraftModel.getPosition(),
+                    tool: toolDraftModel.getPreviousName(),
+                    game: game,
+                    map: map,
+                    tab: toolDraftModel.getPreviousTab()
+                )
+            }
+            
+            if toolDraftModel.didAssetsImageNameChange() {
+                try Self.updateToolAssetsImageName(
+                    for: dbConnection,
+                    newAssetsImageName: toolDraftModel.getAssetsImageName(),
+                    tool: toolDraftModel.getPreviousName(),
+                    game: game,
+                    map: map,
+                    tab: toolDraftModel.getPreviousTab()
+                )
+            }
+            
+            if toolDraftModel.didTabChange() {
+                try Self.updateTabForTool(
+                    for: dbConnection,
+                    newTab: toolDraftModel.getTab(),
+                    tool: toolDraftModel.getPreviousName(),
+                    tab: toolDraftModel.getPreviousTab(),
+                    map: map,
+                    game: game
+                )
+            }
+            
+            if toolDraftModel.didNameChange() {
+                try Self.updateTabName(
+                    for: dbConnection,
+                    newTabName: toolDraftModel.getName(),
+                    game: game,
+                    map: map,
+                    tab: toolDraftModel.getTab()
+                )
+            }
+
+        }
+    }
+    
+    // MARK: - TAB
+    
+    /// - `TAB(name, position, iconName, map, game)`
+    /// - `PK(name, map, game)`
+    /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateTabName(
+        for dbConnection: Connection,
+        newTabName: String,
+        game: String,
+        map: String,
+        tab: String
+    ) throws -> Void {
+        let tabTable = DBMS.tab
+        
+        let updateTabQuery = tabTable.table.filter(
+            tabTable.nameColumn == tab.lowercased() &&
+            tabTable.foreignKeys.gameColumn == game &&
+            tabTable.foreignKeys.mapColumn == map
+        ).update(tabTable.nameColumn <- newTabName.lowercased())
+                
+        try dbConnection.run(updateTabQuery)
+    }
+    
+    
+    /// - `TAB(name, position, iconName, map, game)`
+    /// - `PK(name, map, game)`
+    /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateTabPosition(
+        for dbConnection: Connection,
+        position: Int,
+        game: String,
+        map: String,
+        tab: String
+    ) throws -> Void {
+        assert(position >= 0)
+        let tabTable = DBMS.tab
+        
+        let updateTabQuery = tabTable.table.filter(
+            tabTable.nameColumn == tab.lowercased() &&
+            tabTable.foreignKeys.gameColumn == game &&
+            tabTable.foreignKeys.mapColumn == map
+        ).update(tabTable.positionColumn <- position)
+                
+        try dbConnection.run(updateTabQuery)
+    }
+    
+    
+    /// - `TAB(name, position, iconName, map, game)`
+    /// - `PK(name, map, game)`
+    /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateTabsForMap(
+        for dbConnection: Connection,
+        game: String,
+        map: String,
+        produce: @escaping (inout SerializedTabModel.WritableDraft) -> Void,
+        validate: @escaping ([SerializedTabModel]) -> Bool
+    ) throws -> Void {
+        var tabsForThisMap = try Self.readTabsForMap(for: dbConnection, game: game, map: map).map { tabModel in
+            return tabModel.getMutableCopy()
+        }
+        
+        for i in 0..<tabsForThisMap.count {
+            produce(&tabsForThisMap[i])
+        }
+        
+        guard validate(tabsForThisMap.map ({ draft in
+            return draft.getImmutableCopy()
+        })) else { fatalError("Unable to validate models. Aborting") }
+        
+        try tabsForThisMap.forEach { tabModelDraft in
+            if tabModelDraft.didPositionChange() {
+                try Self.updateTabPosition(
+                    for: dbConnection,
+                    position: tabModelDraft.getPosition(),
+                    game: game,
+                    map: map,
+                    tab: tabModelDraft.getPreviousName()
+                )
+            }
+            
+            if tabModelDraft.didNameChange() {
+                try Self.updateTabName(
+                    for: dbConnection,
+                    newTabName: tabModelDraft.getName(),
+                    game: game,
+                    map: map,
+                    tab: tabModelDraft.getPreviousName()
+                )
+            }
+        }
+    }
+    
+    
+    // MARK: - MAP
+    
 }
 
 

@@ -79,26 +79,60 @@ public final class SerializedTabModel: Hashable, Sendable, ObservableObject {
     public final class WritableDraft {
         weak private var owner: SerializedTabModel?
         private var position: Int
+        private var name: String
+        
+        private var didPositionUpdate: Bool = false
+        private var didNameUpdate: Bool = false
         
         internal init(from: SerializedTabModel) {
             self.owner = from
             self.position = from.getPosition()
+            self.name = from.getName()
         }
         
         public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
-            self.position = newPosition
+            if self.position != newPosition {
+                self.position = newPosition
+                self.didPositionUpdate = true
+            }
             return self
+        }
+        
+        internal final func didPositionChange() -> Bool {
+            return self.didPositionUpdate
+        }
+        
+        public final func withName(_ name: String) -> Self {
+            if self.name != name {
+                self.name = name.lowercased()
+                self.didNameUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didNameChange() -> Bool {
+            return self.didNameUpdate
         }
         
         public final func getPosition() -> Int {
             return self.position
         }
         
+        public final func getPreviousName() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getName()
+        }
+        
+        public final func getName() -> String {
+            return self.name
+        }
+        
         public final func getImmutableCopy() -> SerializedTabModel {
             guard let owner = self.owner else { fatalError("Failed to retain reference to mutable parent of type \(String(describing: SerializedTabModel.self))") }
+            
             return SerializedTabModel(
-                name: owner.name,
-                position: owner.position,
+                name: self.name,
+                position: self.position,
                 map: owner.map,
                 game: owner.game
             )
