@@ -2511,6 +2511,27 @@ public extension DBMS.CRUD {
     }
     
     // MARK: - TAB
+    /// For all the tools in the specified tab whose position is [`threshold + 1`..< `map.tabs.count`], this method decreases their position by one.
+    ///
+    /// - `TAB(name, position, iconName, map, game)`
+    /// - `PK(name, map, game)`
+    /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func decrementPositionsForTabsInMap(
+        for dbConnection: Connection,
+        map: String,
+        game: String,
+        threshold: Int = 0
+    ) throws -> Void {
+        let tabs = DBMS.tab
+        
+        try dbConnection.run(
+            tabs.table.filter(
+                tabs.foreignKeys.mapColumn == map &&
+                tabs.foreignKeys.gameColumn == game &&
+                tabs.positionColumn > threshold)
+            .update(tabs.positionColumn <- tabs.positionColumn - 1)
+        )
+    }
     
     /// - `TAB(name, position, iconName, map, game)`
     /// - `PK(name, map, game)`

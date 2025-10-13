@@ -579,7 +579,7 @@ public extension DBMS.CRUD {
     /// - `TOOL(name, position, assetsImageName, tab, map, game)`
     /// - `PK(name, tab, map, game)`
     /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func deleteTool(
+    internal static func deleteTool(
         for dbConnection: Connection,
         tool: String,
         tab: String,
@@ -658,6 +658,85 @@ public extension DBMS.CRUD {
             }
         }
     }
+    
+    
+    // MARK: - TABS
+    /// - `TAB(name, position, iconName, map, game)`
+    /// - `PK(name, map, game)`
+    /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func deleteTab(
+        for dbConnection: Connection,
+        tab: String,
+        map: String,
+        game: String,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        let tabTable = DBMS.tab
+        
+        func delete() throws {
+            let findToolQuery = tabTable.table.filter(
+                tabTable.nameColumn == tab.lowercased() &&
+                tabTable.foreignKeys.mapColumn == map.lowercased() &&
+                tabTable.foreignKeys.gameColumn == game.lowercased()
+            )
+
+            try dbConnection.run(findToolQuery.delete())
+        }
+        
+        if shouldDecreasePositions {
+            guard let position = try Self.readTabPosition(
+                for: dbConnection,
+                game: game,
+                map: map,
+                tab: tab
+            ) else {
+                fatalError("Attempted to delete a tab but could not find its position.")
+            }
+            
+            try Self.decrementPositionsForTabsInMap(
+                for: dbConnection,
+                map: map,
+                game: game,
+                threshold: position
+            )
+            
+            try delete()
+        } else {
+            try delete()
+        }
+        
+    }
+    
+    
+    /// - `TAB(name, position, iconName, map, game)`
+    /// - `PK(name, map, game)`
+    /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func batchDeleteTabsForMap(
+        for dbConnection: Connection,
+        map: String,
+        game: String,
+        shouldRemove: (SerializedTabModel) -> Bool,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        let tabsForThisMap = try Self.readTabsForMap(
+            for: dbConnection,
+            game: game,
+            map: map
+        )
+        
+        try tabsForThisMap.forEach { tabModel in
+            if shouldRemove(tabModel) {
+                try Self.deleteTab(
+                    for: dbConnection,
+                    tab: tabModel.getName(),
+                    map: map,
+                    game: game,
+                    shouldDecreasePositions: shouldDecreasePositions
+                )
+            }
+        }
+    }
+
     
 }
 #endif

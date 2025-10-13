@@ -98,8 +98,7 @@ extension DBMS.CRUD {
         return result
     }
 
-    
-    // MARK: - READ MAPS
+
     public static func readAllSubmaps(
         for dbConnection: Connection,
         master: String,
@@ -166,7 +165,7 @@ extension DBMS.CRUD {
     }
 
     
-    //MARK: - READ VARIANTS
+    //MARK: - READ VISUAL MEDIA
     private static func _readFirstLevelMasterImagesForGallery(
         for dbConnection: Connection,
         game: String,
@@ -1527,6 +1526,8 @@ extension DBMS.CRUD {
     }
     
     
+    // MARK: - TAB
+    
     /// - `TAB(name, position, iconName, map, game)`
     public static func readTabsForMap(
         for dbConnection: Connection,
@@ -1561,26 +1562,33 @@ extension DBMS.CRUD {
     }
     
     
-    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
-    public static func readToolsForTab(
+    /// - `TAB(name, position, iconName, map, game)`
+    /// - `PK(name, map, game)`
+    /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func readTabPosition(
         for dbConnection: Connection,
         game: String,
         map: String,
-        tab: String
-    ) throws -> [SerializedToolModel] {
-        let tools = DBMS.tool
+        tab: String,
+    ) throws -> Int? {
+        let tabTable = DBMS.tab
         
-        let findToolsQuery = tools.table
-            .filter(
-                tools.foreignKeys.gameColumn == game &&
-                tools.foreignKeys.mapColumn == map &&
-                tools.foreignKeys.tabColumn == tab
-            ).order(tools.positionColumn)
+        let findToolQuery = tabTable.table.filter(
+            tabTable.nameColumn == tab.lowercased() &&
+            tabTable.foreignKeys.gameColumn == game.lowercased() &&
+            tabTable.foreignKeys.mapColumn == map.lowercased()
+        )
         
-        return try dbConnection.prepare(findToolsQuery).map { result in
-            return SerializedToolModel(result)
+        let positions = try dbConnection.prepare(findToolQuery).map { result in
+            return result[tabTable.positionColumn]
         }
+        
+        assert(positions.count <= 1)
+        
+        return positions.first
     }
+    
+    
     
     public static func readGalleryNestingDepth(
         for dbConnection: Connection,
@@ -1995,6 +2003,30 @@ extension DBMS.CRUD {
     }
     
     // MARK: - TOOLS
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    public static func readToolsForTab(
+        for dbConnection: Connection,
+        game: String,
+        map: String,
+        tab: String
+    ) throws -> [SerializedToolModel] {
+        let tools = DBMS.tool
+        
+        let findToolsQuery = tools.table
+            .filter(
+                tools.foreignKeys.gameColumn == game &&
+                tools.foreignKeys.mapColumn == map &&
+                tools.foreignKeys.tabColumn == tab
+            ).order(tools.positionColumn)
+        
+        return try dbConnection.prepare(findToolsQuery).map { result in
+            return SerializedToolModel(result)
+        }
+    }
+    
     /// - `TOOL(name, position, assetsImageName, tab, map, game)`
     /// - `PK(name, tab, map, game)`
     /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
