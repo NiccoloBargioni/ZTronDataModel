@@ -2012,7 +2012,6 @@ extension DBMS.CRUD {
             toolTable.foreignKeys.tabColumn == tab.lowercased()
         )
         
-        
         let positions = try dbConnection.prepare(findToolQuery).map { result in
             return result[toolTable.positionColumn]
         }
@@ -2020,6 +2019,33 @@ extension DBMS.CRUD {
         assert(positions.count <= 1)
         
         return positions.first
+    }
+    
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func readTabForTool(
+        for dbConnection: Connection,
+        tool: String,
+        game: String,
+        map: String,
+    ) throws -> SerializedTabModel? {
+        let toolTable = DBMS.tool
+        
+        let findTabQuery = toolTable.table.filter(
+            toolTable.nameColumn == tool.lowercased() &&
+            toolTable.foreignKeys.gameColumn == game.lowercased() &&
+            toolTable.foreignKeys.mapColumn == map.lowercased()
+        )
+        
+        let tabs = try dbConnection.prepare(findTabQuery).map { result in
+            return SerializedTabModel(result)
+        }
+        
+        assert(tabs.count <= 1)
+        
+        return tabs.first
     }
 }
 

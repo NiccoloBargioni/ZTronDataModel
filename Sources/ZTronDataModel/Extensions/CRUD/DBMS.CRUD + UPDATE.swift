@@ -266,6 +266,37 @@ public extension DBMS.CRUD {
         )
     }
     
+    /// - `OUTLINE(resourceName, colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
+    /// - `PK(image, gallery, tool, tab, map, game)`
+    /// - `FK(image, gallery, tool, tab, map, game) REFERENCES REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func updateOutlineTab(
+        for dbConnection: Connection,
+        newTab: String,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Void {
+        let outline = DBMS.outline
+
+        let outlineToUpdate = outline.table.filter(
+            outline.foreignKeys.imageColumn == image &&
+            outline.foreignKeys.galleryColumn == gallery.lowercased() &&
+            outline.foreignKeys.toolColumn == tool.lowercased() &&
+            outline.foreignKeys.tabColumn == tab.lowercased() &&
+            outline.foreignKeys.mapColumn == map.lowercased() &&
+            outline.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        try dbConnection.run(
+            outlineToUpdate.update(
+                outline.foreignKeys.tabColumn <- newTab.lowercased()
+            )
+        )
+    }
+    
     // MARK: - BOUNDING CIRCLE
     /// Updates the outline color hex and (optionally) opacity of the specified outline.
     ///
@@ -555,6 +586,36 @@ public extension DBMS.CRUD {
         )
     }
     
+    /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
+    /// - `PK(image, gallery, tool, tab, map, game)`
+    /// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func updateBoundingCircleTab(
+        for dbConnection: Connection,
+        newTab: String,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Void {
+        let boundingCircle = DBMS.boundingCircle
+
+        let outlineToUpdate = boundingCircle.table.filter(
+            boundingCircle.foreignKeys.imageColumn == image &&
+            boundingCircle.foreignKeys.galleryColumn == gallery.lowercased() &&
+            boundingCircle.foreignKeys.toolColumn == tool.lowercased() &&
+            boundingCircle.foreignKeys.tabColumn == tab.lowercased() &&
+            boundingCircle.foreignKeys.mapColumn == map.lowercased() &&
+            boundingCircle.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        try dbConnection.run(
+            outlineToUpdate.update(
+                boundingCircle.foreignKeys.tabColumn <- newTab.lowercased()
+            )
+        )
+    }
     // MARK: - VISUAL MEDIA (FORMER IMAGE)
     
     /// Updates the name of the resource associated with this image in the assets folder. Coincidentially, it updates the media identity on database, cascading
@@ -624,6 +685,38 @@ public extension DBMS.CRUD {
             )
         )
     }
+    
+    /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+    /// - `PK(name, gallery, tool, tab, map, game)`
+    /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    static func updateVisualMediaTab(
+        for dbConnection: Connection,
+        newTab: String,
+        image: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws {
+        let visualMediaTable = DBMS.visualMedia
+                
+        let imageToUpdate = visualMediaTable.table.filter(
+            visualMediaTable.nameColumn == image.lowercased() &&
+            visualMediaTable.foreignKeys.galleryColumn == gallery.lowercased() &&
+            visualMediaTable.foreignKeys.toolColumn == tool.lowercased() &&
+            visualMediaTable.foreignKeys.tabColumn == tab.lowercased() &&
+            visualMediaTable.foreignKeys.mapColumn == map.lowercased() &&
+            visualMediaTable.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        try dbConnection.run(
+            imageToUpdate.update(
+                visualMediaTable.descriptionColumn <- newTab.lowercased()
+            )
+        )
+    }
+    
     
     
     /// Updates the LocalizedStringKey value associated with the search label of the specified visual media, to `searchLabel.lowercased()`.
@@ -703,6 +796,8 @@ public extension DBMS.CRUD {
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    ///
+    /// - Note: An assumption is made that `produce` doesn't alter the order of the input array
     static func updateVisualMediaPositions(
         for dbConnection: Connection,
         image: String,
@@ -854,6 +949,33 @@ public extension DBMS.CRUD {
         )
     }
     
+    /// For all the visual medias in the specified (`tool`, `map`, `game`), their `tab` is set to `targetTab`.
+    ///
+    /// - Note: Since `BOUNDING_CIRCLE`, `OUTLINES`, `LABEL` all reference `VISUAL_MEDIA.tab` as foreign keys and `VISUAL_MEDIA` specified `UPDATE CASCADE` policy, it's expected that all the overlays cascading update their `tab` column to match the new `targetTab`,
+    ///
+    /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+    /// - `PK(name, gallery, tool, tab, map, game)`
+    /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    internal static func updateTabForAllVisualMediasInTool(
+        for dbConnection: Connection,
+        targetTab: String,
+        gallery: String,
+        tool: String,
+        map: String,
+        game: String,
+    ) throws -> Void {
+        let visualMedia = DBMS.visualMedia
+        
+        let tabUpdateQuery = visualMedia.table.filter(
+            visualMedia.foreignKeys.galleryColumn == gallery &&
+            visualMedia.foreignKeys.toolColumn == tool &&
+            visualMedia.foreignKeys.mapColumn == map &&
+            visualMedia.foreignKeys.gameColumn == game
+        ).update(visualMedia.foreignKeys.tabColumn <- targetTab.lowercased())
+        
+        try dbConnection.run(tabUpdateQuery)
+    }
+    
     // MARK: - GALLERIES
     /// For all the first-level galleries whose position is in [`threshold + 1`..< `firstLevelGalleries.count`], this method decreases their position by one.
     ///
@@ -996,7 +1118,7 @@ public extension DBMS.CRUD {
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal func updateAssetsImageName(
+    internal func updateGalleryAssetsImageName(
         for dbConnection: Connection,
         assetsImageName: String,
         gallery: String,
@@ -1017,10 +1139,38 @@ public extension DBMS.CRUD {
                 
         try dbConnection.run(updateGalleryQuery)
     }
+
     
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal func updateGalleryTab(
+        for dbConnection: Connection,
+        newTab: String,
+        gallery: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Void {
+        let galleryTable = DBMS.gallery
+        
+        let updateGalleryQuery = galleryTable.table.filter(
+                galleryTable.nameColumn == gallery &&
+                galleryTable.foreignKeys.gameColumn == game &&
+                galleryTable.foreignKeys.mapColumn == map &&
+                galleryTable.foreignKeys.tabColumn == tab &&
+                galleryTable.foreignKeys.toolColumn == tool
+            ).update(galleryTable.foreignKeys.tabColumn <- newTab.lowercased())
+                
+        try dbConnection.run(updateGalleryQuery)
+    }
+    
+    
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    /// - Note: An internal assumption is made that `produce` doesn't alter the order of the array.
     internal func batchUpdateFirstLevelGalleryPositions(
         for dbConnection: Connection,
         assetsImageName: String,
@@ -1061,16 +1211,18 @@ public extension DBMS.CRUD {
             assert(positions[0] == 0)
             assert(positions[positions.count - 1] == positions.count - 1)
             
-            try updatedModels.forEach { updatedGalleryModel in
-                try Self.updateGalleryPosition(
-                    for: dbConnection,
-                    position: updatedGalleryModel.getPosition(),
-                    gallery: updatedGalleryModel.getName(),
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
+            try updatedModels.enumerated().forEach { i, updatedGalleryModel in
+                if updatedGalleryModel.getPosition() != galleries[i].getPosition() {
+                    try Self.updateGalleryPosition(
+                        for: dbConnection,
+                        position: updatedGalleryModel.getPosition(),
+                        gallery: updatedGalleryModel.getName(),
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
             }
         }
     }
@@ -1079,6 +1231,8 @@ public extension DBMS.CRUD {
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    ///
+    /// - Note: An internal assumption is made that `produce` doesn't alter the order of the array.
     internal func batchUpdatePositionsForImmediateSubgalleriesOfMaster(
         for dbConnection: Connection,
         assetsImageName: String,
@@ -1120,18 +1274,46 @@ public extension DBMS.CRUD {
             assert(positions[0] == 0)
             assert(positions[positions.count - 1] == positions.count - 1)
             
-            try updatedModels.forEach { updatedGalleryModel in
-                try Self.updateGalleryPosition(
-                    for: dbConnection,
-                    position: updatedGalleryModel.getPosition(),
-                    gallery: updatedGalleryModel.getName(),
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
+            try updatedModels.enumerated().forEach { i, updatedGalleryModel in
+                if updatedGalleryModel.getPosition() != galleries[i].getPosition() {
+                    try Self.updateGalleryPosition(
+                        for: dbConnection,
+                        position: updatedGalleryModel.getPosition(),
+                        gallery: updatedGalleryModel.getName(),
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
             }
         }
+    }
+    
+    
+    /// For all the galleries in the specified (`tool`, `map`, `game`), their `tab` is set to `targetTab`.
+    ///
+    /// - Note: Since `VISUAL_MEDIA` references `GALLERY.tab` as foreign keys and `GALLERY` specified `UPDATE CASCADE` policy, it's expected that all the `VISUAL_MEDIA` in the updated `GALLERY` cascading update their `tab` column to match the new `targetTab`, which in turn should `UPDATE CASCADE` all the overlays and variants' `tab` column.
+    ///
+    /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+    /// - `PK(name, gallery, tool, tab, map, game)`
+    /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    internal static func updateTabForAllGalleriesInTool(
+        for dbConnection: Connection,
+        targetTab: String,
+        tool: String,
+        map: String,
+        game: String,
+    ) throws -> Void {
+        let galleryTable = DBMS.gallery
+        
+        let tabUpdateQuery = galleryTable.table.filter(
+            galleryTable.foreignKeys.toolColumn == tool &&
+            galleryTable.foreignKeys.mapColumn == map &&
+            galleryTable.foreignKeys.gameColumn == game
+        ).update(galleryTable.foreignKeys.tabColumn <- targetTab.lowercased())
+        
+        try dbConnection.run(tabUpdateQuery)
     }
     
     // MARK: - TOOLS
@@ -1212,6 +1394,8 @@ public extension DBMS.CRUD {
     /// - `TOOL(name, position, assetsImageName, tab, map, game)`
     /// - `PK(name, tab, map, game)`
     /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    ///
+    /// - Note: An internal assumption is made that `produce` doesn't alter the order of the array.
     internal func  batchUpdatePositionsForTools(
         for dbConnection: Connection,
         tab: String,
@@ -1219,7 +1403,9 @@ public extension DBMS.CRUD {
         game: String,
         produce: @escaping (inout [SerializedToolModel.WritableDraft]) -> Void
     ) throws -> Void {
-        var toolsDrafts = try Self.readToolsForTab(for: dbConnection, game: game, map: map, tab: tab).map { tool in
+        let tools = try Self.readToolsForTab(for: dbConnection, game: game, map: map, tab: tab)
+        
+        var toolsDrafts = tools.map { tool in
             return tool.getMutableCopy()
         }
         
@@ -1238,15 +1424,18 @@ public extension DBMS.CRUD {
             assert(positions[0] == 0)
             assert(positions[positions.count - 1] == positions.count - 1)
             
-            try updatedModels.forEach { updatedToolModel in
-                try Self.updateToolPosition(
-                    for: dbConnection,
-                    position: updatedToolModel.getPosition(),
-                    tool: updatedToolModel.getName(),
-                    game: game,
-                    map: map,
-                    tab: tab
-                )
+            try updatedModels.enumerated().forEach { i, updatedToolModel in
+                
+                if updatedToolModel.getPosition() != tools[i].getPosition() {
+                    try Self.updateToolPosition(
+                        for: dbConnection,
+                        position: updatedToolModel.getPosition(),
+                        tool: updatedToolModel.getName(),
+                        game: game,
+                        map: map,
+                        tab: tab
+                    )
+                }
             }
         }
     }
@@ -1256,7 +1445,7 @@ public extension DBMS.CRUD {
     /// - `TOOL(name, position, assetsImageName, tab, map, game)`
     /// - `PK(name, tab, map, game)`
     /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func decrementPositionForToolsOfTab(
+    internal static func decrementPositionsForToolsOfTab(
         for dbConnection: Connection,
         tab: String,
         map: String,
@@ -1274,4 +1463,216 @@ public extension DBMS.CRUD {
             .update(tools.positionColumn <- tools.positionColumn - 1)
         )
     }
+    
+    /// For all the tools in the specified tab whose position is [`threshold`..< `tab.tools.count`], this method increases their position by one.
+    ///
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func incrementPositionsForToolsOfTab(
+        for dbConnection: Connection,
+        tab: String,
+        map: String,
+        game: String,
+        threshold: Int = 0
+    ) throws -> Void {
+        let tools = DBMS.tool
+        
+        try dbConnection.run(
+            tools.table.filter(
+                tools.foreignKeys.tabColumn == tab &&
+                tools.foreignKeys.mapColumn == map &&
+                tools.foreignKeys.gameColumn == game &&
+                tools.positionColumn >= threshold)
+            .update(tools.positionColumn <- tools.positionColumn + 1)
+        )
+    }
+    
+    
+    private static func updateTabForTool(
+        for dbConnection: Connection,
+        newTab: String,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String,
+    ) throws -> Void {
+        let tools = DBMS.tool
+        
+        try dbConnection.run(
+            tools.table.filter(
+                tools.foreignKeys.tabColumn == tab &&
+                tools.foreignKeys.mapColumn == map &&
+                tools.foreignKeys.gameColumn == game
+            ).update(tools.foreignKeys.tabColumn <- tab.lowercased())
+        )
+    }
+    
+    
+    /// TODO:
+    /// - Since it's expensive, first check if the specified tool's tab is different from the target
+    /// - Batch update the tab for `Tool`, `Gallery`, `Has_Subgallery`, `Image`, `Image_Has_Variant`, `Outline`, `Bounding_Box`
+    /// - Update indices for tools of the former tab, if appropriate
+    /// - Update indices for tools of the new tab, if appropriate
+    /// - Update indices for the migrated tool.
+    static func migrateToolToNewTab(
+        for dbConnection: Connection,
+        updatedPosition: Int? = nil,
+        tool: String,
+        map: String,
+        game: String,
+        produce: @escaping (SerializedTabModel) -> OnTabConflictStrategy,
+        sourceIndicesStrategy: TabMigrationSourcePositionStrategy = .preserveSourceIndices,
+        targetIndicesStrategy: TabMigrationTargetPositionStrategy = .preserveTargetIndices
+    ) throws -> Void {
+        guard let previousTab = try? Self.readTabForTool(for: dbConnection, tool: tool, game: game, map: map) else {
+            Self.logger.warning("Attempted to migrate tool to new tab but could not acquire info about previous tab.")
+            return
+        }
+        
+        assert((try? Self.tabExists(for: dbConnection, tab: previousTab.getName(), map: map, game: game)) != nil)
+
+        
+        guard (try? Self.toolExistsInDifferentTab(
+            for: dbConnection,
+            tool: tool,
+            tab: previousTab.getName(),
+            map: map,
+            game: game)) ?? false else {
+            Self.logger.warning("Attempted to migrate a tool to a new tab but that was not needed, skipping...")
+            return
+        }
+        
+        let toolModel = DBMS.tool
+        
+        let findAllTabsForThisToolQuery = toolModel.table.filter(
+            toolModel.nameColumn == tool &&
+            toolModel.foreignKeys.mapColumn == map &&
+            toolModel.foreignKeys.gameColumn == game
+        )
+        
+        let allTabsForThisTool = try dbConnection.prepare(findAllTabsForThisToolQuery).map { tabRow in
+            return SerializedTabModel(tabRow)
+        }
+        
+        guard allTabsForThisTool.count > 0 else { return }
+        
+        var targetTab: SerializedTabModel? = nil
+        for tab in allTabsForThisTool {
+            if produce(tab) == .keepCurrent {
+                targetTab = tab
+                break
+            }
+        }
+        
+        if let target = targetTab {
+            guard target != previousTab else { return }
+            
+            if sourceIndicesStrategy == .updateSourceIndices {
+                if let positionOfTool = try Self.readToolPosition(for: dbConnection, tool: tool, game: game, map: map, tab: previousTab.getName()) {
+                    try Self.decrementPositionsForToolsOfTab(
+                        for: dbConnection,
+                        tab: previousTab.getName(),
+                        map: map,
+                        game: game,
+                        threshold: positionOfTool
+                    )
+                } else {
+                    fatalError("Could not read position of the tool in the source tab to decrement indices.")
+                }
+            }
+            
+            try Self.updateTabForTool(
+                for: dbConnection,
+                newTab: target.getName(),
+                tool: tool,
+                tab: previousTab.getName(),
+                map: map,
+                game: game
+            )
+            
+            if targetIndicesStrategy == .updateTargetIndices {
+                if let updatedPosition = updatedPosition {
+                    try Self.updateToolPosition(
+                        for: dbConnection,
+                        position: updatedPosition,
+                        tool: tool,
+                        game: game,
+                        map: map,
+                        tab: target.getName()
+                    )
+                    
+                    try Self.incrementPositionsForToolsOfTab(
+                        for: dbConnection,
+                        tab: target.getName(),
+                        map: map,
+                        game: game,
+                        threshold: updatedPosition)
+                } else {
+                    if let positionOfTool = try Self.readToolPosition(for: dbConnection, tool: tool, game: game, map: map, tab: previousTab.getName()) {
+                        try Self.updateToolPosition(
+                            for: dbConnection,
+                            position: positionOfTool,
+                            tool: tool,
+                            game: game,
+                            map: map,
+                            tab: target.getName()
+                        )
+                        
+                        try Self.incrementPositionsForToolsOfTab(
+                            for: dbConnection,
+                            tab: target.getName(),
+                            map: map,
+                            game: game,
+                            threshold: positionOfTool)
+                    } else {
+                        fatalError("Did not specify an updated position, and could not read position of the tool in the source tab to decrement indices.")
+                    }
+                }
+            } else {
+                if targetIndicesStrategy == .placeAtEnd {
+                    if let numberOfTools = try? Self.countToolsForTab(
+                        for: dbConnection,
+                        game: game,
+                        map: map,
+                        tab: target.getName()
+                    ) {
+                        // NB: After moving tool to new tab, there are `numberOfTool + 1` tools in `targetTab`, spanning 0...numberOfTools. Therefore the new position will be numberOfTools
+                        try Self.updateToolPosition(
+                            for: dbConnection,
+                            position: numberOfTools,
+                            tool: tool,
+                            game: game,
+                            map: map,
+                            tab: target.getName()
+                        )
+                    } else {
+                        fatalError("Unable to count number of tools for tab \(target.getName())")
+                    }
+                }
+            }
+            
+            try Self.updateTabForAllGalleriesInTool(
+                for: dbConnection,
+                targetTab: target.getName(),
+                tool: tool,
+                map: map,
+                game: game
+            )
+        } else {
+            fatalError("Unable to find target tab. 0/\(allTabsForThisTool.count) tabs were accepted.")
+        }   
+    }
+}
+
+
+public enum TabMigrationSourcePositionStrategy: Hashable, Sendable {
+    case preserveSourceIndices
+    case updateSourceIndices
+}
+
+public enum TabMigrationTargetPositionStrategy: Hashable, Sendable {
+    case preserveTargetIndices
+    case updateTargetIndices
+    case placeAtEnd
 }

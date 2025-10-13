@@ -103,12 +103,14 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         private var position: Int
         private var name: String
         private var assetsImageName: String
+        private var tab: String
         
         internal init(from: SerializedToolModel) {
             self.owner = from
             self.position = from.getPosition()
             self.name = from.getName()
             self.assetsImageName = from.getAssetsImageName()
+            self.tab = from.getTab()
         }
         
         public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
@@ -126,6 +128,15 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
             return self
         }
         
+        public final func withTab(_ newTab: String) -> Self {
+            self.tab = newTab.lowercased()
+            return self
+        }
+        
+        public final func getTab() -> String {
+            return self.tab
+        }
+        
         public final func getPosition() -> Int {
             return self.position
         }
@@ -136,7 +147,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
                 name: owner.name,
                 position: owner.position,
                 assetsImageName: owner.assetsImageName,
-                tab: owner.tab,
+                tab: self.tab,
                 map: owner.map,
                 game: owner.game
             )

@@ -611,7 +611,7 @@ public extension DBMS.CRUD {
                 fatalError("Attempted to delete a tool but could not find its position.")
             }
             
-            try Self.decrementPositionForToolsOfTab(
+            try Self.decrementPositionsForToolsOfTab(
                 for: dbConnection,
                 tab: tab,
                 map: map,
