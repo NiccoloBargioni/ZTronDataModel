@@ -2604,6 +2604,145 @@ public extension DBMS.CRUD {
     
     
     // MARK: - MAP
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateMapPosition(
+        for dbConnection: Connection,
+        newPosition: Int,
+        game: String,
+        map: String,
+    ) throws -> Void {
+        assert(newPosition >= 0)
+        let mapTable = DBMS.map
+        
+        let updateTabQuery = mapTable.table.filter(
+            mapTable.nameColumn == map &&
+            mapTable.foreignKeys.gameColumn == game
+        ).update(mapTable.positionColumn <- newPosition)
+                
+        try dbConnection.run(updateTabQuery)
+    }
+    
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateMapAssetsImageName(
+        for dbConnection: Connection,
+        newAssetsImageName: String,
+        game: String,
+        map: String,
+    ) throws -> Void {
+        let mapTable = DBMS.map
+        
+        let updateTabQuery = mapTable.table.filter(
+            mapTable.nameColumn == map &&
+            mapTable.foreignKeys.gameColumn == game
+        ).update(mapTable.assetsImageNameColumn <- newAssetsImageName)
+                
+        try dbConnection.run(updateTabQuery)
+    }
+    
+    
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateFirstLevelMapsForGame(
+        for dbConnection: Connection,
+        game: String,
+        produce: @escaping (inout SerializedMapModel.WritableDraft) -> Void,
+        validate: @escaping ([SerializedMapModel]) -> Bool
+    ) throws -> Void {
+        guard var mapsForThisGame = (try Self.readAllMaps(
+            for: dbConnection,
+            game: game,
+            limitToFirstLevelMasters: true
+        )[.maps] as? [SerializedMapModel])?.map ({ tabModel in
+            return tabModel.getMutableCopy()
+        }) else {
+            fatalError("Unable to load maps for game \(game). Aborting")
+        }
+        
+        for i in 0..<mapsForThisGame.count {
+            produce(&mapsForThisGame[i])
+        }
+        
+        guard validate(mapsForThisGame.map ({ draft in
+            return draft.getImmutableCopy()
+        })) else { fatalError("Unable to validate models. Aborting") }
+        
+        
+        try mapsForThisGame.forEach { mapModelDraft in
+            if mapModelDraft.didPositionChange() {
+                try Self.updateMapPosition(
+                    for: dbConnection,
+                    newPosition: mapModelDraft.getPosition(),
+                    game: game,
+                    map: mapModelDraft.getName()
+                )
+            }
+            
+            if mapModelDraft.didAssetsImageNameChange() {
+                try Self.updateMapAssetsImageName(
+                    for: dbConnection,
+                    newAssetsImageName: mapModelDraft.getAssetsImageName(),
+                    game: game,
+                    map: mapModelDraft.getName()
+                )
+            }
+        }
+    }
+    
+    
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateFirstLevelSubmapsOfMap(
+        for dbConnection: Connection,
+        master: String,
+        game: String,
+        produce: @escaping (inout SerializedMapModel.WritableDraft) -> Void,
+        validate: @escaping ([SerializedMapModel]) -> Bool
+    ) throws -> Void {
+        guard var mapsForThisGame = (try Self.readAllSubmaps(
+            for: dbConnection,
+            master: master,
+            game: game
+        )[.maps] as? [SerializedMapModel])?.map ({ tabModel in
+            return tabModel.getMutableCopy()
+        }) else {
+            fatalError("Unable to load maps for game \(game). Aborting")
+        }
+        
+        for i in 0..<mapsForThisGame.count {
+            produce(&mapsForThisGame[i])
+        }
+        
+        guard validate(mapsForThisGame.map ({ draft in
+            return draft.getImmutableCopy()
+        })) else { fatalError("Unable to validate models. Aborting") }
+        
+        
+        try mapsForThisGame.forEach { mapModelDraft in
+            if mapModelDraft.didPositionChange() {
+                try Self.updateMapPosition(
+                    for: dbConnection,
+                    newPosition: mapModelDraft.getPosition(),
+                    game: game,
+                    map: mapModelDraft.getName()
+                )
+            }
+            
+            if mapModelDraft.didAssetsImageNameChange() {
+                try Self.updateMapAssetsImageName(
+                    for: dbConnection,
+                    newAssetsImageName: mapModelDraft.getAssetsImageName(),
+                    game: game,
+                    map: mapModelDraft.getName()
+                )
+            }
+        }
+    }
     
 }
 

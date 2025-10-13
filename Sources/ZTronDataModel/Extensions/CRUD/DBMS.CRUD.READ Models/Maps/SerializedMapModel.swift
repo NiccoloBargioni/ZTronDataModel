@@ -8,13 +8,13 @@ import SQLite
 public final class SerializedMapModel: ReadMapOptional, ObservableObject {
     private let name: String
     private let position: Int
-    private let assetsImageName: String?
+    private let assetsImageName: String
     private let game: String
     
     internal init(
         name: String,
         position: Int,
-        assetsImageName: String?,
+        assetsImageName: String,
         game: String
     ) {
         self.name = name
@@ -63,7 +63,7 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
         MAP(
             name: \(self.name),
             position: \(self.position),
-            assetsImageName: \(self.assetsImageName ?? "nil"),
+            assetsImageName: \(self.assetsImageName),
             game: \(self.game)
         )
         """
@@ -76,19 +76,52 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
     public final class WritableDraft {
         weak private var owner: SerializedMapModel?
         private var position: Int
+        private var assetsImageName: String
+        
+        private var didPositionUpdate: Bool = false
+        private var didAssetsImageNameUpdate: Bool = false
         
         internal init(from: SerializedMapModel) {
             self.owner = from
             self.position = from.getPosition()
+            self.assetsImageName = from.assetsImageName
+        }
+        
+        public final func getName() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getName()
         }
         
         public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
-            self.position = newPosition
+            if self.position != newPosition {
+                self.position = newPosition
+                self.didPositionUpdate = true
+            }
             return self
+        }
+        
+        internal final func didPositionChange() -> Bool {
+            return self.didPositionUpdate
         }
         
         public final func getPosition() -> Int {
             return self.position
+        }
+        
+        public final func withUpdatedAssetsImageName(_ newAssetsImageName: String) -> WritableDraft {
+            if self.assetsImageName != newAssetsImageName {
+                self.assetsImageName = newAssetsImageName
+                self.didAssetsImageNameUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didAssetsImageNameChange() -> Bool {
+            return self.didAssetsImageNameUpdate
+        }
+        
+        public final func getAssetsImageName() -> String {
+            return self.assetsImageName
         }
         
         public final func getImmutableCopy() -> SerializedMapModel {
@@ -96,7 +129,7 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
             return SerializedMapModel(
                 name: owner.getName(),
                 position: self.position,
-                assetsImageName: owner.getAssetsImageName(),
+                assetsImageName: self.assetsImageName,
                 game: owner.getGame()
             )
         }
