@@ -320,10 +320,13 @@ public extension DBMS.CRUD {
             outlineTable.foreignKeys.gameColumn == game
         )
         
-        var outlinesModelsDrafts = try dbConnection.prepare(findBoundingCirclesForImage).map { outlineRow in
-            return SerializedOutlineModel(outlineRow).getMutableCopy()
+        let outlinesModels = try dbConnection.prepare(findBoundingCirclesForImage).map { outlineRow in
+            return SerializedOutlineModel(outlineRow)
         }
                 
+        var outlinesModelsDrafts = outlinesModels.map { model in
+            return model.getMutableCopy()
+        }
         
         for i in 0..<outlinesModelsDrafts.count {
             produce(&outlinesModelsDrafts[i])
@@ -752,10 +755,13 @@ public extension DBMS.CRUD {
             boundingCircleTable.foreignKeys.gameColumn == game
         )
         
-        var boundingCirclesModelsDrafts = try dbConnection.prepare(findBoundingCirclesForImage).map { boundingCircleRow in
-            return SerializedBoundingCircleModel(boundingCircleRow).getMutableCopy()
+        let boundingCirclesModels = try dbConnection.prepare(findBoundingCirclesForImage).map { boundingCircleRow in
+            return SerializedBoundingCircleModel(boundingCircleRow)
         }
-                
+           
+        var boundingCirclesModelsDrafts = boundingCirclesModels.map { bcModel in
+            return bcModel.getMutableCopy()
+        }
         
         for i in 0..<boundingCirclesModelsDrafts.count {
             produce(&boundingCirclesModelsDrafts[i])
