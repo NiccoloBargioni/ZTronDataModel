@@ -2590,19 +2590,23 @@ public extension DBMS.CRUD {
         produce: @escaping (inout SerializedTabModel.WritableDraft) -> Void,
         validate: @escaping ([SerializedTabModel]) -> Bool
     ) throws -> Void {
-        var tabsForThisMap = try Self.readTabsForMap(for: dbConnection, game: game, map: map).map { tabModel in
-            return tabModel.getMutableCopy()
+        let tabsForThisMap = try Self.readTabsForMap(for: dbConnection, game: game, map: map).map { tabModel in
+            return tabModel
+        }
+
+        var tabsDrafts = tabsForThisMap.map { mapModel in
+            return mapModel.getMutableCopy()
         }
         
-        for i in 0..<tabsForThisMap.count {
-            produce(&tabsForThisMap[i])
+        for i in 0..<tabsDrafts.count {
+            produce(&tabsDrafts[i])
         }
         
-        guard validate(tabsForThisMap.map ({ draft in
+        guard validate(tabsDrafts.map ({ draft in
             return draft.getImmutableCopy()
         })) else { fatalError("Unable to validate models. Aborting") }
         
-        try tabsForThisMap.forEach { tabModelDraft in
+        try tabsDrafts.forEach { tabModelDraft in
             if tabModelDraft.didPositionChange() {
                 try Self.updateTabPosition(
                     for: dbConnection,
@@ -2676,27 +2680,29 @@ public extension DBMS.CRUD {
         produce: @escaping (inout SerializedMapModel.WritableDraft) -> Void,
         validate: @escaping ([SerializedMapModel]) -> Bool
     ) throws -> Void {
-        guard var mapsForThisGame = (try Self.readAllMaps(
+        guard let mapsForThisGame = (try Self.readAllMaps(
             for: dbConnection,
             game: game,
             options: [.maps],
             limitToFirstLevelMasters: true
-        )[.maps] as? [SerializedMapModel])?.map ({ gameModel in
-            return gameModel.getMutableCopy()
-        }) else {
+        )[.maps] as? [SerializedMapModel]) else {
             fatalError("Unable to load maps for game \(game). Aborting")
         }
         
-        for i in 0..<mapsForThisGame.count {
-            produce(&mapsForThisGame[i])
+        var mapsDrafts = mapsForThisGame.map { gameModel in
+            return gameModel.getMutableCopy()
         }
         
-        guard validate(mapsForThisGame.map ({ draft in
+        for i in 0..<mapsDrafts.count {
+            produce(&mapsDrafts[i])
+        }
+        
+        guard validate(mapsDrafts.map ({ draft in
             return draft.getImmutableCopy()
         })) else { fatalError("Unable to validate models. Aborting") }
         
         
-        try mapsForThisGame.forEach { mapModelDraft in
+        try mapsDrafts.forEach { mapModelDraft in
             if mapModelDraft.didPositionChange() {
                 try Self.updateMapPosition(
                     for: dbConnection,
@@ -2728,27 +2734,29 @@ public extension DBMS.CRUD {
         produce: @escaping (inout SerializedMapModel.WritableDraft) -> Void,
         validate: @escaping ([SerializedMapModel]) -> Bool
     ) throws -> Void {
-        guard var mapsForThisGame = (try Self.readAllSubmaps(
+        guard let mapsForThisGame = (try Self.readAllSubmaps(
             for: dbConnection,
             master: master,
             game: game,
             options: [.maps]
-        )[.maps] as? [SerializedMapModel])?.map ({ mapsModel in
-            return mapsModel.getMutableCopy()
-        }) else {
+        )[.maps] as? [SerializedMapModel]) else {
             fatalError("Unable to load maps for game \(game). Aborting")
         }
         
-        for i in 0..<mapsForThisGame.count {
-            produce(&mapsForThisGame[i])
+        var mapsDrafts = mapsForThisGame.map { mapsModel in
+            return mapsModel.getMutableCopy()
         }
         
-        guard validate(mapsForThisGame.map ({ draft in
+        for i in 0..<mapsDrafts.count {
+            produce(&mapsDrafts[i])
+        }
+        
+        guard validate(mapsDrafts.map ({ draft in
             return draft.getImmutableCopy()
         })) else { fatalError("Unable to validate models. Aborting") }
         
         
-        try mapsForThisGame.forEach { mapModelDraft in
+        try mapsDrafts.forEach { mapModelDraft in
             if mapModelDraft.didPositionChange() {
                 try Self.updateMapPosition(
                     for: dbConnection,
@@ -2904,22 +2912,24 @@ public extension DBMS.CRUD {
         guard var allGames = (try Self.readAllGames(
             for: dbConnection,
             options: [.games]
-        )[.games] as? [SerializedGameModel])?.map ({ gameModel in
-            return gameModel.getMutableCopy()
-        }) else {
+        )[.games] as? [SerializedGameModel]) else {
             fatalError("Unable to load all games. Aborting")
         }
         
-        for i in 0..<allGames.count {
-            produce(&allGames[i])
+        var gamesDrafts = allGames.map ({ gameModel in
+            return gameModel.getMutableCopy()
+        })
+        
+        for i in 0..<gamesDrafts.count {
+            produce(&gamesDrafts[i])
         }
         
-        guard validate(allGames.map ({ draft in
+        guard validate(gamesDrafts.map ({ draft in
             return draft.getImmutableCopy()
         })) else { fatalError("Unable to validate models. Aborting") }
         
         
-        try allGames.forEach { gameModelDraft in
+        try gamesDrafts.forEach { gameModelDraft in
             if gameModelDraft.didPositionChange() {
                 try Self.updateGamePosition(
                     for: dbConnection,
