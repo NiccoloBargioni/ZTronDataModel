@@ -169,7 +169,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             self.boundingFrameHeight = owner.boundingFrame?.size.height
         }
 
-        public final func withBottomBarIcon(_ newBottomBarIcon: String) -> Self {
+        @discardableResult public final func withBottomBarIcon(_ newBottomBarIcon: String) -> Self {
             self.bottomBarIcon = newBottomBarIcon.lowercased()
             self.didBottomBarIconChange = true
             return self
@@ -186,7 +186,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return owner.bottomBarIcon
         }
         
-        public final func withGoBackBottomBarIcon(_ newGoBackBottomBarIcon: String?) -> Self {
+        @discardableResult public final func withGoBackBottomBarIcon(_ newGoBackBottomBarIcon: String?) -> Self {
             self.goBackBottomBarIcon = newGoBackBottomBarIcon
             self.didGoBackBottomBarIconChange = true
             return self
@@ -203,7 +203,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return owner.goBackBottomBarIcon
         }
 
-        public final func withOriginX(_ newOriginX: Double) -> Self {
+        @discardableResult public final func withOriginX(_ newOriginX: Double) -> Self {
             assert(newOriginX >= 0 && newOriginX <= 1)
             self.boundingFrameOriginX = newOriginX
             self.didBoundingFrameOriginXChange = true
@@ -222,7 +222,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
         }
 
         
-        public final func withOriginY(_ newOriginY: Double) -> Self {
+        @discardableResult public final func withOriginY(_ newOriginY: Double) -> Self {
             assert(newOriginY >= 0 && newOriginY <= 1)
             self.boundingFrameOriginY = newOriginY
             self.didBoundingFrameOriginYChange = true
@@ -241,7 +241,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return owner.boundingFrame?.origin.y
         }
         
-        public final func withOrigin(_ origin: CGPoint?) -> Self {
+        @discardableResult public final func withOrigin(_ origin: CGPoint?) -> Self {
             assert(origin?.x ?? 0 >= 0 && origin?.x ?? 0 <= 1)
             assert(origin?.y ?? 0 >= 0 && origin?.y ?? 0 <= 1)
             
@@ -266,7 +266,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return self.didBoundingFrameOriginXChange || self.didBoundingFrameOriginYChange
         }
 
-        public final func withWidth(_ newWidth: Double) -> Self {
+        @discardableResult public final func withWidth(_ newWidth: Double) -> Self {
             assert(newWidth >= 0 && newWidth <= 1)
             self.boundingFrameWidth = newWidth
             self.didBoundingFrameWidthChange = true
@@ -284,7 +284,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return owner.boundingFrame?.size.width
         }
         
-        public final func withHeight(_ newHeight: Double) -> Self {
+        @discardableResult public final func withHeight(_ newHeight: Double) -> Self {
             assert(newHeight >= 0 && newHeight <= 1)
             self.boundingFrameHeight = newHeight
             self.didBoundingFrameHeightChange = true
@@ -303,7 +303,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return owner.boundingFrame?.size.height
         }
         
-        public final func withSize(_ size: CGSize?) -> Self {
+        @discardableResult public final func withSize(_ size: CGSize?) -> Self {
             assert(size?.width ?? 0 >= 0 && size?.width ?? 0 <= 1)
             assert(size?.height ?? 0 >= 0 && size?.height ?? 0 <= 1)
             

@@ -177,7 +177,7 @@ public final class SerializedVideoModel: SerializedVisualMediaModel {
             )
         }
         
-        public final func withName(_ name: String) -> WritableDraft {
+        @discardableResult public final func withName(_ name: String) -> WritableDraft {
             if self.name != name {
                 self.name = name.lowercased()
                 self.didNameChange = true
@@ -198,7 +198,7 @@ public final class SerializedVideoModel: SerializedVisualMediaModel {
             return owner.getName()
         }
         
-        public final func withDescription(_ description: String) -> WritableDraft {
+        @discardableResult public final func withDescription(_ description: String) -> WritableDraft {
             if self.description != description {
                 self.description = description.lowercased()
                 self.didDescriptionChange = true
@@ -220,7 +220,7 @@ public final class SerializedVideoModel: SerializedVisualMediaModel {
             return self.description
         }
         
-        public final func withPosition(_ position: Int) -> WritableDraft {
+        @discardableResult public final func withPosition(_ position: Int) -> WritableDraft {
             if self.position != position {
                 self.position = position
                 self.didPositionChange = true
@@ -241,7 +241,7 @@ public final class SerializedVideoModel: SerializedVisualMediaModel {
             return owner.position
         }
         
-        public final func withSearchLabel(_ searchLabel: String?) -> WritableDraft {
+        @discardableResult public final func withSearchLabel(_ searchLabel: String?) -> WritableDraft {
             if self.searchLabel != searchLabel {
                 self.searchLabel = searchLabel?.lowercased()
                 self.didSearchLabelChange = true

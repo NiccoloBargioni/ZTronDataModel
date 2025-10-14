@@ -118,7 +118,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
             self.tab = from.getTab()
         }
         
-        public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
+        @discardableResult public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
             if self.position != newPosition {
                 self.position = newPosition
                 self.didPositionUpdate = true
@@ -137,7 +137,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
             return owner.position
         }
         
-        public final func withName(_ newName: String) -> Self {
+        @discardableResult public final func withName(_ newName: String) -> Self {
             if self.name != newName {
                 self.name = newName.lowercased()
                 self.didNameUpdate = true
@@ -157,7 +157,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         }
 
         
-        public final func withAssetsImageName(_ newAssetsImageName: String) -> Self {
+        @discardableResult public final func withAssetsImageName(_ newAssetsImageName: String) -> Self {
             if self.assetsImageName != newAssetsImageName {
                 self.assetsImageName = newAssetsImageName
                 self.didAssetsImageNameUpdate = true
@@ -176,7 +176,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
             return owner.assetsImageName
         }
         
-        public final func withTab(_ newTab: String) -> Self {
+        @discardableResult public final func withTab(_ newTab: String) -> Self {
             if self.tab != newTab {
                 self.tab = newTab.lowercased()
                 self.didTabUpdate = true

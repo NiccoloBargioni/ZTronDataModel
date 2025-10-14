@@ -163,7 +163,7 @@ public final class SerializedOutlineModel: ReadImageOptional {
             self.owner = from
         }
         
-        public final func withResourceName(_ resourceName: String) -> Self {
+        @discardableResult public final func withResourceName(_ resourceName: String) -> Self {
             if self.resourceName != resourceName {
                 self.resourceName = resourceName.lowercased()
                 self.didResourceNameUpdate = true
@@ -180,7 +180,7 @@ public final class SerializedOutlineModel: ReadImageOptional {
             return self.resourceName
         }
         
-        public final func withColorHex(_ colorHex: String) -> Self {
+        @discardableResult public final func withColorHex(_ colorHex: String) -> Self {
             if self.colorHex != colorHex {
                 assert(isValidHexColor(colorHex))
                 self.colorHex = colorHex
@@ -204,7 +204,7 @@ public final class SerializedOutlineModel: ReadImageOptional {
             return owner.colorHex
         }
 
-        public final func withIsActive(_ isActive: Bool) -> Self {
+        @discardableResult public final func withIsActive(_ isActive: Bool) -> Self {
             if self._isActive != isActive {
                 self._isActive = isActive
                 self.didIsActiveUpdate = true
@@ -227,7 +227,7 @@ public final class SerializedOutlineModel: ReadImageOptional {
             return owner._isActive
         }
         
-        public final func withOpacity(_ opacity: Double) -> Self {
+        @discardableResult public final func withOpacity(_ opacity: Double) -> Self {
             if self.opacity != opacity {
                 assert(opacity >= 0 && opacity <= 1)
                 self.opacity = opacity
@@ -251,7 +251,7 @@ public final class SerializedOutlineModel: ReadImageOptional {
             return owner.opacity
         }
         
-        public final func withBoundingBox(_ boundingBox: CGRect) -> Self {
+        @discardableResult public final func withBoundingBox(_ boundingBox: CGRect) -> Self {
             if boundingBox.origin.x != self.boundingBox.origin.x ||
                 boundingBox.origin.y != self.boundingBox.origin.y ||
                 boundingBox.size.width != self.boundingBox.size.width ||

@@ -96,7 +96,7 @@ public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableOb
             self.position = from.getPosition()
         }
         
-        public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
+        @discardableResult public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
             self.position = newPosition
             return self
         }

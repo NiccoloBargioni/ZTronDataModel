@@ -157,7 +157,7 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
             self.owner = from
         }
         
-        public final func withColorHex(_ colorHex: String) -> Self {
+        @discardableResult public final func withColorHex(_ colorHex: String) -> Self {
             if self.colorHex != colorHex {
                 assert(isValidHexColor(colorHex))
                 self.colorHex = colorHex
@@ -182,7 +182,7 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
             return self.colorHex
         }
 
-        public final func withIsActive(_ isActive: Bool) -> Self {
+        @discardableResult public final func withIsActive(_ isActive: Bool) -> Self {
             if self._isActive != isActive {
                 self._isActive = isActive
                 self.didIsActiveUpdate = true
@@ -206,7 +206,7 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
         }
 
         
-        public final func withOpacity(_ opacity: Double) -> Self {
+        @discardableResult public final func withOpacity(_ opacity: Double) -> Self {
             if self.opacity != opacity {
                 assert(opacity >= 0 && opacity <= 1)
                 self.opacity = opacity
@@ -231,7 +231,7 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
         }
 
         
-        public final func withIdleDiameter(_ diameter: Double?) -> Self {
+        @discardableResult public final func withIdleDiameter(_ diameter: Double?) -> Self {
             if self.idleDiameter != idleDiameter {
                 assert(diameter ?? 0 >= 0 && diameter ?? 0 <= 1)
                 self.idleDiameter = diameter
@@ -256,7 +256,7 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
             return owner.idleDiameter
         }
         
-        public final func withNormalizedCenter(_ center: CGPoint?) -> Self {
+        @discardableResult public final func withNormalizedCenter(_ center: CGPoint?) -> Self {
             if self.normalizedCenter?.x != center?.x || self.normalizedCenter?.y != center?.y {
                 assert(center?.x ?? 0 >= 0 && center?.x ?? 0 <= 1)
                 assert(center?.y ?? 0 >= 0 && center?.y ?? 0 <= 1)

@@ -92,7 +92,7 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
             return owner.name
         }
         
-        public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
+        @discardableResult public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
             if self.position != newPosition {
                 self.position = newPosition
                 self.didPositionUpdate = true
@@ -115,7 +115,7 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
             return self.position
         }
         
-        public final func withUpdatedAssetsImageName(_ newAssetsImageName: String) -> WritableDraft {
+        @discardableResult public final func withUpdatedAssetsImageName(_ newAssetsImageName: String) -> WritableDraft {
             if self.assetsImageName != newAssetsImageName {
                 self.assetsImageName = newAssetsImageName
                 self.didAssetsImageNameUpdate = true

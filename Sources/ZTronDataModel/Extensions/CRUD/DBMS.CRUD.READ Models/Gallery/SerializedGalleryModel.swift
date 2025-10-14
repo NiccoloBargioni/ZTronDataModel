@@ -103,7 +103,7 @@ public final class SerializedGalleryModel: ReadGalleryOptional {
             self.owner = parent
         }
         
-        public final func withName(_ name: String) -> Self {
+        @discardableResult public final func withName(_ name: String) -> Self {
             if self.name != name {
                 self.name = name.lowercased()
                 self.didNameChange = true
@@ -124,7 +124,7 @@ public final class SerializedGalleryModel: ReadGalleryOptional {
             return owner.getName()
         }
         
-        public final func withPosition(_ position: Int) -> Self {
+        @discardableResult public final func withPosition(_ position: Int) -> Self {
             if self.position != position {
                 self.position = position
                 self.didPositionChange = true
@@ -147,7 +147,7 @@ public final class SerializedGalleryModel: ReadGalleryOptional {
             return owner.position
         }
         
-        public final func withAssetsImageName(_ assetsImageName: String?) -> Self {
+        @discardableResult public final func withAssetsImageName(_ assetsImageName: String?) -> Self {
             if self.assetsImageName != assetsImageName {
                 self.assetsImageName = assetsImageName
                 self.didAssetsImageNameChange = true

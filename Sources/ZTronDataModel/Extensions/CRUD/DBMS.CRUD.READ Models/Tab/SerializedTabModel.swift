@@ -90,7 +90,7 @@ public final class SerializedTabModel: Hashable, Sendable, ObservableObject {
             self.name = from.getName()
         }
         
-        public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
+        @discardableResult public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
             if self.position != newPosition {
                 self.position = newPosition
                 self.didPositionUpdate = true
@@ -111,7 +111,7 @@ public final class SerializedTabModel: Hashable, Sendable, ObservableObject {
         }
         
         
-        public final func withName(_ name: String) -> Self {
+        @discardableResult public final func withName(_ name: String) -> Self {
             if self.name != name {
                 self.name = name.lowercased()
                 self.didNameUpdate = true

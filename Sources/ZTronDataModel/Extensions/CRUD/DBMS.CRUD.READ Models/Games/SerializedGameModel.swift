@@ -90,7 +90,7 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
             self.assetsImageName = from.assetsImageName
         }
         
-        public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
+        @discardableResult public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
             if newPosition != self.position {
                 self.position = newPosition
                 self.didPositionUpdate = true
@@ -113,7 +113,7 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
             return owner.position
         }
         
-        public final func withAssetsImageName(_ assetsImageName: String) -> Self {
+        @discardableResult public final func withAssetsImageName(_ assetsImageName: String) -> Self {
             if self.assetsImageName != assetsImageName {
                 self.assetsImageName = assetsImageName.lowercased()
                 self.didAssetsImageNameUpdate = true
@@ -142,6 +142,14 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
                 fatalError("Unable to retain reference of master before reading `name`.")
             }
             return owner.name
+        }
+
+        
+        public final func getStudio() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `studio`.")
+            }
+            return owner.studio
         }
 
         
