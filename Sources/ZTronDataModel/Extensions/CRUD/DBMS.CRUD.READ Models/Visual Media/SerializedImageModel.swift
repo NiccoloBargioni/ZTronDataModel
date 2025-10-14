@@ -178,8 +178,8 @@ public final class SerializedImageModel: SerializedVisualMediaModel {
         }
         
         public final func getPreviousName() -> String {
-            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
-            return owner.getName()
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `name`.") }
+            return owner.name
         }
         
         public final func withDescription(_ description: String) -> WritableDraft {
@@ -198,6 +198,11 @@ public final class SerializedImageModel: SerializedVisualMediaModel {
             return self.description
         }
         
+        public final func getPreviousDescription() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `description`.") }
+            return owner.description
+        }
+        
         public final func withPosition(_ position: Int) -> WritableDraft {
             if position != self.position {
                 self.position = position
@@ -214,6 +219,12 @@ public final class SerializedImageModel: SerializedVisualMediaModel {
             return self.position
         }
         
+        public final func getPreviousPosition() -> Int {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `position`.") }
+            return owner.position
+        }
+
+        
         public final func withSearchLabel(_ searchLabel: String?) -> WritableDraft {
             if searchLabel != self.searchLabel {
                 self.searchLabel = searchLabel?.lowercased()
@@ -221,6 +232,7 @@ public final class SerializedImageModel: SerializedVisualMediaModel {
             }
             return self
         }
+        
         
         internal final func didSearchLabelUpdate() -> Bool {
             return self.didSearchLabelChange
@@ -230,6 +242,40 @@ public final class SerializedImageModel: SerializedVisualMediaModel {
             return self.searchLabel
         }
         
+        public final func getPreviousSearchLabel() -> String? {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `searchLabel`.") }
+            return owner.searchLabel
+        }
+        
+        public final func getTool() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tool`.")
+            }
+            return owner.tool
+        }
+        
+        public final func getTab() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tab`.")
+            }
+            return owner.tab
+        }
+        
+        public final func getMap() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `map`.")
+            }
+            return owner.map
+        }
+        
+        public final func getGame() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `game`.")
+            }
+            return owner.game
+        }
+        
+        /// - Note: Unsafe. One could make an immutable copy from this and pass it around as if it was fetched from db.
         public final func getImmutableCopy() -> SerializedImageModel {
             guard let owner = self.owner else {
                 fatalError("Unexpectedly released reference to parent before returning immutable copy")

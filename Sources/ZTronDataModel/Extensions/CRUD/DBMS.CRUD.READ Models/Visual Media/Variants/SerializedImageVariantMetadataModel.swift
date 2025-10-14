@@ -179,6 +179,13 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return self.didBottomBarIconChange
         }
         
+        public final func getPreviousBottomBarIcon() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `bottomBarIcon`.")
+            }
+            return owner.bottomBarIcon
+        }
+        
         public final func withGoBackBottomBarIcon(_ newGoBackBottomBarIcon: String?) -> Self {
             self.goBackBottomBarIcon = newGoBackBottomBarIcon
             self.didGoBackBottomBarIconChange = true
@@ -189,6 +196,13 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return self.didGoBackBottomBarIconChange
         }
         
+        public final func getPreviousGoBackBottomBarIcon() -> String? {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `goBackBottomBaricon`.")
+            }
+            return owner.goBackBottomBarIcon
+        }
+
         public final func withOriginX(_ newOriginX: Double) -> Self {
             assert(newOriginX >= 0 && newOriginX <= 1)
             self.boundingFrameOriginX = newOriginX
@@ -200,11 +214,31 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return self.didBoundingFrameOriginXChange
         }
         
+        public final func getPreviousOriginX() -> Double? {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `origin.x`.")
+            }
+            return owner.boundingFrame?.origin.x
+        }
+
+        
         public final func withOriginY(_ newOriginY: Double) -> Self {
             assert(newOriginY >= 0 && newOriginY <= 1)
             self.boundingFrameOriginY = newOriginY
             self.didBoundingFrameOriginYChange = true
             return self
+        }
+        
+        internal final func didOriginYUpdate() -> Bool {
+            return self.didBoundingFrameOriginYChange
+        }
+
+        
+        public final func getPreviousOriginY() -> Double? {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `origin.y`.")
+            }
+            return owner.boundingFrame?.origin.y
         }
         
         public final func withOrigin(_ origin: CGPoint) -> Self {
@@ -218,6 +252,14 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             self.didBoundingFrameOriginYChange = true
             
             return self
+        }
+        
+        public final func getPreviousOrigin() -> CGPoint? {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `origin`.")
+            }
+            return owner.boundingFrame?.origin
+
         }
         
         internal final func didOriginUpdate() -> Bool {
@@ -235,6 +277,13 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return self.didBoundingFrameWidthChange
         }
         
+        public final func getPreviousWidth() -> Double? {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `size.width`.")
+            }
+            return owner.boundingFrame?.size.width
+        }
+        
         public final func withHeight(_ newHeight: Double) -> Self {
             assert(newHeight >= 0 && newHeight <= 1)
             self.boundingFrameHeight = newHeight
@@ -242,8 +291,16 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return self
         }
         
+        
         internal final func didHeightUpdate() -> Bool {
             return self.didBoundingFrameHeightChange
+        }
+        
+        public final func getPreviousHeight() -> Double? {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `size.height`.")
+            }
+            return owner.boundingFrame?.size.height
         }
         
         public final func withSize(_ size: CGSize) -> Self {
@@ -262,6 +319,14 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
         internal final func didSizeUpdate() -> Bool {
             return self.didBoundingFrameWidthChange || self.didBoundingFrameHeightChange
         }
+        
+        public final func getPreviousSize() -> CGSize? {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `size`.")
+            }
+            return owner.boundingFrame?.size
+        }
+
         
         public final func getBottomBarIcon() -> String {
             return self.bottomBarIcon
@@ -315,7 +380,49 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return owner.slave
         }
         
-        public final func getImmutableCopy() -> SerializedImageVariantMetadataModel {
+        public final func getMaster() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `master`.")
+            }
+            return owner.master
+        }
+                
+        public final func getGallery() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `gallery`.")
+            }
+            return owner.gallery
+        }
+        
+        public final func getTool() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tool`.")
+            }
+            return owner.tool
+        }
+        
+        public final func getTab() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tab`.")
+            }
+            return owner.tab
+        }
+        
+        public final func getMap() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `map`.")
+            }
+            return owner.map
+        }
+        
+        public final func getGame() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `game`.")
+            }
+            return owner.game
+        }
+        
+        internal final func getImmutableCopy() -> SerializedImageVariantMetadataModel {
             guard let owner = self.owner else {
                 fatalError("Failed to retain reference to owner before committing the draft.")
             }

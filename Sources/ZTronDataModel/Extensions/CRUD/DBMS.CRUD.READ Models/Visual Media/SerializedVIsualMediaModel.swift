@@ -34,10 +34,14 @@ public protocol SerializedVisualMediaModelWritableDraft {
     func getImmutableCopy() -> M
     
     func getName() -> String
-    func getPreviousName() -> String
     func getDescription() -> String
     func getPosition() -> Int
     func getSearchLabel() -> String?
+
+    func getPreviousName() -> String
+    func getPreviousDescription() -> String
+    func getPreviousPosition() -> Int
+    func getPreviousSearchLabel() -> String?
 }
 
 internal protocol SerializedVisualMediaModelWritableDraftUpdateBearer {    

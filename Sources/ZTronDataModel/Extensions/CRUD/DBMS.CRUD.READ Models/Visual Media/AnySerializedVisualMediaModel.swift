@@ -93,6 +93,21 @@ public final class AnySerializedVisualMediaModel: SerializedVisualMediaModel {
     }
  
     public final class AnyWritableDraft: SerializedVisualMediaModelWritableDraft {
+        public func getPreviousDescription() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.description!
+        }
+        
+        public func getPreviousPosition() -> Int {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.position!
+        }
+        
+        public func getPreviousSearchLabel() -> String? {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.searchLabel!
+        }
+        
         
         public func getImmutableCopy() -> AnySerializedVisualMediaModel {
             guard let owner = self.owner else {

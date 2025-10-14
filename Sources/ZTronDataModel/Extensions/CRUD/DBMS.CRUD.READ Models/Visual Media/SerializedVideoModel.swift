@@ -210,6 +210,12 @@ public final class SerializedVideoModel: SerializedVisualMediaModel {
             return self.didDescriptionChange
         }
         
+        public final func getPreviousDescription() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `description`.") }
+            return owner.description
+        }
+
+        
         public final func getDescription() -> String {
             return self.description
         }
@@ -230,6 +236,11 @@ public final class SerializedVideoModel: SerializedVisualMediaModel {
             return self.position
         }
         
+        public final func getPreviousPosition() -> Int {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `position`.") }
+            return owner.position
+        }
+        
         public final func withSearchLabel(_ searchLabel: String?) -> WritableDraft {
             if self.searchLabel != searchLabel {
                 self.searchLabel = searchLabel?.lowercased()
@@ -242,10 +253,16 @@ public final class SerializedVideoModel: SerializedVisualMediaModel {
             return self.didSearchLabelChange
         }
         
+        public final func getPreviousSearchLabel() -> String? {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `searchLabel`.") }
+            return owner.searchLabel
+        }
+        
         public final func getSearchLabel() -> String? {
             return self.searchLabel
         }
         
+        /// - Note: Unsafe. One could make an immutable copy from this and pass it around as if it was fetched from db.
         public final func getImmutableCopy() -> SerializedVideoModel {
             guard let owner = self.owner else {
                 fatalError("Unexpectedly released reference to parent before returning immutable copy")

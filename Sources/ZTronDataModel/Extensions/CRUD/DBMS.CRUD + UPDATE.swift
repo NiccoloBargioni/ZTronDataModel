@@ -2765,6 +2765,70 @@ public extension DBMS.CRUD {
         }
     }
     
+    
+    // MARK: - MAP
+    /// For all the tools in the specified first level maps whose position is [`threshold + 1`..< `game.maps.count`], this method decreases their position by one.
+    ///
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func decrementPositionsForFirstLevelMapsInGame(
+        for dbConnection: Connection,
+        game: String,
+        threshold: Int = 0
+    ) throws -> Void {
+        let maps = DBMS.map
+        let submaps = DBMS.hasSubmap
+        
+        let findSlavesQuery = submaps.table.select(submaps.slaveColumn).filter(
+            submaps.foreignKeys.gameColumn == game
+        )
+        
+        let slaves = try dbConnection.prepare(findSlavesQuery).map { mapRow in
+            return mapRow[maps.nameColumn]
+        }
+        
+        try dbConnection.run(
+            maps.table.filter(
+                !slaves.contains(maps.nameColumn) &&
+                maps.foreignKeys.gameColumn == game &&
+                maps.positionColumn > threshold)
+            .update(maps.positionColumn <- maps.positionColumn - 1)
+        )
+    }
+    
+    
+    /// For all the tools in the specified first level maps whose position is [`threshold + 1`..< `game.maps.count`], this method decreases their position by one.
+    ///
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func decrementPositionsForSubmapsOfMaster(
+        for dbConnection: Connection,
+        master: String,
+        game: String,
+        threshold: Int = 0
+    ) throws -> Void {
+        let maps = DBMS.map
+        let submaps = DBMS.hasSubmap
+        
+        let findSlavesQuery = submaps.table.select(submaps.slaveColumn).filter(
+            submaps.masterColumn == master &&
+            submaps.foreignKeys.gameColumn == game
+        )
+        
+        let slaves = try dbConnection.prepare(findSlavesQuery).map { mapRow in
+            return mapRow[maps.nameColumn]
+        }
+        
+        try dbConnection.run(
+            maps.table.filter(
+                slaves.contains(maps.nameColumn) &&
+                maps.foreignKeys.gameColumn == game &&
+                maps.positionColumn > threshold)
+            .update(maps.positionColumn <- maps.positionColumn - 1)
+        )
+    }
 }
 
 

@@ -33,6 +33,50 @@ extension DBMS.CRUD {
 
     
     // MARK: - READ MAPS
+    internal static func readMapPosition(
+        for dbConnection: Connection,
+        game: String,
+        map: String,
+    ) throws -> Int? {
+        let mapTable = DBMS.map
+        
+        let findMapQuery = mapTable.table.filter(
+            mapTable.nameColumn == map.lowercased() &&
+            mapTable.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        let positions = try dbConnection.prepare(findMapQuery).map { result in
+            return result[mapTable.positionColumn]
+        }
+        
+        assert(positions.count <= 1)
+        
+        return positions.first
+    }
+    
+    
+    internal static func readMapMaster(
+        for dbConnection: Connection,
+        map: String,
+        game: String,
+    ) throws -> SerializedMapModel? {
+        let submaps = DBMS.hasSubmap
+        
+        let findMapQuery = submaps.table.filter(
+            submaps.slaveColumn == map.lowercased() &&
+            submaps.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        let masters = try dbConnection.prepare(findMapQuery).map { result in
+            return SerializedMapModel(result)
+        }
+        
+        assert(masters.count <= 1)
+        
+        return masters.first
+    }
+    
+    
     public static func readAllMaps(
         for dbConnection: Connection,
         game: String,
@@ -164,6 +208,83 @@ extension DBMS.CRUD {
         return result
     }
 
+    
+    internal static func readSubmapsTree(
+        for dbConnection: Connection,
+        master: String,
+        game: String,
+    ) throws -> [SerializedMapModel] {
+        let mapTable = DBMS.map
+        let slavesTable = DBMS.hasSubmap
+        
+        let findAllSubgalleriesQuery: String = """
+        WITH RECURSIVE SubtreeOfMap AS (
+            SELECT
+                \(mapTable.tableName).\(mapTable.nameColumn.template),
+                \(mapTable.tableName).\(mapTable.positionColumn.template),
+                \(mapTable.tableName).\(mapTable.assetsImageNameColumn.template),
+                \(mapTable.tableName).\(mapTable.foreignKeys.gameColumn.template),
+            FROM \(mapTable.tableName)
+            WHERE
+                \(mapTable.tableName).\(mapTable.nameColumn.template) = "\(master.lowercased())"
+                AND \(mapTable.tableName).\(mapTable.foreignKeys.gameColumn.template) = "\(game.lowercased())"
+
+            UNION ALL
+
+            SELECT
+                SUBMAP.\(mapTable.nameColumn.template),
+                SUBMAP.\(mapTable.positionColumn.template),
+                SUBMAP.\(mapTable.assetsImageNameColumn.template),
+                SUBMAP.\(mapTable.foreignKeys.gameColumn.template),
+            FROM
+                \(mapTable.tableName) SUBMAP
+            INNER JOIN \(slavesTable.tableName) ON
+                \(slavesTable.tableName).\(slavesTable.slaveColumn.template) = SUBMAP.\(mapTable.nameColumn.template)
+                AND \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template) = SUBMAP.\(mapTable.foreignKeys.gameColumn.template)
+            INNER JOIN SubtreeOfMap ON 
+                        SubtreeOfMap.\(mapTable.nameColumn.template
+        ) = \(slavesTable.tableName).\(slavesTable.masterColumn.template)
+                AND SubtreeOfMap.\(mapTable.foreignKeys.gameColumn) = \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template)
+        )
+        SELECT * FROM SubtreeOfMap;
+        """
+        
+        var statement: OpaquePointer?
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        if sqlite3_prepare_v2(dbConnection.handle, findAllSubgalleriesQuery, -1, &statement, nil) == SQLITE_OK {
+            var submaps: [SerializedMapModel] = []
+            
+            while sqlite3_step(statement) == SQLITE_ROW {
+                /*
+                 Column 0: name String
+                 Column 1: position Int
+                 Column 2: assetsImageName: String
+                 Column 3: game: String
+                 */
+                
+                let nameColumn = String(cString: sqlite3_column_text(statement, 0))
+                let positionColumn = sqlite3_column_int(statement, 1)
+                let assetsImageNameColumn = String(cString: sqlite3_column_text(statement,2))
+                let gameColumn = String(cString: sqlite3_column_text(statement, 3))
+                
+                submaps.append(SerializedMapModel(
+                    name: nameColumn,
+                    position: Int(positionColumn),
+                    assetsImageName: assetsImageNameColumn,
+                    game: gameColumn
+                ))
+            }
+            
+            return submaps
+        } else {
+            let errorMessage = String(cString: sqlite3_errmsg(dbConnection.handle))
+            throw SQLQueryError.genericError(reason: errorMessage)
+        }
+    }
     
     //MARK: - READ VISUAL MEDIA
     private static func _readFirstLevelMasterImagesForGallery(
@@ -1905,7 +2026,7 @@ extension DBMS.CRUD {
                 
                 let nameColumn = String(cString: sqlite3_column_text(statement, 0))
                 let positionColumn = sqlite3_column_int(statement, 1)
-                let assetsImageNameColumn = sqlite3_column_type(statement, 1) != SQLITE_NULL ? String(cString: sqlite3_column_text(statement,2)) : nil
+                let assetsImageNameColumn = sqlite3_column_type(statement, 2) != SQLITE_NULL ? String(cString: sqlite3_column_text(statement,2)) : nil
                 let toolColumn = String(cString: sqlite3_column_text(statement, 3))
                 let tabColumn = String(cString: sqlite3_column_text(statement, 4))
                 let mapColumn = String(cString: sqlite3_column_text(statement, 5))

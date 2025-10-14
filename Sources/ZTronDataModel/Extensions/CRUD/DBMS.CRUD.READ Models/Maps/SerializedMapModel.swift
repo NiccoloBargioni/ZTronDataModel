@@ -89,7 +89,7 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
         
         public final func getName() -> String {
             guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
-            return owner.getName()
+            return owner.name
         }
         
         public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
@@ -100,9 +100,16 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
             return self
         }
         
+        
         internal final func didPositionChange() -> Bool {
             return self.didPositionUpdate
         }
+        
+        public final func getPreviousPosition() -> Int {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.position
+        }
+
         
         public final func getPosition() -> Int {
             return self.position
@@ -119,6 +126,12 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
         internal final func didAssetsImageNameChange() -> Bool {
             return self.didAssetsImageNameUpdate
         }
+        
+        public final func getPreviousAssetsImageName() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.assetsImageName
+        }
+
         
         public final func getAssetsImageName() -> String {
             return self.assetsImageName

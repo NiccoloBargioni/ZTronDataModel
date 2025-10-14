@@ -197,6 +197,13 @@ public final class SerializedOutlineModel: ReadImageOptional {
             return self.colorHex
         }
 
+        public final func getPreviousColorHex() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `colorHex`.")
+            }
+            return owner.colorHex
+        }
+
         public final func withIsActive(_ isActive: Bool) -> Self {
             if self._isActive != isActive {
                 self._isActive = isActive
@@ -213,6 +220,12 @@ public final class SerializedOutlineModel: ReadImageOptional {
             return self._isActive
         }
 
+        public final func getPreviousIsActive() -> Bool {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `isActive`.")
+            }
+            return owner._isActive
+        }
         
         public final func withOpacity(_ opacity: Double) -> Self {
             if self.opacity != opacity {
@@ -231,6 +244,12 @@ public final class SerializedOutlineModel: ReadImageOptional {
             return self.opacity
         }
 
+        public final func getPreviousOpacity() -> Double {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `opacity`.")
+            }
+            return owner.opacity
+        }
         
         public final func withBoundingBox(_ boundingBox: CGRect) -> Self {
             if boundingBox.origin.x != self.boundingBox.origin.x ||
@@ -249,12 +268,62 @@ public final class SerializedOutlineModel: ReadImageOptional {
             return self.didBoundingBoxUpdate
         }
         
+        
+        public final func getPreviousBoundingBox() -> CGRect {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `bounding box`.")
+            }
+            return owner.boundingBox
+        }
+
+        
         public final func getBoundingBox() -> CGRect {
             return self.boundingBox
         }
 
+        public final func getImage() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `image`.")
+            }
+            return owner.image
+        }
         
-        public final func getImmutableCopy() -> SerializedOutlineModel {
+        public final func getGallery() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `gallery`.")
+            }
+            return owner.gallery
+        }
+        
+        public final func getTool() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tool`.")
+            }
+            return owner.tool
+        }
+        
+        public final func getTab() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tab`.")
+            }
+            return owner.tab
+        }
+        
+        public final func getMap() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `map`.")
+            }
+            return owner.map
+        }
+        
+        public final func getGame() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `game`.")
+            }
+            return owner.game
+        }
+        
+        internal final func getImmutableCopy() -> SerializedOutlineModel {
             guard let owner = self.owner else {
                 fatalError("Unable to retain reference of master before committing draft.")
             }

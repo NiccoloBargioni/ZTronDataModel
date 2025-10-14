@@ -130,6 +130,13 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
             return self.didPositionUpdate
         }
         
+        public final func getPreviousPosition() -> Int {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `position`.")
+            }
+            return owner.position
+        }
+        
         public final func withName(_ newName: String) -> Self {
             if self.name != newName {
                 self.name = newName.lowercased()
@@ -142,6 +149,14 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
             return self.didNameUpdate
         }
         
+        public final func getPreviousName() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `name`.")
+            }
+            return owner.name
+        }
+
+        
         public final func withAssetsImageName(_ newAssetsImageName: String) -> Self {
             if self.assetsImageName != newAssetsImageName {
                 self.assetsImageName = newAssetsImageName
@@ -152,6 +167,13 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         
         internal final func didAssetsImageNameChange() -> Bool {
             return self.didAssetsImageNameUpdate
+        }
+        
+        public final func getPreviousAssetsImageName() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `assetsImageName`.")
+            }
+            return owner.assetsImageName
         }
         
         public final func withTab(_ newTab: String) -> Self {
@@ -182,17 +204,28 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         public final func getName() -> String {
             return self.name
         }
-        
-        public final func getPreviousName() -> String {
-            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
-            return owner.getName()
-        }
-        
+                
         public final func getAssetsImageName() -> String {
             return self.assetsImageName
         }
         
-        public final func getImmutableCopy() -> SerializedToolModel {
+        
+        public final func getMap() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `map`.")
+            }
+            return owner.map
+        }
+        
+        public final func getGame() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `game`.")
+            }
+            return owner.game
+        }
+
+        
+        internal final func getImmutableCopy() -> SerializedToolModel {
             guard let owner = self.owner else { fatalError("Failed to retain reference to mutable parent of type \(String(describing: SerializedToolModel.self))") }
             return SerializedToolModel(
                 name: self.name,

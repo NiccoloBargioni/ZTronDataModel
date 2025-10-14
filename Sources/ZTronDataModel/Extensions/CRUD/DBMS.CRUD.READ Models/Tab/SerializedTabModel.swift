@@ -102,6 +102,15 @@ public final class SerializedTabModel: Hashable, Sendable, ObservableObject {
             return self.didPositionUpdate
         }
         
+        
+        public final func getPreviousPosition() -> Int {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `position`.")
+            }
+            return owner.position
+        }
+        
+        
         public final func withName(_ name: String) -> Self {
             if self.name != name {
                 self.name = name.lowercased()
@@ -114,20 +123,38 @@ public final class SerializedTabModel: Hashable, Sendable, ObservableObject {
             return self.didNameUpdate
         }
         
+        public final func getPreviousName() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `name`.")
+            }
+            return owner.name
+        }
+
+        
         public final func getPosition() -> Int {
             return self.position
-        }
-        
-        public final func getPreviousName() -> String {
-            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
-            return owner.getName()
         }
         
         public final func getName() -> String {
             return self.name
         }
         
-        public final func getImmutableCopy() -> SerializedTabModel {
+        
+        public final func getGame() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `game`.")
+            }
+            return owner.game
+        }
+
+        public final func getMap() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `map`.")
+            }
+            return owner.map
+        }
+
+        internal final func getImmutableCopy() -> SerializedTabModel {
             guard let owner = self.owner else { fatalError("Failed to retain reference to mutable parent of type \(String(describing: SerializedTabModel.self))") }
             
             return SerializedTabModel(

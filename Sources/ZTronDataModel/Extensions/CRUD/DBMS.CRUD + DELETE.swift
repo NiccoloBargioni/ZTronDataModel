@@ -674,13 +674,13 @@ public extension DBMS.CRUD {
         let tabTable = DBMS.tab
         
         func delete() throws {
-            let findToolQuery = tabTable.table.filter(
+            let findTabQuery = tabTable.table.filter(
                 tabTable.nameColumn == tab.lowercased() &&
                 tabTable.foreignKeys.mapColumn == map.lowercased() &&
                 tabTable.foreignKeys.gameColumn == game.lowercased()
             )
 
-            try dbConnection.run(findToolQuery.delete())
+            try dbConnection.run(findTabQuery.delete())
         }
         
         if shouldDecreasePositions {
@@ -736,7 +736,157 @@ public extension DBMS.CRUD {
             }
         }
     }
-
     
+    // MARK: - MAPS
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func deleteMap(
+        for dbConnection: Connection,
+        map: String,
+        game: String
+    ) throws -> Void {
+        let mapTable = DBMS.map
+        
+        let subtreeOfMap = try Self.readSubmapsTree(
+            for: dbConnection,
+            master: map.lowercased(),
+            game: game.lowercased(),
+        )
+
+        try subtreeOfMap.forEach { mapModel in
+            let findMapQuery = mapTable.table.filter(
+                mapTable.nameColumn == map.lowercased() &&
+                mapTable.foreignKeys.gameColumn == game.lowercased()
+            )
+
+            try dbConnection.run(findMapQuery.delete())
+        }
+    }
+    
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func deleteFirstLevelMap(
+        for dbConnection: Connection,
+        map: String,
+        game: String,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+                
+        if shouldDecreasePositions {
+            guard let position = try Self.readMapPosition(
+                for: dbConnection,
+                game: game,
+                map: map,
+            ) else {
+                fatalError("Attempted to delete a map but could not find its position.")
+            }
+            
+            try Self.decrementPositionsForFirstLevelMapsInGame(
+                for: dbConnection,
+                game: game,
+                threshold: position
+            )
+            
+            try deleteMap(for: dbConnection, map: map, game: game)
+        } else {
+            try deleteMap(for: dbConnection, map: map, game: game)
+        }
+    }
+    
+    
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func deleteSubmapOfMap(
+        for dbConnection: Connection,
+        map: String,
+        game: String,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        guard let masterOfThisMap = try Self.readMapMaster(for: dbConnection, map: map, game: game) else {
+            Self.logger.error("Attempted to delete immediate submap of map but couldn't find its master")
+            return
+        }
+        
+        if shouldDecreasePositions {
+            guard let position = try Self.readMapPosition(
+                for: dbConnection,
+                game: game,
+                map: map,
+            ) else {
+                fatalError("Attempted to delete a submap but could not find its position.")
+            }
+            
+            try Self.decrementPositionsForSubmapsOfMaster(
+                for: dbConnection,
+                master: masterOfThisMap.getName(),
+                game: game,
+                threshold: position
+            )
+            
+            try deleteMap(for: dbConnection, map: map, game: game)
+        } else {
+            try deleteMap(for: dbConnection, map: map, game: game)
+        }
+    }
+    
+    
+    
+    static func batchDeleteFirstLevelMapsForGame(
+        for dbConnection: Connection,
+        game: String,
+        shouldRemove: (SerializedMapModel) -> Bool,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        guard let firstLevelMapsForThisGame = (try Self.readAllMaps(
+            for: dbConnection,
+            game: game,
+            limitToFirstLevelMasters: true
+        )[.maps] as? [SerializedMapModel]) else {
+            fatalError("Attempted but failed to read list of first-level maps for game \(game)")
+        }
+        
+        try firstLevelMapsForThisGame.forEach { mapModel in
+            if shouldRemove(mapModel) {
+                try Self.deleteFirstLevelMap(
+                    for: dbConnection,
+                    map: mapModel.getName(),
+                    game: game,
+                    shouldDecreasePositions: shouldDecreasePositions
+                )
+            }
+        }
+    }
+    
+    
+    static func batchDeleteFirstLevelSubmapsForMap(
+        for dbConnection: Connection,
+        master: String,
+        game: String,
+        shouldRemove: (SerializedMapModel) -> Bool,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        guard let firstLevelSlavesOfMap = (try Self.readAllSubmaps(
+            for: dbConnection,
+            master: master,
+            game: game,
+            limitToFirstLevelMasters: true
+        )[.maps] as? [SerializedMapModel]) else {
+            fatalError("Attempted but failed to read list of first-level submaps of \(master) for game \(game)")
+        }
+        
+        try firstLevelSlavesOfMap.forEach { mapModel in
+            if shouldRemove(mapModel) {
+                try Self.deleteFirstLevelMap(
+                    for: dbConnection,
+                    map: mapModel.getName(),
+                    game: game,
+                    shouldDecreasePositions: shouldDecreasePositions
+                )
+            }
+        }
+    }
 }
 #endif

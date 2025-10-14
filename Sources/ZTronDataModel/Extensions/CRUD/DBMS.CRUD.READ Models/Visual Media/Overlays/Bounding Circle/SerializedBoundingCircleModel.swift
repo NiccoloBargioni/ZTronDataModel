@@ -166,8 +166,16 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
             return self
         }
         
+        
         internal final func didColorHexChange() -> Bool {
             return self.didColorHexUpdate
+        }
+        
+        public final func getPreviousColorHex() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `colorHex`.")
+            }
+            return owner.colorHex
         }
         
         public final func getColorHex() -> String {
@@ -186,6 +194,13 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
             return self.didIsActiveUpdate
         }
         
+        public final func getPreviousIsActive() -> Bool {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `isActive`.")
+            }
+            return owner._isActive
+        }
+
         public final func isActive() -> Bool {
             return self._isActive
         }
@@ -202,6 +217,13 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
         
         internal final func didOpacityChange() -> Bool {
             return self.didOpacityUpdate
+        }
+        
+        public final func getPreviousOpacity() -> Double {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `opacity`.")
+            }
+            return owner.opacity
         }
         
         public final func getOpacity() -> Double {
@@ -222,11 +244,17 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
             return self.didIdleDiameterUpdate
         }
         
+        
         public final func getIdleDiameter() -> Double? {
             return self.idleDiameter
         }
 
-        
+        public final func getPreviousIdleDiameter() -> Double? {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `idle diameter`.")
+            }
+            return owner.idleDiameter
+        }
         
         public final func withNormalizedCenter(_ center: CGPoint?) -> Self {
             if self.normalizedCenter?.x != center?.x || self.normalizedCenter?.y != center?.y {
@@ -244,11 +272,63 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
             return self.didNormalizedCenterUpdate
         }
         
+        
         public final func getNormalizedCenter() -> CGPoint? {
             return self.normalizedCenter
         }
+        
+        
+        public final func getPreviousNormalizedCenter() -> CGPoint? {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `normalized center`.")
+            }
+            return owner.normalizedCenter
+        }
 
-        public final func getImmutableCopy() -> SerializedBoundingCircleModel {
+        
+        public final func getImage() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `image`.")
+            }
+            return owner.image
+        }
+        
+        public final func getGallery() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `gallery`.")
+            }
+            return owner.gallery
+        }
+        
+        public final func getTool() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tool`.")
+            }
+            return owner.tool
+        }
+        
+        public final func getTab() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tab`.")
+            }
+            return owner.tab
+        }
+        
+        public final func getMap() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `map`.")
+            }
+            return owner.map
+        }
+        
+        public final func getGame() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `game`.")
+            }
+            return owner.game
+        }
+        
+        internal final func getImmutableCopy() -> SerializedBoundingCircleModel {
             guard let owner = self.owner else {
                 fatalError("Unable to retain reference of master before committing draft.")
             }

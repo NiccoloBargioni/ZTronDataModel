@@ -140,6 +140,13 @@ public final class SerializedGalleryModel: ReadGalleryOptional {
             return self.position
         }
         
+        public final func getPreviousPosition() -> Int {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `position`.")
+            }
+            return owner.position
+        }
+        
         public final func withAssetsImageName(_ assetsImageName: String?) -> Self {
             if self.assetsImageName != assetsImageName {
                 self.assetsImageName = assetsImageName
@@ -148,6 +155,7 @@ public final class SerializedGalleryModel: ReadGalleryOptional {
             return self
         }
         
+        
         public final func didAssetsImageNameUpdate() -> Bool {
             return self.didAssetsImageNameChange
         }
@@ -155,8 +163,43 @@ public final class SerializedGalleryModel: ReadGalleryOptional {
         public final func getAssetsImageName() -> String? {
             return self.assetsImageName
         }
+
+        public final func getPreviousAssetsImageName() -> String? {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `assetsImageName`.")
+            }
+            return owner.assetsImageName
+        }
+                
+        public final func getTool() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tool`.")
+            }
+            return owner.tool
+        }
         
-        public final func getImmutableCopy() -> SerializedGalleryModel {
+        public final func getTab() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tab`.")
+            }
+            return owner.tab
+        }
+        
+        public final func getMap() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `map`.")
+            }
+            return owner.map
+        }
+        
+        public final func getGame() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `game`.")
+            }
+            return owner.game
+        }
+        
+        internal final func getImmutableCopy() -> SerializedGalleryModel {
             guard let owner = self.owner else {
                 fatalError("Attempted to create an immutable copy after parent was already released.")
             }
