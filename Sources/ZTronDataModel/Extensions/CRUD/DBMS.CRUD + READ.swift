@@ -7,6 +7,26 @@ extension String: ReadGalleryOptional {  }
 
 extension DBMS.CRUD {
     // MARK: - READ GAMES
+    internal static func readGamePosition(
+        for dbConnection: Connection,
+        game: String,
+    ) throws -> Int? {
+        let gameTable = DBMS.game
+        
+        let findMapQuery = gameTable.table.filter(
+            gameTable.nameColumn == game.lowercased()
+        )
+        
+        let positions = try dbConnection.prepare(findMapQuery).map { result in
+            return result[gameTable.positionColumn]
+        }
+        
+        assert(positions.count <= 1)
+        
+        return positions.first
+    }
+    
+    
     public static func readAllGames(
         for dbConnection: Connection,
         options: Set<ReadGamesOption> = Set<ReadGamesOption>([.games])

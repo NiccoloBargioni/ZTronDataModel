@@ -704,7 +704,6 @@ public extension DBMS.CRUD {
         } else {
             try delete()
         }
-        
     }
     
     
@@ -833,7 +832,9 @@ public extension DBMS.CRUD {
     }
     
     
-    
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
     static func batchDeleteFirstLevelMapsForGame(
         for dbConnection: Connection,
         game: String,
@@ -861,6 +862,9 @@ public extension DBMS.CRUD {
     }
     
     
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
     static func batchDeleteFirstLevelSubmapsForMap(
         for dbConnection: Connection,
         master: String,
@@ -883,6 +887,65 @@ public extension DBMS.CRUD {
                     for: dbConnection,
                     map: mapModel.getName(),
                     game: game,
+                    shouldDecreasePositions: shouldDecreasePositions
+                )
+            }
+        }
+    }
+    
+    // MARK: - GAME
+    internal static func deleteGame(
+        for dbConnection: Connection,
+        game: String,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        let gameTable = DBMS.game
+        
+        func delete() throws {
+            let findGameQuery = gameTable.table.filter(
+                gameTable.nameColumn == game.lowercased()
+            )
+
+            try dbConnection.run(findGameQuery.delete())
+        }
+        
+        if shouldDecreasePositions {
+            guard let position = try Self.readGamePosition(
+                for: dbConnection,
+                game: game,
+            ) else {
+                fatalError("Attempted to delete a game but could not find its position.")
+            }
+            
+            try Self.decrementPositionsForGames(for: dbConnection, threshold: position)
+            
+            try delete()
+        } else {
+            try delete()
+        }
+    }
+    
+    
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func batchDeleteGames(
+        for dbConnection: Connection,
+        shouldRemove: (SerializedGameModel) -> Bool,
+        shouldDecreasePositions: Bool = false
+    ) throws -> Void {
+        guard let games = (try Self.readAllGames(
+            for: dbConnection,
+            options: [.games]
+        )[.games] as? [SerializedGameModel]) else {
+            fatalError("Attempted but failed to read list of all games")
+        }
+        
+        try games.forEach { gameModel in
+            if shouldRemove(gameModel) {
+                try Self.deleteGame(
+                    for: dbConnection,
+                    game: gameModel.getName(),
                     shouldDecreasePositions: shouldDecreasePositions
                 )
             }

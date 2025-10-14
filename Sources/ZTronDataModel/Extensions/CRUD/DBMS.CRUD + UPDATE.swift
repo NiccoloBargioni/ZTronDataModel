@@ -2677,9 +2677,10 @@ public extension DBMS.CRUD {
         guard var mapsForThisGame = (try Self.readAllMaps(
             for: dbConnection,
             game: game,
+            options: [.maps],
             limitToFirstLevelMasters: true
-        )[.maps] as? [SerializedMapModel])?.map ({ tabModel in
-            return tabModel.getMutableCopy()
+        )[.maps] as? [SerializedMapModel])?.map ({ gameModel in
+            return gameModel.getMutableCopy()
         }) else {
             fatalError("Unable to load maps for game \(game). Aborting")
         }
@@ -2728,9 +2729,10 @@ public extension DBMS.CRUD {
         guard var mapsForThisGame = (try Self.readAllSubmaps(
             for: dbConnection,
             master: master,
-            game: game
-        )[.maps] as? [SerializedMapModel])?.map ({ tabModel in
-            return tabModel.getMutableCopy()
+            game: game,
+            options: [.maps]
+        )[.maps] as? [SerializedMapModel])?.map ({ mapsModel in
+            return mapsModel.getMutableCopy()
         }) else {
             fatalError("Unable to load maps for game \(game). Aborting")
         }
@@ -2766,7 +2768,7 @@ public extension DBMS.CRUD {
     }
     
     
-    // MARK: - MAP
+
     /// For all the tools in the specified first level maps whose position is [`threshold + 1`..< `game.maps.count`], this method decreases their position by one.
     ///
     /// - `MAP(name, position, assetsImageName, game)`
@@ -2828,6 +2830,110 @@ public extension DBMS.CRUD {
                 maps.positionColumn > threshold)
             .update(maps.positionColumn <- maps.positionColumn - 1)
         )
+    }
+    
+    // MARK: - GAME
+    /// For all the tools in the specified games whose position is [`threshold + 1`..< `games.count`], this method decreases their position by one.
+    ///
+    /// - `GAME(name, position, assetsImageName, studio)`
+    /// - `PK(name)`
+    /// - `FK(studio) REFERENCES STUDIO(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func decrementPositionsForGames(
+        for dbConnection: Connection,
+        threshold: Int = 0
+    ) throws -> Void {
+        let gameTable = DBMS.game
+        
+        try dbConnection.run(
+            gameTable.table.filter(
+                gameTable.positionColumn > threshold)
+            .update(gameTable.positionColumn <- gameTable.positionColumn - 1)
+        )
+    }
+    
+    /// - `GAME(name, position, assetsImageName, studio)`
+    /// - `PK(name)`
+    /// - `FK(studio) REFERENCES STUDIO(name) ON DELETE CASCADE ON UPDATE CASCADE`
+     internal static func updateGamePosition(
+        for dbConnection: Connection,
+        newPosition: Int,
+        game: String,
+        threshold: Int = 0
+    ) throws -> Void {
+        assert(newPosition >= 0)
+        let gameTable = DBMS.game
+        
+        try dbConnection.run(
+            gameTable.table.filter(
+                gameTable.nameColumn == game.lowercased()
+            )
+            .update(gameTable.positionColumn <- newPosition)
+        )
+    }
+    
+    
+    /// - `GAME(name, position, assetsImageName, studio)`
+    /// - `PK(name)`
+    /// - `FK(studio) REFERENCES STUDIO(name) ON DELETE CASCADE ON UPDATE CASCADE`
+     internal static func updateGameAssetsImageName(
+        for dbConnection: Connection,
+        assetsImageName: String,
+        game: String,
+    ) throws -> Void {
+        let gameTable = DBMS.game
+        
+        try dbConnection.run(
+            gameTable.table.filter(
+                gameTable.nameColumn == game.lowercased()
+            )
+            .update(gameTable.assetsImageNameColumn <- assetsImageName.lowercased())
+        )
+    }
+    
+    
+    /// - `MAP(name, position, assetsImageName, game)`
+    /// - `PK(name, game)`
+    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateGames(
+        for dbConnection: Connection,
+        produce: @escaping (inout SerializedGameModel.WritableDraft) -> Void,
+        validate: @escaping ([SerializedGameModel]) -> Bool
+    ) throws -> Void {
+        guard var allGames = (try Self.readAllGames(
+            for: dbConnection,
+            options: [.games]
+        )[.games] as? [SerializedGameModel])?.map ({ gameModel in
+            return gameModel.getMutableCopy()
+        }) else {
+            fatalError("Unable to load all games. Aborting")
+        }
+        
+        for i in 0..<allGames.count {
+            produce(&allGames[i])
+        }
+        
+        guard validate(allGames.map ({ draft in
+            return draft.getImmutableCopy()
+        })) else { fatalError("Unable to validate models. Aborting") }
+        
+        
+        try allGames.forEach { gameModelDraft in
+            if gameModelDraft.didPositionChange() {
+                try Self.updateGamePosition(
+                    for: dbConnection,
+                    newPosition: gameModelDraft.getPosition(),
+                    game: gameModelDraft.getName()
+                )
+            }
+            
+            if gameModelDraft.didAssetsImageNameChange() {
+                try Self.updateGameAssetsImageName(
+                    for: dbConnection,
+                    assetsImageName: gameModelDraft.getAssetsImageName(),
+                    game: gameModelDraft.getName(),
+                )
+            }
+        }
     }
 }
 

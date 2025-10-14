@@ -137,7 +137,7 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
             return self.assetsImageName
         }
         
-        public final func getImmutableCopy() -> SerializedMapModel {
+        internal final func getImmutableCopy() -> SerializedMapModel {
             guard let owner = self.owner else { fatalError("Failed to retain reference to mutable parent of type \(String(describing: SerializedGameModel.self))") }
             return SerializedMapModel(
                 name: owner.getName(),

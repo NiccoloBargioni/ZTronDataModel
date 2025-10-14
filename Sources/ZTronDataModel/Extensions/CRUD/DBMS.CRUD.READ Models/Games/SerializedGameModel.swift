@@ -79,14 +79,22 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
     public final class WritableDraft {
         weak private var owner: SerializedGameModel?
         private var position: Int
+        private var assetsImageName: String
+        
+        private var didPositionUpdate: Bool = false
+        private var didAssetsImageNameUpdate: Bool = false
         
         internal init(from: SerializedGameModel) {
             self.owner = from
-            self.position = from.getPosition()
+            self.position = from.position
+            self.assetsImageName = from.assetsImageName
         }
         
         public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
-            self.position = newPosition
+            if newPosition != self.position {
+                self.position = newPosition
+                self.didPositionUpdate = true
+            }
             return self
         }
         
@@ -94,9 +102,58 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
             return self.position
         }
         
-        public final func getImmutableCopy() -> SerializedGameModel {
+        internal final func didPositionChange() -> Bool {
+            return self.didPositionUpdate
+        }
+        
+        public final func getPreviousPosition() -> Int {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `position`.")
+            }
+            return owner.position
+        }
+        
+        public final func withAssetsImageName(_ assetsImageName: String) -> Self {
+            if self.assetsImageName != assetsImageName {
+                self.assetsImageName = assetsImageName.lowercased()
+                self.didAssetsImageNameUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didAssetsImageNameChange() -> Bool {
+            return self.didAssetsImageNameUpdate
+        }
+
+        public final func getAssetsImageName() -> String {
+            return self.assetsImageName
+        }
+
+        public final func getPreviousAssetsImageName() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `assetsImageName`.")
+            }
+            return owner.assetsImageName
+        }
+        
+        
+        public final func getName() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `name`.")
+            }
+            return owner.name
+        }
+
+        
+        internal final func getImmutableCopy() -> SerializedGameModel {
             guard let owner = self.owner else { fatalError("Failed to retain reference to mutable parent of type \(String(describing: SerializedGameModel.self))") }
-            return SerializedGameModel(name: owner.getName(), position: self.position, assetsImageName: owner.getAssetsImageName(), studio: owner.getStudio())
+            
+            return SerializedGameModel(
+                name: owner.getName(),
+                position: self.position,
+                assetsImageName: self.assetsImageName,
+                studio: owner.getStudio()
+            )
         }
     }
 
