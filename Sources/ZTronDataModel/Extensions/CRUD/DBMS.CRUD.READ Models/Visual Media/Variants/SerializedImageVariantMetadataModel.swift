@@ -241,12 +241,12 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return owner.boundingFrame?.origin.y
         }
         
-        public final func withOrigin(_ origin: CGPoint) -> Self {
-            assert(origin.x >= 0 && origin.x <= 1)
-            assert(origin.y >= 0 && origin.y <= 1)
+        public final func withOrigin(_ origin: CGPoint?) -> Self {
+            assert(origin?.x ?? 0 >= 0 && origin?.x ?? 0 <= 1)
+            assert(origin?.y ?? 0 >= 0 && origin?.y ?? 0 <= 1)
             
-            self.boundingFrameOriginX = origin.x
-            self.boundingFrameOriginY = origin.y
+            self.boundingFrameOriginX = origin?.x
+            self.boundingFrameOriginY = origin?.y
             
             self.didBoundingFrameOriginXChange = true
             self.didBoundingFrameOriginYChange = true
@@ -303,12 +303,12 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             return owner.boundingFrame?.size.height
         }
         
-        public final func withSize(_ size: CGSize) -> Self {
-            assert(size.width >= 0 && size.width <= 1)
-            assert(size.height >= 0 && size.height <= 1)
+        public final func withSize(_ size: CGSize?) -> Self {
+            assert(size?.width ?? 0 >= 0 && size?.width ?? 0 <= 1)
+            assert(size?.height ?? 0 >= 0 && size?.height ?? 0 <= 1)
             
-            self.boundingFrameWidth = size.width
-            self.boundingFrameHeight = size.height
+            self.boundingFrameWidth = size?.width
+            self.boundingFrameHeight = size?.height
             
             self.didBoundingFrameWidthChange = true
             self.didBoundingFrameHeightChange = true
