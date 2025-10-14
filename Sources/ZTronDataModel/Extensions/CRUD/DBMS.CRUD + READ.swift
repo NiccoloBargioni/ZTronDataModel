@@ -1110,7 +1110,7 @@ extension DBMS.CRUD {
             .join(
                 slavesTable.table,
                 on: slavesTable.masterColumn == master &&
-                slavesTable.table[slavesTable.masterColumn] == imagesTable.table[imagesTable.nameColumn] &&
+                slavesTable.table[slavesTable.slaveColumn] == imagesTable.table[imagesTable.nameColumn] &&
                 slavesTable.table[slavesTable.foreignKeys.gameColumn] == imagesTable.table[imagesTable.foreignKeys.gameColumn] &&
                 slavesTable.table[slavesTable.foreignKeys.mapColumn] == imagesTable.table[imagesTable.foreignKeys.mapColumn] &&
                 slavesTable.table[slavesTable.foreignKeys.tabColumn] == imagesTable.table[imagesTable.foreignKeys.tabColumn] &&
