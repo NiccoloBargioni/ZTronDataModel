@@ -231,9 +231,9 @@ public final class SerializedBoundingCircleModel: ReadImageOptional {
         }
 
         
-        public final func withIdleDiameter(_ diameter: Double) -> Self {
+        public final func withIdleDiameter(_ diameter: Double?) -> Self {
             if self.idleDiameter != idleDiameter {
-                assert(diameter >= 0 && diameter <= 1)
+                assert(diameter ?? 0 >= 0 && diameter ?? 0 <= 1)
                 self.idleDiameter = diameter
                 self.didIdleDiameterUpdate = true
             }
