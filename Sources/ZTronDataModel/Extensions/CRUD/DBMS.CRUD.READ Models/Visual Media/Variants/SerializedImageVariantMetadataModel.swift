@@ -167,6 +167,7 @@ public final class SerializedImageVariantMetadataModel: ReadImageOptional {
             self.boundingFrameOriginY = owner.boundingFrame?.origin.y
             self.boundingFrameWidth = owner.boundingFrame?.size.width
             self.boundingFrameHeight = owner.boundingFrame?.size.height
+            self.owner = owner
         }
 
         @discardableResult public final func withBottomBarIcon(_ newBottomBarIcon: String) -> Self {
