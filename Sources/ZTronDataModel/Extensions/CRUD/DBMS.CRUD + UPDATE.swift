@@ -2451,19 +2451,21 @@ public extension DBMS.CRUD {
         produce: @escaping (inout SerializedToolModel.WritableDraft) -> Void,
         validate: @escaping ([SerializedToolModel]) -> Bool
     ) throws -> Void {
-        var toolsForThisTab = try Self.readToolsForTab(for: dbConnection, game: game, map: map, tab: tab).map { tabModel in
+        let toolsForThisTab = try Self.readToolsForTab(for: dbConnection, game: game, map: map, tab: tab)
+        
+        var toolsDrafts = toolsForThisTab.map { tabModel in
             return tabModel.getMutableCopy()
         }
         
-        for i in 0..<toolsForThisTab.count {
-            produce(&toolsForThisTab[i])
+        for i in 0..<toolsDrafts.count {
+            produce(&toolsDrafts[i])
         }
         
-        guard validate(toolsForThisTab.map ({ draft in
+        guard validate(toolsDrafts.map ({ draft in
             return draft.getImmutableCopy()
         })) else { fatalError("Unable to validate models. Aborting") }
         
-        try toolsForThisTab.forEach { toolDraftModel in
+        try toolsDrafts.forEach { toolDraftModel in
             if toolDraftModel.didPositionChange() {
                 try Self.updateToolPosition(
                     for: dbConnection,
