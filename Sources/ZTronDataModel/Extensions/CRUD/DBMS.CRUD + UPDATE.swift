@@ -969,12 +969,15 @@ public extension DBMS.CRUD {
             return
         }
     
-        guard var variantsDrafts = variantsForThisMaster?.getVariants().map ({ variantModel in
-            return variantModel.getMutableCopy()
-        }) else {
+        guard let variantsModels = variantsForThisMaster?.getVariants() else {
             Self.logger.error("Unable to make variants drafts for \(tool)/\(gallery)/\(master)")
             return
         }
+        
+        var variantsDrafts = variantsModels.map { variantModel in
+            return variantModel.getMutableCopy()
+        }
+        
         
         for i in 0..<variantsDrafts.count {
             produce(&variantsDrafts[i])
