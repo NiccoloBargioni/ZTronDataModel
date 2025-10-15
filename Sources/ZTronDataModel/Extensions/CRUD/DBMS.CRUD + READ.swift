@@ -243,7 +243,7 @@ extension DBMS.CRUD {
                 \(mapTable.tableName).\(mapTable.nameColumn.template),
                 \(mapTable.tableName).\(mapTable.positionColumn.template),
                 \(mapTable.tableName).\(mapTable.assetsImageNameColumn.template),
-                \(mapTable.tableName).\(mapTable.foreignKeys.gameColumn.template),
+                \(mapTable.tableName).\(mapTable.foreignKeys.gameColumn.template)
             FROM \(mapTable.tableName)
             WHERE
                 \(mapTable.tableName).\(mapTable.nameColumn.template) = "\(master.lowercased())"
@@ -255,7 +255,7 @@ extension DBMS.CRUD {
                 SUBMAP.\(mapTable.nameColumn.template),
                 SUBMAP.\(mapTable.positionColumn.template),
                 SUBMAP.\(mapTable.assetsImageNameColumn.template),
-                SUBMAP.\(mapTable.foreignKeys.gameColumn.template),
+                SUBMAP.\(mapTable.foreignKeys.gameColumn.template)
             FROM
                 \(mapTable.tableName) SUBMAP
             INNER JOIN \(slavesTable.tableName) ON
@@ -264,7 +264,7 @@ extension DBMS.CRUD {
             INNER JOIN SubtreeOfMap ON 
                         SubtreeOfMap.\(mapTable.nameColumn.template
         ) = \(slavesTable.tableName).\(slavesTable.masterColumn.template)
-                AND SubtreeOfMap.\(mapTable.foreignKeys.gameColumn) = \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template)
+                AND SubtreeOfMap.\(mapTable.foreignKeys.gameColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template)
         )
         SELECT * FROM SubtreeOfMap;
         """
@@ -1986,7 +1986,7 @@ extension DBMS.CRUD {
                 \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template),
                 \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template),
                 \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template),
-                \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template),
+                \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template)
             FROM \(galleryTable.tableName)
             WHERE
                 \(galleryTable.tableName).\(galleryTable.nameColumn.template) = "\(master.lowercased())"
@@ -2004,7 +2004,7 @@ extension DBMS.CRUD {
                 SUBGALLERY.\(galleryTable.foreignKeys.toolColumn.template),
                 SUBGALLERY.\(galleryTable.foreignKeys.tabColumn.template),
                 SUBGALLERY.\(galleryTable.foreignKeys.mapColumn.template),
-                SUBGALLERY.\(galleryTable.foreignKeys.gameColumn.template),
+                SUBGALLERY.\(galleryTable.foreignKeys.gameColumn.template)
             FROM
                 \(galleryTable.tableName) SUBGALLERY
             INNER JOIN \(slavesTable.tableName) ON
