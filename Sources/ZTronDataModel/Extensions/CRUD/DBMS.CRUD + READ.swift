@@ -1109,13 +1109,20 @@ extension DBMS.CRUD {
             )
             .join(
                 slavesTable.table,
-                on: slavesTable.masterColumn == master &&
-                slavesTable.table[slavesTable.slaveColumn] == imagesTable.table[imagesTable.nameColumn] &&
+                on: slavesTable.table[slavesTable.slaveColumn] == imagesTable.table[imagesTable.nameColumn] &&
                 slavesTable.table[slavesTable.foreignKeys.gameColumn] == imagesTable.table[imagesTable.foreignKeys.gameColumn] &&
                 slavesTable.table[slavesTable.foreignKeys.mapColumn] == imagesTable.table[imagesTable.foreignKeys.mapColumn] &&
                 slavesTable.table[slavesTable.foreignKeys.tabColumn] == imagesTable.table[imagesTable.foreignKeys.tabColumn] &&
                 slavesTable.table[slavesTable.foreignKeys.toolColumn] == imagesTable.table[imagesTable.foreignKeys.toolColumn] &&
                 slavesTable.table[slavesTable.foreignKeys.galleryColumn] == imagesTable.table[imagesTable.foreignKeys.galleryColumn]
+            )
+            .filter(
+                slavesTable.table[slavesTable.foreignKeys.gameColumn] == game.lowercased() &&
+                slavesTable.table[slavesTable.foreignKeys.mapColumn] == map.lowercased() &&
+                slavesTable.table[slavesTable.foreignKeys.tabColumn] == tab.lowercased() &&
+                slavesTable.table[slavesTable.foreignKeys.toolColumn] == tool.lowercased() &&
+                slavesTable.table[slavesTable.foreignKeys.galleryColumn] == gallery.lowercased() &&
+                slavesTable.table[slavesTable.masterColumn] == master.lowercased()
             )
             .order(imagesTable.table[imagesTable.positionColumn])
         
