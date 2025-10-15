@@ -188,7 +188,7 @@ public extension DBMS.CRUD {
                 outline.boundingBoxOriginXColumn <- newOrigin.x,
                 outline.boundingBoxOriginYColumn <- newOrigin.y,
                 outline.boundingBoxWidthColumn <- newSize.width,
-                outline.boundingBoxOriginYColumn <- newSize.height,
+                outline.boundingBoxHeightColumn <- newSize.height,
             )
         )
     }
