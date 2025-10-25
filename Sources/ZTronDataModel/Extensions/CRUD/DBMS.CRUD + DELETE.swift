@@ -2,7 +2,6 @@ import Foundation
 import SQLite3
 import SQLite
 
-#if DEBUG
 public extension DBMS.CRUD {
     
     static func deleteStudio(for dbConnection: Connection, studio: String) throws {
@@ -952,4 +951,3 @@ public extension DBMS.CRUD {
         }
     }
 }
-#endif
