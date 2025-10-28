@@ -28,7 +28,7 @@ public extension DBMS.CRUD {
         tool: String,
         tab: String,
         map: String,
-        game: String,
+        game: String
     ) throws -> Void {
         let outlineTable = DBMS.outline
         
@@ -53,7 +53,7 @@ public extension DBMS.CRUD {
         tool: String,
         tab: String,
         map: String,
-        game: String,
+        game: String
     ) throws -> Void {
         let boundingCircleTable = DBMS.boundingCircle
         
@@ -228,7 +228,7 @@ public extension DBMS.CRUD {
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false,
-        shouldRemove: @escaping (any SerializedVisualMediaModel) -> Bool,
+        shouldRemove: @escaping (any SerializedVisualMediaModel) -> Bool
     ) throws -> Void {
         if let firstLevelImages = try Self.readFirstLevelMasterImagesForGallery(
             for: dbConnection,
@@ -273,7 +273,7 @@ public extension DBMS.CRUD {
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false,
-        shouldRemove: @escaping (any SerializedVisualMediaModel) -> Bool,
+        shouldRemove: @escaping (any SerializedVisualMediaModel) -> Bool
     ) throws -> Void {
         let slaveImages = try Self.readAllVariants(
             for: dbConnection,
@@ -310,7 +310,7 @@ public extension DBMS.CRUD {
         tool: String,
         tab: String,
         map: String,
-        game: String,
+        game: String
     ) throws -> Void {
         let galleryTable = DBMS.gallery
         

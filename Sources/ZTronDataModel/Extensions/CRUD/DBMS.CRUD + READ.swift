@@ -9,7 +9,7 @@ extension DBMS.CRUD {
     // MARK: - READ GAMES
     internal static func readGamePosition(
         for dbConnection: Connection,
-        game: String,
+        game: String
     ) throws -> Int? {
         let gameTable = DBMS.game
         
@@ -56,7 +56,7 @@ extension DBMS.CRUD {
     internal static func readMapPosition(
         for dbConnection: Connection,
         game: String,
-        map: String,
+        map: String
     ) throws -> Int? {
         let mapTable = DBMS.map
         
@@ -78,7 +78,7 @@ extension DBMS.CRUD {
     internal static func readMapMaster(
         for dbConnection: Connection,
         map: String,
-        game: String,
+        game: String
     ) throws -> SerializedMapModel? {
         let submaps = DBMS.hasSubmap
         
@@ -232,7 +232,7 @@ extension DBMS.CRUD {
     internal static func readSubmapsTree(
         for dbConnection: Connection,
         master: String,
-        game: String,
+        game: String
     ) throws -> [SerializedMapModel] {
         let mapTable = DBMS.map
         let slavesTable = DBMS.hasSubmap
@@ -1717,7 +1717,7 @@ extension DBMS.CRUD {
         for dbConnection: Connection,
         game: String,
         map: String,
-        tab: String,
+        tab: String
     ) throws -> Int? {
         let tabTable = DBMS.tab
         
@@ -1744,7 +1744,7 @@ extension DBMS.CRUD {
         map: String,
         tab: String,
         tool: String,
-        gallery: String,
+        gallery: String
     ) throws -> Int? {
         let galleryTable = DBMS.gallery
         let slavesTable = DBMS.subgallery
@@ -1905,7 +1905,7 @@ extension DBMS.CRUD {
         game: String,
         map: String,
         tab: String,
-        tool: String,
+        tool: String
     ) throws -> Int? {
         let galleryTable = DBMS.gallery
         let slavesTable = DBMS.subgallery
@@ -1979,7 +1979,7 @@ extension DBMS.CRUD {
         game: String,
         map: String,
         tab: String,
-        tool: String,
+        tool: String
     ) throws -> [SerializedGalleryModel] {
         let galleryTable = DBMS.gallery
         let slavesTable = DBMS.subgallery
@@ -2183,7 +2183,7 @@ extension DBMS.CRUD {
         tool: String,
         game: String,
         map: String,
-        tab: String,
+        tab: String
     ) throws -> Int? {
         let toolTable = DBMS.tool
         
@@ -2211,7 +2211,7 @@ extension DBMS.CRUD {
         for dbConnection: Connection,
         tool: String,
         game: String,
-        map: String,
+        map: String
     ) throws -> SerializedTabModel? {
         let toolTable = DBMS.tool
         

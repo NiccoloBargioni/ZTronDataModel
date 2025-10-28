@@ -1393,7 +1393,7 @@ public extension DBMS.CRUD {
         gallery: String,
         tool: String,
         map: String,
-        game: String,
+        game: String
     ) throws -> Void {
         let visualMedia = DBMS.visualMedia
         
@@ -1928,7 +1928,7 @@ public extension DBMS.CRUD {
         targetTab: String,
         tool: String,
         map: String,
-        game: String,
+        game: String
     ) throws -> Void {
         let galleryTable = DBMS.gallery
         
@@ -2276,7 +2276,7 @@ public extension DBMS.CRUD {
         tool: String,
         tab: String,
         map: String,
-        game: String,
+        game: String
     ) throws -> Void {
         let tools = DBMS.tool
         
@@ -2306,7 +2306,7 @@ public extension DBMS.CRUD {
         game: String,
         sourceIndicesStrategy: TabMigrationSourcePositionStrategy = .preserveSourceIndices,
         targetIndicesStrategy: TabMigrationTargetPositionStrategy = .preserveTargetIndices,
-        produce: @escaping (SerializedTabModel) -> OnTabConflictStrategy,
+        produce: @escaping (SerializedTabModel) -> OnTabConflictStrategy
     ) throws -> Void {
         guard let previousTab = try? Self.readTabForTool(for: dbConnection, tool: tool, game: game, map: map) else {
             Self.logger.warning("Attempted to migrate tool to new tab but could not acquire info about previous tab.")
@@ -2647,7 +2647,7 @@ public extension DBMS.CRUD {
         for dbConnection: Connection,
         newPosition: Int,
         game: String,
-        map: String,
+        map: String
     ) throws -> Void {
         assert(newPosition >= 0)
         let mapTable = DBMS.map
@@ -2667,7 +2667,7 @@ public extension DBMS.CRUD {
         for dbConnection: Connection,
         newAssetsImageName: String,
         game: String,
-        map: String,
+        map: String
     ) throws -> Void {
         let mapTable = DBMS.map
         
@@ -2897,7 +2897,7 @@ public extension DBMS.CRUD {
      internal static func updateGameAssetsImageName(
         for dbConnection: Connection,
         assetsImageName: String,
-        game: String,
+        game: String
     ) throws -> Void {
         let gameTable = DBMS.game
         

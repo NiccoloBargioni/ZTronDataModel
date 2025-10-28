@@ -11,7 +11,7 @@ public final class AnySerializedVisualMediaModel: SerializedVisualMediaModel {
     
     
     internal init(
-        _ base: any SerializedVisualMediaModel,
+        _ base: any SerializedVisualMediaModel
     ) {
         self.base = base
         self.name = nil
@@ -25,7 +25,7 @@ public final class AnySerializedVisualMediaModel: SerializedVisualMediaModel {
         name: String,
         description: String,
         position: Int,
-        searchLabel: String?,
+        searchLabel: String?
     ) {
         self.base = base
         self.name = name.lowercased()

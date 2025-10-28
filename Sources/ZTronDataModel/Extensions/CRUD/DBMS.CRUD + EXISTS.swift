@@ -296,7 +296,7 @@ extension DBMS.CRUD {
         tool: String,
         tab: String,
         map: String,
-        game: String,
+        game: String
     ) throws -> Bool {
         let toolModel = DBMS.tool
         
