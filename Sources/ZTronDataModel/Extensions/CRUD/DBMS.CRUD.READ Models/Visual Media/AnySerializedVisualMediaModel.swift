@@ -118,7 +118,7 @@ public final class AnySerializedVisualMediaModel: SerializedVisualMediaModel {
                 name: self.name,
                 description: self.description,
                 position: self.position,
-                searchLabel: self.searchLabel,
+                searchLabel: self.searchLabel
             )
         }
         

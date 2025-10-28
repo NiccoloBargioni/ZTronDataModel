@@ -749,7 +749,7 @@ public extension DBMS.CRUD {
         let subtreeOfMap = try Self.readSubmapsTree(
             for: dbConnection,
             master: map.lowercased(),
-            game: game.lowercased(),
+            game: game.lowercased()
         )
 
         try subtreeOfMap.forEach { mapModel in
@@ -776,7 +776,7 @@ public extension DBMS.CRUD {
             guard let position = try Self.readMapPosition(
                 for: dbConnection,
                 game: game,
-                map: map,
+                map: map
             ) else {
                 fatalError("Attempted to delete a map but could not find its position.")
             }
@@ -812,7 +812,7 @@ public extension DBMS.CRUD {
             guard let position = try Self.readMapPosition(
                 for: dbConnection,
                 game: game,
-                map: map,
+                map: map
             ) else {
                 fatalError("Attempted to delete a submap but could not find its position.")
             }
@@ -911,7 +911,7 @@ public extension DBMS.CRUD {
         if shouldDecreasePositions {
             guard let position = try Self.readGamePosition(
                 for: dbConnection,
-                game: game,
+                game: game
             ) else {
                 fatalError("Attempted to delete a game but could not find its position.")
             }

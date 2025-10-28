@@ -1046,7 +1046,7 @@ extension DBMS.CRUD {
                 imagesTable.foreignKeys.mapColumn,
                 imagesTable.foreignKeys.tabColumn,
                 imagesTable.foreignKeys.toolColumn,
-                imagesTable.foreignKeys.galleryColumn,
+                imagesTable.foreignKeys.galleryColumn
             )
             .join(
                 slavesTable.table,
@@ -1105,7 +1105,7 @@ extension DBMS.CRUD {
                 imagesTable.table[imagesTable.foreignKeys.mapColumn],
                 imagesTable.table[imagesTable.foreignKeys.tabColumn],
                 imagesTable.table[imagesTable.foreignKeys.toolColumn],
-                imagesTable.table[imagesTable.foreignKeys.galleryColumn],
+                imagesTable.table[imagesTable.foreignKeys.galleryColumn]
             )
             .join(
                 slavesTable.table,
@@ -1474,7 +1474,7 @@ extension DBMS.CRUD {
                 game: game,
                 map: map,
                 tab: tab,
-                tool: tool,
+                tool: tool
             )
             
             galleriesWithOptions[.maxDepth] = [maxDepth]
@@ -1662,7 +1662,7 @@ extension DBMS.CRUD {
                     map: map,
                     tab: tab,
                     tool: tool,
-                    gallery: gallery.getName(),
+                    gallery: gallery.getName()
                 ) ?? 0
             }
             

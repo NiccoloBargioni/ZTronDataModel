@@ -188,7 +188,7 @@ public extension DBMS.CRUD {
                 outline.boundingBoxOriginXColumn <- newOrigin.x,
                 outline.boundingBoxOriginYColumn <- newOrigin.y,
                 outline.boundingBoxWidthColumn <- newSize.width,
-                outline.boundingBoxHeightColumn <- newSize.height,
+                outline.boundingBoxHeightColumn <- newSize.height
             )
         )
     }
@@ -619,7 +619,7 @@ public extension DBMS.CRUD {
         
         try dbConnection.run(
             boundingCircleToUpdate.update(
-                boundingCircleTable.idleDiameterColumn <- newDiameter,
+                boundingCircleTable.idleDiameterColumn <- newDiameter
             )
         )
     }
@@ -939,7 +939,7 @@ public extension DBMS.CRUD {
             imageVariant.boundingFrameOriginXColumn <- origin?.x,
             imageVariant.boundingFrameOriginYColumn <- origin?.y,
             imageVariant.boundingFrameWidthColumn <- size?.width,
-            imageVariant.boundingFrameHeightColumn <- size?.height,
+            imageVariant.boundingFrameHeightColumn <- size?.height
         )
         
         try dbConnection.run(variantToUpdate)
@@ -2951,7 +2951,7 @@ public extension DBMS.CRUD {
                 try Self.updateGameAssetsImageName(
                     for: dbConnection,
                     assetsImageName: gameModelDraft.getAssetsImageName(),
-                    game: gameModelDraft.getName(),
+                    game: gameModelDraft.getName()
                 )
             }
         }
