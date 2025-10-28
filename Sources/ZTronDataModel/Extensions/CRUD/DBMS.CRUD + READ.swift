@@ -2130,7 +2130,7 @@ extension DBMS.CRUD {
                 galleryTable.foreignKeys.gameColumn,
                 galleryTable.foreignKeys.mapColumn,
                 galleryTable.foreignKeys.tabColumn,
-                galleryTable.foreignKeys.toolColumn,
+                galleryTable.foreignKeys.toolColumn
             )
             .join(
                 slavesTable.table,
