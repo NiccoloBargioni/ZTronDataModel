@@ -2727,25 +2727,6 @@ public extension DBMS.CRUD {
         try dbConnection.run(updateTabQuery)
     }
     
-    /// - `MAP(name, position, assetsImageName, game)`
-    /// - `PK(name, game)`
-    /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func updateMapAssetsImageName(
-        for dbConnection: Connection,
-        newAssetsImageName: String,
-        game: String,
-        map: String
-    ) throws -> Void {
-        let mapTable = DBMS.map
-        
-        let updateTabQuery = mapTable.table.filter(
-            mapTable.nameColumn == map &&
-            mapTable.foreignKeys.gameColumn == game
-        ).update(mapTable.assetsImageNameColumn <- newAssetsImageName)
-                
-        try dbConnection.run(updateTabQuery)
-    }
-    
     
     /// - `MAP(name, position, assetsImageName, game)`
     /// - `PK(name, game)`
@@ -2783,15 +2764,6 @@ public extension DBMS.CRUD {
                 try Self.updateMapPosition(
                     for: dbConnection,
                     newPosition: mapModelDraft.getPosition(),
-                    game: game,
-                    map: mapModelDraft.getName()
-                )
-            }
-            
-            if mapModelDraft.didAssetsImageNameChange() {
-                try Self.updateMapAssetsImageName(
-                    for: dbConnection,
-                    newAssetsImageName: mapModelDraft.getAssetsImageName(),
                     game: game,
                     map: mapModelDraft.getName()
                 )
@@ -2840,16 +2812,7 @@ public extension DBMS.CRUD {
                     game: game,
                     map: mapModelDraft.getName()
                 )
-            }
-            
-            if mapModelDraft.didAssetsImageNameChange() {
-                try Self.updateMapAssetsImageName(
-                    for: dbConnection,
-                    newAssetsImageName: mapModelDraft.getAssetsImageName(),
-                    game: game,
-                    map: mapModelDraft.getName()
-                )
-            }
+            }            
         }
     }
     
@@ -2958,25 +2921,6 @@ public extension DBMS.CRUD {
     }
     
     
-    /// - `GAME(name, position, assetsImageName, studio)`
-    /// - `PK(name)`
-    /// - `FK(studio) REFERENCES STUDIO(name) ON DELETE CASCADE ON UPDATE CASCADE`
-     internal static func updateGameAssetsImageName(
-        for dbConnection: Connection,
-        assetsImageName: String,
-        game: String
-    ) throws -> Void {
-        let gameTable = DBMS.game
-        
-        try dbConnection.run(
-            gameTable.table.filter(
-                gameTable.nameColumn == game.lowercased()
-            )
-            .update(gameTable.assetsImageNameColumn <- assetsImageName.lowercased())
-        )
-    }
-    
-    
     /// - `MAP(name, position, assetsImageName, game)`
     /// - `PK(name, game)`
     /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
@@ -2985,7 +2929,7 @@ public extension DBMS.CRUD {
         produce: @escaping (inout SerializedGameModel.WritableDraft) -> Void,
         validate: @escaping ([SerializedGameModel]) -> Bool
     ) throws -> Void {
-        guard var allGames = (try Self.readAllGames(
+        guard let allGames = (try Self.readAllGames(
             for: dbConnection,
             options: [.games]
         )[.games] as? [SerializedGameModel]) else {
@@ -3010,14 +2954,6 @@ public extension DBMS.CRUD {
                 try Self.updateGamePosition(
                     for: dbConnection,
                     newPosition: gameModelDraft.getPosition(),
-                    game: gameModelDraft.getName()
-                )
-            }
-            
-            if gameModelDraft.didAssetsImageNameChange() {
-                try Self.updateGameAssetsImageName(
-                    for: dbConnection,
-                    assetsImageName: gameModelDraft.getAssetsImageName(),
                     game: gameModelDraft.getName()
                 )
             }

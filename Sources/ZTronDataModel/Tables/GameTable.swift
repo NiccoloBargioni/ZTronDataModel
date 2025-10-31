@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 @preconcurrency import SQLite
     
-/// - `GAME(name, position, assetsImageName, studio)`
+/// - `GAME(name, position, studio)`
 /// - `PK(name)`
 /// - `FK(studio) REFERENCES STUDIO(name) ON DELETE CASCADE ON UPDATE CASCADE`
 ///
@@ -25,7 +25,6 @@ public final class Game: DBTableCreator {
     let tableName = "GAME"
     let nameColumn: SQLite.Expression<String>
     let positionColumn: SQLite.Expression<Int>
-    let assetsImageNameColumn: SQLite.Expression<String>
     let foreignKeys: Game.ForeignKeys
     let table: SQLite.Table
     
@@ -33,7 +32,6 @@ public final class Game: DBTableCreator {
         self.table = Table(tableName)
         self.nameColumn = SQLite.Expression<String>("name")
         self.positionColumn = SQLite.Expression<Int>("position")
-        self.assetsImageNameColumn = SQLite.Expression<String>("assetsImageName")
         self.foreignKeys = Game.ForeignKeys()
     }
     
@@ -45,7 +43,6 @@ public final class Game: DBTableCreator {
                 CREATE TABLE IF NOT EXISTS \(self.tableName) (
                     \(self.nameColumn.template) TEXT NOT NULL,
                     \(self.positionColumn.template) INT NOT NULL CHECK(\(self.positionColumn.template) >= 0),
-                    \(self.assetsImageNameColumn.template) TEXT NOT NULL,
                     \(self.foreignKeys.studioColumn.template) TEXT NOT NULL,
                     PRIMARY KEY (\(self.nameColumn.template)),
                     FOREIGN KEY (\(self.foreignKeys.studioColumn.template)) REFERENCES \(studioModel.tableName)(\(studioModel.nameColumn.template)) ON DELETE CASCADE ON UPDATE CASCADE

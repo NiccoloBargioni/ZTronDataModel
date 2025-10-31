@@ -27,7 +27,6 @@ extension DBMS {
             for dbConnection: Connection,
             name: String,
             position: Int,
-            assetsImageName: String
         ) throws {
             assert(position >= 0)
             let studio = DBMS.studio
@@ -37,7 +36,6 @@ extension DBMS {
                     or: or,
                     studio.nameColumn <- name,
                     studio.positionColumn <- position,
-                    studio.assetsImageNameColumn <- assetsImageName
                 )
             )
             
@@ -64,7 +62,6 @@ extension DBMS {
                     or: or,
                     game.nameColumn <- name,
                     game.positionColumn <- position,
-                    game.assetsImageNameColumn <- assetsImageName,
                     game.foreignKeys.studioColumn <- studio
                 )
             )
@@ -81,7 +78,6 @@ extension DBMS {
             for dbConnection: Connection,
             name: String,
             position: Int,
-            assetsImageName: String,
             game: String
         ) throws {
             assert(position >= 0)
@@ -92,7 +88,6 @@ extension DBMS {
                     or: or,
                     map.nameColumn <- name,
                     map.positionColumn <- position,
-                    map.assetsImageNameColumn <- assetsImageName,
                     map.foreignKeys.gameColumn <- game
                 )
             )

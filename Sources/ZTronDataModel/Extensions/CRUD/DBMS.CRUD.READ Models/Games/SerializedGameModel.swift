@@ -9,7 +9,6 @@ import SQLite
 public final class SerializedGameModel: ReadGameOptional, ObservableObject {
     private let name: String
     private let position: Int
-    private let assetsImageName: String
     private let studio: String
     
     internal init(_ fromRow: Row, namespaceColumns: Bool = false) {
@@ -17,20 +16,17 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
         
         self.name = (namespaceColumns) ? fromRow[game.table[game.nameColumn]] : fromRow[game.nameColumn]
         self.position = (namespaceColumns) ? fromRow[game.table[game.positionColumn]] : fromRow[game.positionColumn]
-        self.assetsImageName = (namespaceColumns) ? fromRow[game.table[game.assetsImageNameColumn]] : fromRow[game.assetsImageNameColumn]
         self.studio = (namespaceColumns) ? fromRow[game.table[game.foreignKeys.studioColumn]] : fromRow[game.foreignKeys.studioColumn]
     }
     
     internal init(
         name: String,
         position: Int,
-        assetsImageName: String,
         studio: String
     ) {
         self.name = name
         self.position = position
         self.studio = studio
-        self.assetsImageName = assetsImageName
     }
     
     public func hash(into hasher: inout Hasher) {
@@ -39,7 +35,7 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
     }
     
     public static func == (lhs: SerializedGameModel, rhs: SerializedGameModel) -> Bool {
-        return lhs.name == rhs.name && lhs.position == rhs.position && lhs.assetsImageName == rhs.assetsImageName &&
+        return lhs.name == rhs.name && lhs.position == rhs.position &&
             lhs.studio == rhs.studio
     }
     
@@ -51,11 +47,7 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
     public func getPosition() -> Int {
         return self.position
     }
-    
-    public func getAssetsImageName() -> String {
-        return self.assetsImageName
-    }
-    
+        
     public func getStudio() -> String {
         return self.studio
     }
@@ -66,7 +58,6 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
         GAME(
             name: \(self.name),
             position: \(self.position),
-            assetsImageName: \(self.assetsImageName),
             studio: \(self.studio)
         )
         """
@@ -79,15 +70,12 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
     public final class WritableDraft {
         weak private var owner: SerializedGameModel?
         private var position: Int
-        private var assetsImageName: String
         
         private var didPositionUpdate: Bool = false
-        private var didAssetsImageNameUpdate: Bool = false
         
         internal init(from: SerializedGameModel) {
             self.owner = from
             self.position = from.position
-            self.assetsImageName = from.assetsImageName
         }
         
         @discardableResult public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
@@ -113,30 +101,6 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
             return owner.position
         }
         
-        @discardableResult public final func withAssetsImageName(_ assetsImageName: String) -> Self {
-            if self.assetsImageName != assetsImageName {
-                self.assetsImageName = assetsImageName.lowercased()
-                self.didAssetsImageNameUpdate = true
-            }
-            return self
-        }
-        
-        internal final func didAssetsImageNameChange() -> Bool {
-            return self.didAssetsImageNameUpdate
-        }
-
-        public final func getAssetsImageName() -> String {
-            return self.assetsImageName
-        }
-
-        public final func getPreviousAssetsImageName() -> String {
-            guard let owner = self.owner else {
-                fatalError("Unable to retain reference of master before reading `assetsImageName`.")
-            }
-            return owner.assetsImageName
-        }
-        
-        
         public final func getName() -> String {
             guard let owner = self.owner else {
                 fatalError("Unable to retain reference of master before reading `name`.")
@@ -159,7 +123,6 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
             return SerializedGameModel(
                 name: owner.getName(),
                 position: self.position,
-                assetsImageName: self.assetsImageName,
                 studio: owner.getStudio()
             )
         }

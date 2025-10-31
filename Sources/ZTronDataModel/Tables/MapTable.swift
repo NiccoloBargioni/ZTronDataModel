@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 @preconcurrency import SQLite
 
-/// - `MAP(name, position, assetsImageName, game)`
+/// - `MAP(name, position, game)`
 /// - `PK(name, game)`
 /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
 ///
@@ -26,7 +26,6 @@ public final class Map: DBTableCreator {
 
     let nameColumn: SQLite.Expression<String>
     let positionColumn: SQLite.Expression<Int>
-    let assetsImageNameColumn: SQLite.Expression<String>
     let foreignKeys: Map.ForeignKeys
     let table: SQLite.Table
     
@@ -34,7 +33,6 @@ public final class Map: DBTableCreator {
         self.table = Table(tableName)
         self.nameColumn = SQLite.Expression<String>("name")
         self.positionColumn = SQLite.Expression<Int>("position")
-        self.assetsImageNameColumn = SQLite.Expression<String>("assetsImageName")
         self.foreignKeys = Map.ForeignKeys()
     }
     
@@ -46,7 +44,6 @@ public final class Map: DBTableCreator {
                 CREATE TABLE IF NOT EXISTS \(self.tableName) (
                     \(self.nameColumn.template) TEXT NOT NULL,
                     \(self.positionColumn.template) INT NOT NULL CHECK(\(self.positionColumn.template) >= 0),
-                    \(self.assetsImageNameColumn.template) TEXT NOT NULL,
                     \(self.foreignKeys.gameColumn.template) TEXT NOT NULL,
                     PRIMARY KEY (
                         \(self.nameColumn.template),

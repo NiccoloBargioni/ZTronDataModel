@@ -8,18 +8,15 @@ import SQLite
 public final class SerializedMapModel: ReadMapOptional, ObservableObject {
     private let name: String
     private let position: Int
-    private let assetsImageName: String
     private let game: String
     
     internal init(
         name: String,
         position: Int,
-        assetsImageName: String,
         game: String
     ) {
         self.name = name
         self.position = position
-        self.assetsImageName = assetsImageName
         self.game = game
     }
     
@@ -29,7 +26,6 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
         
         self.name = namespaceColumns ? fromRow[map.table[map.nameColumn]] :  fromRow[map.nameColumn]
         self.position = namespaceColumns ? fromRow[map.table[map.positionColumn]] : fromRow[map.positionColumn]
-        self.assetsImageName = namespaceColumns ? fromRow[map.table[map.assetsImageNameColumn]] : fromRow[map.assetsImageNameColumn]
         self.game = namespaceColumns ? fromRow[map.table[map.foreignKeys.gameColumn]] : fromRow[map.foreignKeys.gameColumn]
     }
     
@@ -39,7 +35,7 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
     }
     
     public static func == (lhs: SerializedMapModel, rhs: SerializedMapModel) -> Bool {
-        return lhs.name == rhs.name && lhs.game == rhs.game && lhs.position == rhs.position && lhs.assetsImageName == rhs.assetsImageName
+        return lhs.name == rhs.name && lhs.game == rhs.game && lhs.position == rhs.position
     }
     
     public func getName() -> String {
@@ -49,11 +45,7 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
     public func getPosition() -> Int {
         return self.position
     }
-    
-    public func getAssetsImageName() -> String? {
-        return self.assetsImageName
-    }
-            
+
     public func getGame() -> String {
         return self.game
     }
@@ -63,7 +55,6 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
         MAP(
             name: \(self.name),
             position: \(self.position),
-            assetsImageName: \(self.assetsImageName),
             game: \(self.game)
         )
         """
@@ -76,15 +67,12 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
     public final class WritableDraft {
         weak private var owner: SerializedMapModel?
         private var position: Int
-        private var assetsImageName: String
         
         private var didPositionUpdate: Bool = false
-        private var didAssetsImageNameUpdate: Bool = false
         
         internal init(from: SerializedMapModel) {
             self.owner = from
             self.position = from.getPosition()
-            self.assetsImageName = from.assetsImageName
         }
         
         public final func getName() -> String {
@@ -115,34 +103,12 @@ public final class SerializedMapModel: ReadMapOptional, ObservableObject {
             return self.position
         }
         
-        @discardableResult public final func withUpdatedAssetsImageName(_ newAssetsImageName: String) -> WritableDraft {
-            if self.assetsImageName != newAssetsImageName {
-                self.assetsImageName = newAssetsImageName
-                self.didAssetsImageNameUpdate = true
-            }
-            return self
-        }
-        
-        internal final func didAssetsImageNameChange() -> Bool {
-            return self.didAssetsImageNameUpdate
-        }
-        
-        public final func getPreviousAssetsImageName() -> String {
-            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
-            return owner.assetsImageName
-        }
-
-        
-        public final func getAssetsImageName() -> String {
-            return self.assetsImageName
-        }
-        
+                
         internal final func getImmutableCopy() -> SerializedMapModel {
             guard let owner = self.owner else { fatalError("Failed to retain reference to mutable parent of type \(String(describing: SerializedGameModel.self))") }
             return SerializedMapModel(
                 name: owner.getName(),
                 position: self.position,
-                assetsImageName: self.assetsImageName,
                 game: owner.getGame()
             )
         }

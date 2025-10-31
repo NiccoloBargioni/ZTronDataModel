@@ -242,7 +242,6 @@ extension DBMS.CRUD {
             SELECT
                 \(mapTable.tableName).\(mapTable.nameColumn.template),
                 \(mapTable.tableName).\(mapTable.positionColumn.template),
-                \(mapTable.tableName).\(mapTable.assetsImageNameColumn.template),
                 \(mapTable.tableName).\(mapTable.foreignKeys.gameColumn.template)
             FROM \(mapTable.tableName)
             WHERE
@@ -254,7 +253,6 @@ extension DBMS.CRUD {
             SELECT
                 SUBMAP.\(mapTable.nameColumn.template),
                 SUBMAP.\(mapTable.positionColumn.template),
-                SUBMAP.\(mapTable.assetsImageNameColumn.template),
                 SUBMAP.\(mapTable.foreignKeys.gameColumn.template)
             FROM
                 \(mapTable.tableName) SUBMAP
@@ -282,19 +280,16 @@ extension DBMS.CRUD {
                 /*
                  Column 0: name String
                  Column 1: position Int
-                 Column 2: assetsImageName: String
-                 Column 3: game: String
+                 Column 2: game: String
                  */
                 
                 let nameColumn = String(cString: sqlite3_column_text(statement, 0))
                 let positionColumn = sqlite3_column_int(statement, 1)
-                let assetsImageNameColumn = String(cString: sqlite3_column_text(statement,2))
-                let gameColumn = String(cString: sqlite3_column_text(statement, 3))
+                let gameColumn = String(cString: sqlite3_column_text(statement, 2))
                 
                 submaps.append(SerializedMapModel(
                     name: nameColumn,
                     position: Int(positionColumn),
-                    assetsImageName: assetsImageNameColumn,
                     game: gameColumn
                 ))
             }
