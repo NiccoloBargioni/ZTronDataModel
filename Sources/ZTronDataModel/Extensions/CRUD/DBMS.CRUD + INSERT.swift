@@ -51,7 +51,6 @@ extension DBMS {
             for dbConnection: Connection,
             name: String,
             position: Int,
-            assetsImageName: String,
             studio: String
         ) throws {
             assert(position >= 0)
