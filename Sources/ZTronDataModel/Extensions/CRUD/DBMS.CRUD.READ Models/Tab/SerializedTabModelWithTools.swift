@@ -117,6 +117,7 @@ public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableOb
             return SerializedTabModelWithTools(
                 name: owner.name,
                 position: owner.position,
+                rating: owner.rating,
                 map: owner.map,
                 game: owner.game,
                 tools: owner.tools
