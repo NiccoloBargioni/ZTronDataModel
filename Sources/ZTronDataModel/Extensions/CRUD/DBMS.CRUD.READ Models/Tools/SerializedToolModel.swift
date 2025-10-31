@@ -7,6 +7,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
     private let name: String
     private let position: Int
     private let assetsImageName: String
+    private let _isSolver: Bool
     private let tab: String
     private let map: String
     private let game: String
@@ -15,6 +16,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         name: String,
         position: Int,
         assetsImageName: String,
+        isSolver: Bool,
         tab: String,
         map: String,
         game: String
@@ -22,6 +24,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         self.name = name
         self.position = position
         self.assetsImageName = assetsImageName
+        self._isSolver = isSolver
         self.tab = tab
         self.map = map
         self.game = game
@@ -34,6 +37,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         self.name = namespaceColumns ? fromRow[tool.table[tool.nameColumn]] :  fromRow[tool.nameColumn]
         self.position = namespaceColumns ? fromRow[tool.table[tool.positionColumn]] : fromRow[tool.positionColumn]
         self.assetsImageName = namespaceColumns ? fromRow[tool.table[tool.assetsImageNameColumn]] : fromRow[tool.assetsImageNameColumn]
+        self._isSolver = namespaceColumns ? fromRow[tool.table[tool.isSolver]] : fromRow[tool.isSolver]
         self.tab = namespaceColumns ? fromRow[tool.table[tool.foreignKeys.tabColumn]] : fromRow[tool.foreignKeys.tabColumn]
         self.map = namespaceColumns ? fromRow[tool.table[tool.foreignKeys.mapColumn]] : fromRow[tool.foreignKeys.mapColumn]
         self.game = namespaceColumns ? fromRow[tool.table[tool.foreignKeys.gameColumn]] : fromRow[tool.foreignKeys.gameColumn]
@@ -65,6 +69,10 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
     
     public func getAssetsImageName() -> String {
         return self.assetsImageName
+    }
+    
+    public final func isSolver() -> Bool {
+        return self._isSolver
     }
     
     public func getTab() -> String {
@@ -231,6 +239,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
                 name: self.name,
                 position: self.position,
                 assetsImageName: self.assetsImageName,
+                isSolver: owner._isSolver,
                 tab: self.tab,
                 map: owner.map,
                 game: owner.game

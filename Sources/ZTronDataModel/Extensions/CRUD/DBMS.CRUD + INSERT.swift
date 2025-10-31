@@ -140,6 +140,7 @@ extension DBMS {
             name: String,
             position: Int,
             assetsImageName: String,
+            isSolver: Bool,
             game: String,
             map: String,
             tab: String
@@ -153,6 +154,7 @@ extension DBMS {
                     tool.nameColumn <- name,
                     tool.positionColumn <- position,
                     tool.assetsImageNameColumn <- assetsImageName,
+                    tool.isSolver <- isSolver,
                     tool.foreignKeys.gameColumn <- game,
                     tool.foreignKeys.mapColumn <- map,
                     tool.foreignKeys.tabColumn <- tab
