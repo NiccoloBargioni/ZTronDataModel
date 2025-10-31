@@ -54,7 +54,7 @@ public final class Tool: DBTableCreator {
                     \(self.nameColumn.template) TEXT NOT NULL,
                     \(self.positionColumn.template) INT NOT NULL CHECK(\(self.positionColumn.template) >= 0),
                     \(self.assetsImageNameColumn.template) TEXT NOT NULL,
-                    \(self.isSolver.template) NOT NULL,
+                    \(self.isSolver.template) INT NOT NULL,
                     \(self.foreignKeys.tabColumn.template) TEXT NOT NULL,
                     \(self.foreignKeys.gameColumn.template) TEXT NOT NULL,
                     \(self.foreignKeys.mapColumn.template) TEXT NOT NULL,

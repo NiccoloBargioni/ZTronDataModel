@@ -109,11 +109,12 @@ extension DBMS {
             for dbConnection: Connection,
             name: String,
             position: Int,
-            iconName: String,
+            rating: Int,
             game: String,
             map: String
         ) throws {
             assert(position >= 0)
+            assert(rating >= 0 && rating <= 3)
             let tab = DBMS.tab
             
             try dbConnection.run(
@@ -121,7 +122,7 @@ extension DBMS {
                     or: or,
                     tab.nameColumn <- name,
                     tab.positionColumn <- position,
-                    tab.iconNameColumn <- iconName,
+                    tab.ratingColumn <- rating,
                     tab.foreignKeys.gameColumn <- game,
                     tab.foreignKeys.mapColumn <- map
                 )

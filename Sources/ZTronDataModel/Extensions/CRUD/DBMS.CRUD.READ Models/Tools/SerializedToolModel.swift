@@ -95,6 +95,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
             name: \(self.name),
             position: \(self.position),
             assetsImageName: \(self.assetsImageName),
+            isSolver: \(self._isSolver),
             tab: \(self.tab),
             map: \(self.map),
             game: \(self.game)
@@ -112,16 +113,19 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         private var name: String
         private var assetsImageName: String
         private var tab: String
+        private var _isSolver: Bool
         
         private var didPositionUpdate: Bool = false
         private var didNameUpdate: Bool = false
         private var didAssetsImageNameUpdate: Bool = false
         private var didTabUpdate: Bool = false
+        private var didIsSolverUpdate: Bool = false
         
         internal init(from: SerializedToolModel) {
             self.owner = from
             self.position = from.getPosition()
             self.name = from.getName()
+            self._isSolver = from.isSolver()
             self.assetsImageName = from.getAssetsImageName()
             self.tab = from.getTab()
         }
@@ -199,6 +203,27 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         internal final func getPreviousTab() -> String {
             guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
             return owner.getTab()
+        }
+        
+        @discardableResult public final func withIsSolver(_ isSolver: Bool) -> Self {
+            if self._isSolver != isSolver {
+                self._isSolver = isSolver
+                self.didIsSolverUpdate = true
+            }
+            return self
+        }
+        
+        public final func isSolver() -> Bool {
+            return self._isSolver
+        }
+        
+        internal final func didIsSolverChange() -> Bool {
+            return self.didIsSolverUpdate
+        }
+        
+        internal final func wasSolver() -> Bool {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner._isSolver
         }
         
         public final func getTab() -> String {

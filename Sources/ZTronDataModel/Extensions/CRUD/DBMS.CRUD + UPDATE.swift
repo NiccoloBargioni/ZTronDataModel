@@ -2149,6 +2149,30 @@ public extension DBMS.CRUD {
     /// - `TOOL(name, position, assetsImageName, tab, map, game)`
     /// - `PK(name, tab, map, game)`
     /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateIsToolASolver(
+        for dbConnection: Connection,
+        isSolver: Bool,
+        tool: String,
+        game: String,
+        map: String,
+        tab: String
+    ) throws -> Void {
+        let toolTable = DBMS.tool
+        
+        let updateToolQuery = toolTable.table.filter(
+            toolTable.nameColumn == tool &&
+            toolTable.foreignKeys.gameColumn == game &&
+            toolTable.foreignKeys.mapColumn == map &&
+            toolTable.foreignKeys.tabColumn == tab
+        ).update(toolTable.isSolver <- isSolver)
+                
+        try dbConnection.run(updateToolQuery)
+    }
+    
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
     static func updateToolAssetsImageName(
         for dbConnection: Connection,
         newAssetsImageName: String,
@@ -2497,6 +2521,17 @@ public extension DBMS.CRUD {
                 )
             }
             
+            if toolDraftModel.didIsSolverChange() {
+                try Self.updateIsToolASolver(
+                    for: dbConnection,
+                    isSolver: toolDraftModel.isSolver(),
+                    tool: toolDraftModel.getPreviousName(),
+                    game: game,
+                    map: map,
+                    tab: toolDraftModel.getPreviousTab()
+                )
+            }
+            
             if toolDraftModel.didTabChange() {
                 try Self.updateTabForTool(
                     for: dbConnection,
@@ -2588,6 +2623,28 @@ public extension DBMS.CRUD {
         try dbConnection.run(updateTabQuery)
     }
     
+    /// - `TAB(name, position, iconName, map, game)`
+    /// - `PK(name, map, game)`
+    /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    static func updateTabRating(
+        for dbConnection: Connection,
+        rating: Int,
+        game: String,
+        map: String,
+        tab: String
+    ) throws -> Void {
+        assert(rating >= 0 && rating <= 3)
+        let tabTable = DBMS.tab
+        
+        let updateTabQuery = tabTable.table.filter(
+            tabTable.nameColumn == tab.lowercased() &&
+            tabTable.foreignKeys.gameColumn == game &&
+            tabTable.foreignKeys.mapColumn == map
+        ).update(tabTable.ratingColumn <- rating)
+                
+        try dbConnection.run(updateTabQuery)
+    }
+    
     
     /// - `TAB(name, position, iconName, map, game)`
     /// - `PK(name, map, game)`
@@ -2630,6 +2687,16 @@ public extension DBMS.CRUD {
                 try Self.updateTabName(
                     for: dbConnection,
                     newTabName: tabModelDraft.getName(),
+                    game: game,
+                    map: map,
+                    tab: tabModelDraft.getPreviousName()
+                )
+            }
+            
+            if tabModelDraft.didRatingChange() {
+                try Self.updateTabRating(
+                    for: dbConnection,
+                    rating: tabModelDraft.getRating(),
                     game: game,
                     map: map,
                     tab: tabModelDraft.getPreviousName()
