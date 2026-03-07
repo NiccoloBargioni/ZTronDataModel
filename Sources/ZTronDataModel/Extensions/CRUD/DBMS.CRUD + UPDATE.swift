@@ -6,7 +6,7 @@ public enum UpdateError: Error {
     case validationError(reason: String)
 }
 
-public extension DBMS.CRUD {
+public extension CRUD {
     // MARK: - OUTLINE
     /// Updates the outline color hex and (optionally) opacity of the specified outline.
     ///

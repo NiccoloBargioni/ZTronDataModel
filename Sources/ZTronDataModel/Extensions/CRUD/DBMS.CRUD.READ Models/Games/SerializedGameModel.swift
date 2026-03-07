@@ -83,6 +83,7 @@ public final class SerializedGameModel: ReadGameOptional, ObservableObject {
                 self.position = newPosition
                 self.didPositionUpdate = true
             }
+            
             return self
         }
         

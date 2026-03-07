@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 import SQLite
 
-extension DBMS.CRUD {
+extension CRUD {
     
     // MARK: STUDIOS
     public static func countStudios(for dbConnection: Connection) throws -> Int {

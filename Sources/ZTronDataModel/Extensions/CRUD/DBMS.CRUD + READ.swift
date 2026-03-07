@@ -5,7 +5,7 @@ import SQLite
 extension String: ReadImageOptional { }
 extension String: ReadGalleryOptional {  }
 
-extension DBMS.CRUD {
+extension CRUD {
     // MARK: - READ GAMES
     internal static func readGamePosition(
         for dbConnection: Connection,
@@ -44,7 +44,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfMaps) {
             result[.numberOfMaps] = []
             for game in theGames {
-                try result[.numberOfMaps]?.append(DBMS.CRUD.countMapsForGame(for: dbConnection, game: game.getName()))
+                try result[.numberOfMaps]?.append(CRUD.countMapsForGame(for: dbConnection, game: game.getName()))
             }
         }
         
@@ -139,7 +139,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfSlaves) {
             result[.numberOfSlaves] = []
             for map in theMaps {
-                try result[.numberOfSlaves]?.append(DBMS.CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfSlaves]?.append(CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -147,7 +147,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTabs) {
             result[.numberOfTabs] = []
             for map in theMaps {
-                try result[.numberOfTabs]?.append(DBMS.CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTabs]?.append(CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -155,7 +155,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTools) {
             result[.numberOfTools] = []
             for map in theMaps {
-                try result[.numberOfTools]?.append(DBMS.CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTools]?.append(CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -205,7 +205,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfSlaves) {
             result[.numberOfSlaves] = []
             for map in theMaps {
-                try result[.numberOfSlaves]?.append(DBMS.CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfSlaves]?.append(CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -213,7 +213,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTabs) {
             result[.numberOfTabs] = []
             for map in theMaps {
-                try result[.numberOfTabs]?.append(DBMS.CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTabs]?.append(CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -221,7 +221,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTools) {
             result[.numberOfTools] = []
             for map in theMaps {
-                try result[.numberOfTools]?.append(DBMS.CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTools]?.append(CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -1428,7 +1428,7 @@ extension DBMS.CRUD {
             var imagesCounts: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                imagesCounts[index] = try DBMS.CRUD.countImagesForGallery(
+                imagesCounts[index] = try CRUD.countImagesForGallery(
                     includeVariants: false,
                     for: dbConnection,
                     game: game,
@@ -1446,7 +1446,7 @@ extension DBMS.CRUD {
             var subgalleriesCount: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                subgalleriesCount[index] = try DBMS.CRUD.countSubgalleriesForGallery(
+                subgalleriesCount[index] = try CRUD.countSubgalleriesForGallery(
                     for: dbConnection,
                     master: gallery.getName(),
                     game: game,
@@ -1598,7 +1598,7 @@ extension DBMS.CRUD {
             var imagesCounts: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                imagesCounts[index] = try DBMS.CRUD.countImagesForGallery(
+                imagesCounts[index] = try CRUD.countImagesForGallery(
                     includeVariants: false,
                     for: dbConnection,
                     game: game,
@@ -1616,7 +1616,7 @@ extension DBMS.CRUD {
             var subgalleriesCount: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                subgalleriesCount[index] = try DBMS.CRUD.countSubgalleriesForGallery(
+                subgalleriesCount[index] = try CRUD.countSubgalleriesForGallery(
                     for: dbConnection,
                     master: gallery.getName(),
                     game: game,
@@ -1633,7 +1633,7 @@ extension DBMS.CRUD {
             var maxDepths: [Int?] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                maxDepths[index] = try DBMS.CRUD.readMaxDepthOfSubgalleryRootedInGallery(
+                maxDepths[index] = try CRUD.readMaxDepthOfSubgalleryRootedInGallery(
                     for: dbConnection,
                     master: gallery.getName(),
                     game: game,
@@ -1651,7 +1651,7 @@ extension DBMS.CRUD {
             var nestingLevels: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                nestingLevels[index] = try DBMS.CRUD.readGalleryNestingDepth(
+                nestingLevels[index] = try CRUD.readGalleryNestingDepth(
                     for: dbConnection,
                     game: game,
                     map: map,

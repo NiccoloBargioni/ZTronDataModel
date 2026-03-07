@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 import SQLite
 
-public extension DBMS.CRUD {
+public extension CRUD {
     
     static func deleteStudio(for dbConnection: Connection, studio: String) throws {
         let studioModel = DomainModel.studio
