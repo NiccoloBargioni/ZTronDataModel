@@ -247,15 +247,17 @@ extension CRUD {
         image: String
     ) throws -> Int {
         let outline = DBMS.outline
-        let countOutlinesForImageQuery = outline.table.where(
-            outline.foreignKeys.gameColumn == game &&
-            outline.foreignKeys.mapColumn == map &&
-            outline.foreignKeys.tabColumn == tab &&
-            outline.foreignKeys.toolColumn == tool &&
-            outline.foreignKeys.galleryColumn == gallery &&
-            outline.foreignKeys.imageColumn == image
-        ).count
+
         
+        let countOutlinesForImageQuery = outline.table.filter(
+            outline.table[outline.foreignKeys.gameColumn] == game &&
+            outline.table[outline.foreignKeys.mapColumn] == map &&
+            outline.table[outline.foreignKeys.tabColumn] == tab &&
+            outline.table[outline.foreignKeys.toolColumn] == tool &&
+            outline.table[outline.foreignKeys.galleryColumn] == gallery &&
+            outline.table[outline.foreignKeys.imageColumn] == image
+        ).count
+
         return try dbConnection.scalar(countOutlinesForImageQuery)
     }
 

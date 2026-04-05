@@ -798,7 +798,7 @@ extension CRUD {
         return result
     }
     
-    private static func readOutlinesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedOutlineModel?] {
+    internal static func readOutlinesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedOutlineModel?] {
         let outline = DBMS.outline
         
         var outlines: [SerializedOutlineModel?] = []
