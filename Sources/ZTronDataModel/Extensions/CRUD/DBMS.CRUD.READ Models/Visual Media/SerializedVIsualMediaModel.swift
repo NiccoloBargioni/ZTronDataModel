@@ -27,10 +27,10 @@ public extension SerializedVisualMediaModel {
 public protocol SerializedVisualMediaModelWritableDraft {
     associatedtype M: SerializedVisualMediaModel
     
-    func withName(_: String) -> Self
-    func withDescription(_: String) -> Self
+    @discardableResult func withName(_: String) -> Self
+    @discardableResult func withDescription(_: String) -> Self
     @discardableResult func withPosition(_: Int) -> Self
-    func withSearchLabel(_: String?) -> Self
+    @discardableResult func withSearchLabel(_: String?) -> Self
     func getImmutableCopy() -> M
     
     func getName() -> String
