@@ -1769,7 +1769,7 @@ public extension CRUD {
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal func updateGalleryTab(
+    internal static func updateGalleryTab(
         for dbConnection: Connection,
         newTab: String,
         gallery: String,
@@ -1796,7 +1796,7 @@ public extension CRUD {
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
     /// - Note: An internal assumption is made that `produce` doesn't alter the order of the array.
-    internal func batchUpdateFirstLevelGalleryPositions(
+    internal static func batchUpdateFirstLevelGalleryPositions(
         for dbConnection: Connection,
         assetsImageName: String,
         tool: String,

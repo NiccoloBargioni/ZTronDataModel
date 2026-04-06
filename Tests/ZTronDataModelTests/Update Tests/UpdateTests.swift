@@ -193,4 +193,174 @@ final class UpdateTests: XCTestCase {
             return .rollback
         }
     }
+
+    
+    
+    public final func testBatchUpdateOutlines() async throws {
+        try DBMSMockProvider.transaction { connection in
+            var randomImageWithOutline: SerializedImageModel
+            var outlinesCount: Int
+            
+            repeat {
+                randomImageWithOutline = try CRUD.randomImage(for: connection)
+                outlinesCount = try CRUD.countOutlinesForImage(
+                    for: connection,
+                    game: randomImageWithOutline.getGame(),
+                    map: randomImageWithOutline.getMap(),
+                    tab: randomImageWithOutline.getTab(),
+                    tool: randomImageWithOutline.getTool(),
+                    gallery: randomImageWithOutline.getGallery(),
+                    image: randomImageWithOutline.getName()
+                )
+                
+                if outlinesCount > 0 {
+                    break
+                }
+            } while(true)
+            
+            print("Performing test on \(randomImageWithOutline.getName())")
+            
+            let randomRect: CGRect = .init(
+                origin: CGPoint(
+                    x: CGFloat.random(in: 0...1),
+                    y: CGFloat.random(in: 0...1),
+                ),
+                size: CGSize(
+                    width: CGFloat.random(in: 0...1),
+                    height: CGFloat.random(in: 0...1)
+                )
+            )
+
+            var outlineName: String = ""
+            
+            try CRUD.updateOutlinesForImage(
+                for: connection,
+                image: randomImageWithOutline.getName(),
+                gallery: randomImageWithOutline.getGallery(),
+                tool: randomImageWithOutline.getTool(),
+                tab: randomImageWithOutline.getTab(),
+                map: randomImageWithOutline.getMap(),
+                game: randomImageWithOutline.getGame()) { outlineDraft in
+                    outlineName = outlineDraft.getResourceName()
+                    
+                    outlineDraft
+                        .withResourceName(outlineDraft.getResourceName())
+                        .withBoundingBox(randomRect)
+                } validate: { _ in
+                    return true
+                }
+
+            let outline = DBMS.outline
+            let fetchOutlineQuery = outline.table.filter(
+                outline.resourceNameColumn == outlineName
+            )
+            
+            guard let outlineRow = try connection.pluck(fetchOutlineQuery) else {
+                fatalError("Unable to fetch outline with name \(outlineName)")
+            }
+                
+            let outlineModel = SerializedOutlineModel(outlineRow)
+            
+            XCTAssertEqual(outlineModel.getResourceName(), outlineName)
+            XCTAssertEqual(outlineModel.getBoundingBox().origin.x, randomRect.origin.x)
+            XCTAssertEqual(outlineModel.getBoundingBox().origin.y, randomRect.origin.y)
+            XCTAssertEqual(outlineModel.getBoundingBox().size.width, randomRect.size.width)
+            XCTAssertEqual(outlineModel.getBoundingBox().size.height, randomRect.size.height)
+            XCTAssertEqual(outlineModel.getImage(), randomImageWithOutline.getName())
+            XCTAssertEqual(outlineModel.getGallery(), randomImageWithOutline.getGallery())
+            XCTAssertEqual(outlineModel.getTool(), randomImageWithOutline.getTool())
+            XCTAssertEqual(outlineModel.getTab(), randomImageWithOutline.getTab())
+            XCTAssertEqual(outlineModel.getMap(), randomImageWithOutline.getMap())
+            XCTAssertEqual(outlineModel.getGame(), randomImageWithOutline.getGame())
+            return .rollback
+        }
+    }
+    
+    
+    public final func testBatchUpdateImages() async throws {
+        try DBMSMockProvider.transaction { dbConnection in
+            let randomGallery = try CRUD.randomGallery(for: dbConnection)
+                
+            let masters = try CRUD.readFirstLevelMasterImagesForGallery(
+                for: dbConnection,
+                game: randomGallery.getGame(),
+                map: randomGallery.getMap(),
+                tab: randomGallery.getTab(),
+                tool: randomGallery.getTool(),
+                gallery: randomGallery.getName(),
+                options: [.medias]
+            )
+            
+            let path = "\(randomGallery.getGame())/\(randomGallery.getMap())/\(randomGallery.getTab())/\(randomGallery.getTool())/\(randomGallery.getName())"
+
+            
+            guard let images = masters[.medias] as? [SerializedImageModel] else {
+                fatalError("Unable to fetch images for \(path)")
+            }
+            
+            guard images.count > 0 else {
+                fatalError("\(path) has 0 master images associated with it. Aborting.")
+            }
+            
+            let newPositions = Array(0..<images.count).shuffled()
+            let updatedImages = zip(images, newPositions).map { image, newPosition in
+                return image.getMutableCopy().withPosition(newPosition).getImmutableCopy()
+            }
+            
+            try CRUD.updateMasterVisualMediasForGallery(
+                for: dbConnection,
+                gallery: randomGallery.getName(),
+                tool: randomGallery.getTool(),
+                tab: randomGallery.getTab(),
+                map: randomGallery.getMap(),
+                game: randomGallery.getGame()
+            ) { imageDraft in
+                    guard let matchingUpdatedDraft = updatedImages.first (where: { candidateModel in
+                        return candidateModel.getName() == imageDraft.getName() &&
+                             candidateModel.getGallery() == imageDraft.getGallery() &&
+                             candidateModel.getTool() == imageDraft.getTool() &&
+                             candidateModel.getTab() == imageDraft.getTab() &&
+                             candidateModel.getGame() == imageDraft.getGame()
+                    }) else {
+                        let draftPath = "\(imageDraft.getGame())/\(imageDraft.getMap())/\(imageDraft.getTab())/\(imageDraft.getTool())/\(imageDraft.getGallery())/\(imageDraft.getName())"
+                        fatalError("Unable to find matching draft for \(draftPath)")
+                    }
+                    
+                    imageDraft
+                        .withPosition(matchingUpdatedDraft.getPosition())
+                } validate: { models in
+                    return true
+                }
+
+            
+            let mastersAfterUpdate = try CRUD.readFirstLevelMasterImagesForGallery(
+                for: dbConnection,
+                game: randomGallery.getGame(),
+                map: randomGallery.getMap(),
+                tab: randomGallery.getTab(),
+                tool: randomGallery.getTool(),
+                gallery: randomGallery.getName(),
+                options: [.medias]
+            )
+            
+            guard let imagesAfterUpdate = mastersAfterUpdate[.medias] as? [SerializedImageModel] else {
+                fatalError("Unable to fetch images for \(path)")
+            }
+
+            let sortedUpdateDraft = updatedImages.sorted(by: { lhs, rhs in
+                return lhs.getPosition() < rhs.getPosition()
+            })
+            
+            zip(imagesAfterUpdate, sortedUpdateDraft).forEach { fetchedImage, updateDraft in
+                XCTAssertEqual(fetchedImage.getName(), updateDraft.getName())
+                XCTAssertEqual(fetchedImage.getGallery(), updateDraft.getGallery())
+                XCTAssertEqual(fetchedImage.getTool(), updateDraft.getTool())
+                XCTAssertEqual(fetchedImage.getTab(), updateDraft.getTab())
+                XCTAssertEqual(fetchedImage.getMap(), updateDraft.getMap())
+                XCTAssertEqual(fetchedImage.getGame(), updateDraft.getGame())
+            }
+            
+            return .rollback
+        }
+    }
 }

@@ -22,6 +22,15 @@ extension CRUD {
     }
 
     
+    // MARK: GAMES
+    public static func countGames(for dbConnection: Connection,) throws -> Int {
+        let studios = DBMS.studio
+        let countGamesForStudioQuery = studios.table.count
+        
+        return try dbConnection.scalar(countGamesForStudioQuery)
+    }
+
+    
     // MARK: MAPS
     public static func countMapsForGame(for dbConnection: Connection, game: String) throws -> Int {
         let map = DBMS.map

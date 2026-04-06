@@ -206,4 +206,95 @@ final class DeleteTests: XCTestCase {
             return .rollback
         }
     }
+    
+    
+    public final func testImageDelete() async throws {
+        try DBMSMockProvider.transaction { connection in
+            
+            var randomImage: SerializedImageModel
+            repeat {
+                randomImage = try CRUD.randomImage(for: connection)
+                let mastersCount = try CRUD.readImageMaster(
+                    for: connection,
+                    slave: randomImage.getName(),
+                    game: randomImage.getGame(),
+                    map: randomImage.getMap(),
+                    tab: randomImage.getTab(),
+                    tool: randomImage.getTool(),
+                    gallery: randomImage.getGallery()
+                )
+                
+                if mastersCount == nil {
+                    break
+                }
+            } while(true);
+            
+            let gallery = DBMS.gallery
+            
+            let randomImageGalleryQuery = gallery.table.filter(
+                gallery.nameColumn == randomImage.getGallery() &&
+                gallery.foreignKeys.toolColumn == randomImage.getTool() &&
+                gallery.foreignKeys.tabColumn == randomImage.getTab() &&
+                gallery.foreignKeys.mapColumn == randomImage.getMap() &&
+                gallery.foreignKeys.gameColumn == randomImage.getGame()
+            )
+            
+            let path = "\(randomImage.getGame())/\(randomImage.getMap())/\(randomImage.getTab())/\(randomImage.getTool())/\(randomImage.getGallery())"
+
+            
+            guard let galleryEntry = try connection.pluck(randomImageGalleryQuery) else {
+                fatalError("Unable to fetch \(path). Aborting")
+            }
+            
+            let galleryModel = SerializedGalleryModel(galleryEntry)
+            
+            try CRUD.deleteFirstLevelImageForGallery(
+                for: connection,
+                image: randomImage.getName(),
+                gallery: randomImage.getGallery(),
+                tool: randomImage.getTool(),
+                tab: randomImage.getTab(),
+                map: randomImage.getMap(),
+                game: randomImage.getGame(),
+                shouldDecreasePositions: true
+            )
+            
+            let imagesAfterDelete = try CRUD.readFirstLevelMasterImagesForGallery(
+                for: connection,
+                game: randomImage.getGame(),
+                map: randomImage.getMap(),
+                tab: randomImage.getTab(),
+                tool: randomImage.getTool(),
+                gallery: randomImage.getGallery(),
+                options: [.medias]
+            )
+            
+            guard let imageModelsAfterDelete = imagesAfterDelete[.medias] as? [SerializedImageModel] else {
+                fatalError("Unable to fetch \(path) after delete. Aborting.")
+            }
+            
+            // Maybe the gallery had just one image, if so, test successful by default.
+            guard imageModelsAfterDelete.count > 0 else { return .rollback }
+            
+            let modelOfDeletedImage = imageModelsAfterDelete.first { modelAfterDelete in
+                return modelAfterDelete.getName() == randomImage.getName() &&
+                    modelAfterDelete.getGallery() == randomImage.getGallery() &&
+                    modelAfterDelete.getTool() == randomImage.getTool() &&
+                    modelAfterDelete.getTab() == randomImage.getTab() &&
+                    modelAfterDelete.getMap() == randomImage.getMap() &&
+                    modelAfterDelete.getGame() == randomImage.getGame()
+            }
+            
+            XCTAssertNil(modelOfDeletedImage)
+            
+            let updatedPositions = imageModelsAfterDelete.map { image in
+                return image.getPosition()
+            }.sorted()
+            
+            XCTAssertEqual(updatedPositions[0], 0)
+            XCTAssertEqual(updatedPositions[updatedPositions.count - 1], updatedPositions.count - 1)
+            
+            return .rollback
+        }
+    }
 }

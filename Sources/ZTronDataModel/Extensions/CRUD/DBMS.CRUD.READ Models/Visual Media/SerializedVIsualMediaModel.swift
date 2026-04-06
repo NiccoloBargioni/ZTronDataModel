@@ -29,7 +29,7 @@ public protocol SerializedVisualMediaModelWritableDraft {
     
     func withName(_: String) -> Self
     func withDescription(_: String) -> Self
-    func withPosition(_: Int) -> Self
+    @discardableResult func withPosition(_: Int) -> Self
     func withSearchLabel(_: String?) -> Self
     func getImmutableCopy() -> M
     
@@ -38,6 +38,12 @@ public protocol SerializedVisualMediaModelWritableDraft {
     func getPosition() -> Int
     func getSearchLabel() -> String?
 
+    func getGallery() -> String
+    func getTool() -> String
+    func getTab() -> String
+    func getMap() -> String
+    func getGame() -> String
+    
     func getPreviousName() -> String
     func getPreviousDescription() -> String
     func getPreviousPosition() -> Int

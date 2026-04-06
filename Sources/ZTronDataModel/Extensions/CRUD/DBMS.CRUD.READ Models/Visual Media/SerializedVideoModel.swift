@@ -262,6 +262,36 @@ public final class SerializedVideoModel: SerializedVisualMediaModel {
             return self.searchLabel
         }
         
+        
+        public final func getGallery() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `gallery`.") }
+            return owner.gallery
+        }
+        
+        
+        public final func getTool() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `tool`.") }
+            return owner.tool
+        }
+        
+        
+        public final func getTab() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `tab`.") }
+            return owner.tab
+        }
+        
+        
+        public final func getMap() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `map`.") }
+            return owner.map
+        }
+        
+        
+        public final func getGame() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `game`.") }
+            return owner.game
+        }
+        
         /// - Note: Unsafe. One could make an immutable copy from this and pass it around as if it was fetched from db.
         public final func getImmutableCopy() -> SerializedVideoModel {
             guard let owner = self.owner else {

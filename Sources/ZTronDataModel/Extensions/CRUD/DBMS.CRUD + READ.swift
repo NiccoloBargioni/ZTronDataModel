@@ -1031,43 +1031,43 @@ extension CRUD {
         
         let findMasterQuery = imagesTable.table
             .select(
-                imagesTable.nameColumn,
-                imagesTable.descriptionColumn,
-                imagesTable.positionColumn,
-                imagesTable.searchLabelColumn,
-                imagesTable.typeColumn,
-                imagesTable.extensionColumn,
-                imagesTable.foreignKeys.gameColumn,
-                imagesTable.foreignKeys.mapColumn,
-                imagesTable.foreignKeys.tabColumn,
-                imagesTable.foreignKeys.toolColumn,
-                imagesTable.foreignKeys.galleryColumn
+                imagesTable.table[imagesTable.nameColumn],
+                imagesTable.table[imagesTable.descriptionColumn],
+                imagesTable.table[imagesTable.positionColumn],
+                imagesTable.table[imagesTable.searchLabelColumn],
+                imagesTable.table[imagesTable.typeColumn],
+                imagesTable.table[imagesTable.extensionColumn],
+                imagesTable.table[imagesTable.foreignKeys.gameColumn],
+                imagesTable.table[imagesTable.foreignKeys.mapColumn],
+                imagesTable.table[imagesTable.foreignKeys.tabColumn],
+                imagesTable.table[imagesTable.foreignKeys.toolColumn],
+                imagesTable.table[imagesTable.foreignKeys.galleryColumn]
             )
             .join(
                 slavesTable.table,
-                on: slavesTable.slaveColumn == slave &&
-                slavesTable.masterColumn == imagesTable.nameColumn &&
-                slavesTable.foreignKeys.gameColumn == imagesTable.foreignKeys.gameColumn &&
-                slavesTable.foreignKeys.mapColumn == imagesTable.foreignKeys.mapColumn &&
-                slavesTable.foreignKeys.tabColumn == imagesTable.foreignKeys.tabColumn &&
-                slavesTable.foreignKeys.toolColumn == imagesTable.foreignKeys.toolColumn &&
-                slavesTable.foreignKeys.galleryColumn == imagesTable.foreignKeys.galleryColumn
+                on: slavesTable.table[slavesTable.slaveColumn] == slave &&
+                slavesTable.table[slavesTable.masterColumn] == imagesTable.table[imagesTable.nameColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.gameColumn] == imagesTable.table[imagesTable.foreignKeys.gameColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.mapColumn] == imagesTable.table[imagesTable.foreignKeys.mapColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.tabColumn] == imagesTable.table[imagesTable.foreignKeys.tabColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.toolColumn] == imagesTable.table[imagesTable.foreignKeys.toolColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.galleryColumn] == imagesTable.table[imagesTable.foreignKeys.galleryColumn]
         )
         
         let masters: [any SerializedVisualMediaModel] = try dbConnection.prepare(findMasterQuery).map { result in
             switch result[imagesTable.typeColumn] {
             case "image":
-                return SerializedImageModel(result)
+                return SerializedImageModel(result, namespaceColumns: true)
                 
             case "video":
-                return SerializedVideoModel(result)
+                return SerializedVideoModel(result, namespaceColumns: true)
                 
             default:
                 fatalError("Unable to make READ model for media of type \(result[imagesTable.typeColumn])")
             }
         }
 
-        assert(masters.count <= 0)
+        assert(masters.count <= 1)
         return masters.first
     }
     
