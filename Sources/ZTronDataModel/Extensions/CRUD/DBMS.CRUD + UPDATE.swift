@@ -15,8 +15,8 @@ public extension CRUD {
     /// - `OUTLINE(resourceName, colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func updateOutlineColor(
-        for dbConnection: Connection, 
+    @discardableResult static func updateOutlineColor(
+        for dbConnection: Connection,
         colorHex: String,
         opacity: Double?,
         image: String,
@@ -25,7 +25,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         let matches = Self.hexValidatingRegex.matches(in: colorHex, range: NSRange(colorHex.startIndex..., in: colorHex))
         
         let stringResults = matches.map {
@@ -67,7 +67,8 @@ public extension CRUD {
                 )
             )
         }
-            
+         
+        return dbConnection.changes
     }
     
     
@@ -78,7 +79,7 @@ public extension CRUD {
     /// - `OUTLINE(resourceName, colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func updateOutlineOpacity(
+    @discardableResult static func updateOutlineOpacity(
         for dbConnection: Connection,
         opacity: Double,
         image: String,
@@ -87,7 +88,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         if opacity < 0 || opacity > 1 {
             throw UpdateError.validationError(reason: "Could not validate opacity \(opacity)")
         }
@@ -109,6 +110,8 @@ public extension CRUD {
                 outlineTable.opacityColumn <- opacity
             )
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -118,7 +121,7 @@ public extension CRUD {
     /// - `OUTLINE(resourceName, colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func updateIsOutlineActive(
+    @discardableResult static func updateIsOutlineActive(
         for dbConnection: Connection,
         isActive: Bool,
         image: String,
@@ -127,7 +130,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         
         let outlineTable = DBMS.outline
         
@@ -145,6 +148,8 @@ public extension CRUD {
                 outlineTable.isActiveColumn <- isActive
             )
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -155,7 +160,7 @@ public extension CRUD {
     /// - `OUTLINE(resourceName, colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func updateOutlineBoundingBox(
+    @discardableResult static func updateOutlineBoundingBox(
         for dbConnection: Connection,
         newOrigin: CGPoint,
         newSize: CGSize,
@@ -165,7 +170,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         assert(newOrigin.x >= 0 && newOrigin.x <= 1)
         assert(newOrigin.y >= 0 && newOrigin.y <= 1)
         
@@ -191,6 +196,8 @@ public extension CRUD {
                 outline.boundingBoxHeightColumn <- newSize.height
             )
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -200,7 +207,7 @@ public extension CRUD {
     /// - `OUTLINE(resourceName, colorHex, isActive, opacity, boundingBoxOriginX, boundingBoxOriginY,boundingBoxWidth, boundingBoxHeight, image, gallery, tool, tab, map, game)`
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func updateOutlineResourceName(
+    @discardableResult static func updateOutlineResourceName(
         for dbConnection: Connection,
         newResourceName: String,
         image: String,
@@ -209,7 +216,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         let outline = DBMS.outline
 
         let outlineToUpdate = outline.table.filter(
@@ -226,6 +233,8 @@ public extension CRUD {
                 outline.resourceNameColumn <- newResourceName.lowercased()
             )
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -298,7 +307,7 @@ public extension CRUD {
     /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func updateOutlinesForImage(
+    @discardableResult static func updateOutlinesForImage(
         for dbConnection: Connection,
         image: String,
         gallery: String,
@@ -308,7 +317,7 @@ public extension CRUD {
         game: String,
         produce: @escaping (inout SerializedOutlineModel.WritableDraft) -> Void,
         validate: @escaping ([SerializedOutlineModel]) -> Bool
-    ) throws -> Void {
+    ) throws -> Int {
         let outlineTable = DBMS.outline
         
         let findBoundingCirclesForImage = outlineTable.table.filter(
@@ -337,9 +346,11 @@ public extension CRUD {
         })) else { fatalError("Unable to validate models. Aborting") }
         
         
+        var changesCount: Int = 0
         try outlinesModelsDrafts.forEach { outlineDraft in
             if outlineDraft.didOpacityChange() {
-                try Self.updateOutlineOpacity(
+                
+                changesCount += try Self.updateOutlineOpacity(
                     for: dbConnection,
                     opacity: outlineDraft.getOpacity(),
                     image: image,
@@ -356,7 +367,7 @@ public extension CRUD {
             }
             
             if outlineDraft.didColorHexChange() {
-                try Self.updateOutlineColor(
+                changesCount += try Self.updateOutlineColor(
                     for: dbConnection,
                     colorHex: outlineDraft.getColorHex(),
                     opacity: outlineDraft.getOpacity(),
@@ -374,7 +385,7 @@ public extension CRUD {
             }
             
             if outlineDraft.didIsActiveChange() {
-                try Self.updateIsOutlineActive(
+                changesCount += try Self.updateIsOutlineActive(
                     for: dbConnection,
                     isActive: outlineDraft.isActive(),
                     image: image,
@@ -393,7 +404,7 @@ public extension CRUD {
             if outlineDraft.didBoundingBoxChange() {
                 let newBoundingBox = outlineDraft.getBoundingBox()
                 
-                try Self.updateOutlineBoundingBox(
+                changesCount += try Self.updateOutlineBoundingBox(
                     for: dbConnection,
                     newOrigin: newBoundingBox.origin,
                     newSize: newBoundingBox.size,
@@ -411,7 +422,7 @@ public extension CRUD {
             }
             
             if outlineDraft.didResourceNameChange() {
-                try Self.updateOutlineResourceName(
+                changesCount += try Self.updateOutlineResourceName(
                     for: dbConnection,
                     newResourceName: outlineDraft.getResourceName(),
                     image: image,
@@ -427,6 +438,8 @@ public extension CRUD {
                 #endif
             }
         }
+        
+        return changesCount
     }
     
     // MARK: - BOUNDING CIRCLE
@@ -437,7 +450,7 @@ public extension CRUD {
     /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func updateBoundingCircleColor(
+    @discardableResult static func updateBoundingCircleColor(
         for dbConnection: Connection,
         colorHex: String,
         opacity: Double?,
@@ -447,7 +460,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         let matches = Self.hexValidatingRegex.matches(in: colorHex, range: NSRange(colorHex.startIndex..., in: colorHex))
         
         let stringResults = matches.map {
@@ -489,6 +502,8 @@ public extension CRUD {
                 )
             )
         }
+        
+        return dbConnection.changes
     }
     
     
@@ -500,7 +515,7 @@ public extension CRUD {
     /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func updateBoundingCircleOpacity(
+    @discardableResult static func updateBoundingCircleOpacity(
         for dbConnection: Connection,
         opacity: Double,
         image: String,
@@ -509,7 +524,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         if opacity < 0 || opacity > 1 {
             throw UpdateError.validationError(reason: "Could not validate opacity \(opacity)")
         }
@@ -531,6 +546,8 @@ public extension CRUD {
                 boundingCircleTable.opacityColumn <- opacity
             )
         )
+        
+        return dbConnection.changes
     }
     
     /// Updates the flag specifing whether or not the bounding circle should be visible by default.
@@ -688,7 +705,7 @@ public extension CRUD {
     /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func toggleBoundingCircleActive(
+    @discardableResult static func toggleBoundingCircleActive(
         for dbConnection: Connection,
         image: String,
         gallery: String,
@@ -696,7 +713,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws {
+    ) throws -> Int {
         let sqlite3Connection = dbConnection.handle
         let boundingCircle = DBMS.boundingCircle
         
@@ -716,12 +733,14 @@ public extension CRUD {
                   \(boundingCircle.foreignKeys.gameColumn.template) = "\(game)"
             """
         )
+        
+        return Int(sqlite3_changes(sqlite3Connection));
     }
     
     /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func updateBoundingCircleTab(
+    @discardableResult internal static func updateBoundingCircleTab(
         for dbConnection: Connection,
         newTab: String,
         image: String,
@@ -730,7 +749,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         let boundingCircle = DBMS.boundingCircle
 
         let outlineToUpdate = boundingCircle.table.filter(
@@ -747,13 +766,15 @@ public extension CRUD {
                 boundingCircle.foreignKeys.tabColumn <- newTab.lowercased()
             )
         )
+        
+        return dbConnection.changes
     }
     
     
     /// - `BOUNDING_CIRCLE(colorHex, isActive, opacity, idleDiameter, normalizedCenterX, normalizedCenterY, image, gallery, tool, tab, map, game)`
     /// - `PK(image, gallery, tool, tab, map, game)`
     /// - `FK(image, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func updateBoundingCirclesForImage(
+    @discardableResult static func updateBoundingCirclesForImage(
         for dbConnection: Connection,
         image: String,
         gallery: String,
@@ -763,7 +784,7 @@ public extension CRUD {
         game: String,
         produce: @escaping (inout SerializedBoundingCircleModel.WritableDraft) -> Void,
         validate: @escaping ([SerializedBoundingCircleModel]) -> Bool
-    ) throws -> Void {
+    ) throws -> Int {
         let boundingCircleTable = DBMS.boundingCircle
         
         let findBoundingCirclesForImage = boundingCircleTable.table.filter(
@@ -791,6 +812,8 @@ public extension CRUD {
             return draft.getImmutableCopy()
         })) else { fatalError("Unable to validate models. Aborting") }
         
+        var changesCount: Int = 0
+        
         try boundingCirclesModelsDrafts.forEach { boundingCircleDraft in
             if boundingCircleDraft.didOpacityChange() {
                 try Self.updateBoundingCircleOpacity(
@@ -803,6 +826,8 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                changesCount += dbConnection.changes
             }
             
             if boundingCircleDraft.didColorHexChange() {
@@ -817,6 +842,8 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                changesCount += dbConnection.changes
             }
             
             if boundingCircleDraft.didIsActiveChange() {
@@ -830,6 +857,8 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                changesCount += dbConnection.changes
             }
             
             if boundingCircleDraft.didIdleDiameterChange() {
@@ -843,6 +872,8 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                changesCount += dbConnection.changes
             }
             
             if boundingCircleDraft.didNormalizedCenterChange() {
@@ -856,15 +887,19 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                changesCount += dbConnection.changes
             }
         }
+        
+        return changesCount
     }
     
     // MARK: - IMAGE VARIANT
     /// - `IMAGE_VARIANT(master, slave, variant, bottomBarIcon, boundingFrameOriginX, boundingFrameOriginY, boundingFrameWidth, boundingFrameHeight, gallery, tool, tab, map, game)`
     /// - `PK(slave, gallery, tool, tab, map, game)`
     /// - `FK(slave, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func updateImageVariantBottomBarIcon(
+    @discardableResult internal static func updateImageVariantBottomBarIcon(
         for dbConnection: Connection,
         bottomBarIcon: String,
         master: String,
@@ -874,7 +909,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         let imageVariant = DBMS.imageVariant
 
         let variantToUpdate = imageVariant.table.filter(
@@ -890,13 +925,14 @@ public extension CRUD {
         )
         
         try dbConnection.run(variantToUpdate)
+        return dbConnection.changes
     }
     
     
     /// - `IMAGE_VARIANT(master, slave, variant, bottomBarIcon, boundingFrameOriginX, boundingFrameOriginY, boundingFrameWidth, boundingFrameHeight, gallery, tool, tab, map, game)`
     /// - `PK(slave, gallery, tool, tab, map, game)`
     /// - `FK(slave, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func updateImageVariantGoBackBottomBarIcon(
+    @discardableResult internal static func updateImageVariantGoBackBottomBarIcon(
         for dbConnection: Connection,
         goBackBottomBarIcon: String?,
         master: String,
@@ -906,7 +942,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         let imageVariant = DBMS.imageVariant
 
         let variantToUpdate = imageVariant.table.filter(
@@ -922,12 +958,13 @@ public extension CRUD {
         )
         
         try dbConnection.run(variantToUpdate)
+        return dbConnection.changes
     }
     
     /// - `IMAGE_VARIANT(master, slave, variant, bottomBarIcon, boundingFrameOriginX, boundingFrameOriginY, boundingFrameWidth, boundingFrameHeight, gallery, tool, tab, map, game)`
     /// - `PK(slave, gallery, tool, tab, map, game)`
     /// - `FK(slave, gallery, tool, tab, map, game) REFERENCES VISUAL_MEDIA(type, extension, name, gallery, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func updateImageVariantBoundingFrame(
+    @discardableResult internal static func updateImageVariantBoundingFrame(
         for dbConnection: Connection,
         origin: CGPoint?,
         size: CGSize?,
@@ -938,7 +975,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         assert(origin?.x ?? 0 >= 0 && origin?.x ?? 0 <= 1)
         assert(origin?.y ?? 0 >= 0 && origin?.y ?? 0 <= 1)
         assert(size?.width ?? 0 >= 0 && size?.width ?? 0 <= 1)
@@ -963,10 +1000,11 @@ public extension CRUD {
         )
         
         try dbConnection.run(variantToUpdate)
+        return dbConnection.changes
     }
     
     
-    static func updateVisualMediaMasterSlaveRelationshipsForMaster(
+    @discardableResult static func updateVisualMediaMasterSlaveRelationshipsForMaster(
         for dbConnection: Connection,
         master: String,
         gallery: String,
@@ -976,7 +1014,7 @@ public extension CRUD {
         game: String,
         produce: @escaping (inout SerializedImageVariantMetadataModel.WritableDraft) -> Void,
         validate: @escaping ([SerializedImageVariantMetadataModel]) -> Bool
-    ) throws -> Void {
+    ) throws -> Int {
         let masterModel = try Self.readImageByID(
             for: dbConnection,
             image: master,
@@ -992,12 +1030,12 @@ public extension CRUD {
             medias: [masterModel]
         ).first else {
             Self.logger.error("No variant found for this master. Aborting")
-            return
+            return 0
         }
     
         guard let variantsModels = variantsForThisMaster?.getVariants() else {
             Self.logger.error("Unable to make variants drafts for \(tool)/\(gallery)/\(master)")
-            return
+            return 0
         }
         
         var variantsDrafts = variantsModels.map { variantModel in
@@ -1015,6 +1053,8 @@ public extension CRUD {
             fatalError("Failed to validate variants drafts model")
         }
         
+        var changesCount: Int = 0
+        
         try variantsDrafts.forEach { variantDraftModel in
             if variantDraftModel.didBottomBarIconUpdate() {
                 try Self.updateImageVariantBottomBarIcon(
@@ -1028,6 +1068,8 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                changesCount += dbConnection.changes
             }
             
             if variantDraftModel.didGoBackBottomBarIconUpdate() {
@@ -1042,6 +1084,8 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                changesCount += dbConnection.changes
             }
             
             if variantDraftModel.didOriginUpdate() || variantDraftModel.didSizeUpdate() {
@@ -1062,8 +1106,12 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                changesCount += dbConnection.changes
             }
         }
+        
+        return changesCount
     }
     
     // MARK: - VISUAL MEDIA (FORMER IMAGE)
@@ -1074,7 +1122,7 @@ public extension CRUD {
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
-    static func updateVisualMediaName(
+    @discardableResult static func updateVisualMediaName(
         for dbConnection: Connection,
         newName: String,
         currentName: String,
@@ -1083,7 +1131,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws {
+    ) throws -> Int {
         let visualMediaTable = DBMS.visualMedia
                 
         let imageToUpdate = visualMediaTable.table.filter(
@@ -1100,6 +1148,8 @@ public extension CRUD {
                 visualMediaTable.nameColumn <- newName.lowercased()
             )
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -1108,7 +1158,7 @@ public extension CRUD {
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
-    static func updateVisualMediaCaption(
+    @discardableResult static func updateVisualMediaCaption(
         for dbConnection: Connection,
         caption: String,
         image: String,
@@ -1117,7 +1167,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws {
+    ) throws -> Int {
         let visualMediaTable = DBMS.visualMedia
                 
         let imageToUpdate = visualMediaTable.table.filter(
@@ -1134,12 +1184,14 @@ public extension CRUD {
                 visualMediaTable.descriptionColumn <- caption.lowercased()
             )
         )
+        
+        return dbConnection.changes
     }
     
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
-    static func updateVisualMediaTab(
+    @discardableResult static func updateVisualMediaTab(
         for dbConnection: Connection,
         newTab: String,
         image: String,
@@ -1148,7 +1200,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws {
+    ) throws -> Int {
         let visualMediaTable = DBMS.visualMedia
                 
         let imageToUpdate = visualMediaTable.table.filter(
@@ -1165,6 +1217,8 @@ public extension CRUD {
                 visualMediaTable.descriptionColumn <- newTab.lowercased()
             )
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -1174,7 +1228,7 @@ public extension CRUD {
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
-    static func updateVisualMediaSearchLabel(
+    @discardableResult static func updateVisualMediaSearchLabel(
         for dbConnection: Connection,
         searchLabel: String?,
         image: String,
@@ -1183,7 +1237,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws {
+    ) throws -> Int {
         let visualMediaTable = DBMS.visualMedia
                 
         let imageToUpdate = visualMediaTable.table.filter(
@@ -1200,6 +1254,8 @@ public extension CRUD {
                 visualMediaTable.searchLabelColumn <- searchLabel?.lowercased()
             )
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -1211,7 +1267,7 @@ public extension CRUD {
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
-    static func updateVisualMediaPosition(
+    @discardableResult static func updateVisualMediaPosition(
         for dbConnection: Connection,
         position: Int,
         image: String,
@@ -1220,7 +1276,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws {
+    ) throws -> Int {
         assert(position >= 0)
         let visualMediaTable = DBMS.visualMedia
                 
@@ -1238,6 +1294,8 @@ public extension CRUD {
                 visualMediaTable.positionColumn <- position
             )
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -1249,7 +1307,7 @@ public extension CRUD {
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
     ///
     /// - Note: An assumption is made that `produce` doesn't alter the order of the input array
-    static func updateVisualMediaPositions(
+    @discardableResult static func updateVisualMediaPositions(
         for dbConnection: Connection,
         image: String,
         gallery: String,
@@ -1258,7 +1316,7 @@ public extension CRUD {
         map: String,
         game: String,
         produce: @escaping (inout [any SerializedVisualMediaModelWritableDraft]) -> Void
-    ) throws {
+    ) throws -> Int {
         if let firstLevelImagesForGallery = try Self.readFirstLevelMasterImagesForGallery(
             for: dbConnection,
             game: game,
@@ -1268,7 +1326,7 @@ public extension CRUD {
             gallery: gallery,
             options: []
         )[.medias] as? [any SerializedVisualMediaModel] {
-            guard firstLevelImagesForGallery.count > 0 else { return }
+            guard firstLevelImagesForGallery.count > 0 else { return 0 }
                 
             var imagesThatNeedUpdate = firstLevelImagesForGallery.map { model in
                 return model.getMutableCopy()
@@ -1288,9 +1346,10 @@ public extension CRUD {
             assert(updatedModelsPositions[0] == 0)
             assert(updatedModelsPositions[updatedModelsPositions.count - 1] ==  updatedModelsPositions.count - 1)
             
+            var changesCount: Int = 0
             try updatedModels.enumerated().forEach { i, model in
                 if model.getPosition() != firstLevelImagesForGallery[i].getPosition() {
-                    try Self.updateVisualMediaPosition(
+                    changesCount += try Self.updateVisualMediaPosition(
                         for: dbConnection,
                         position: model.getPosition(),
                         image: image.lowercased(),
@@ -1302,6 +1361,8 @@ public extension CRUD {
                     )
                 }
             }
+            
+            return changesCount
         } else {
             self.logger.error("Tried to cast `.medias` result for \(String(describing: Self.readFirstLevelMasterImagesForGallery)) to [\(String(describing: SerializedImageModel.self))] but cast unexpectedly fail.")
             fatalError()
@@ -1314,7 +1375,7 @@ public extension CRUD {
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
-    internal static func decrementPositionsForFirstLevelImagesInGallery(
+    @discardableResult internal static func decrementPositionsForFirstLevelImagesInGallery(
         for dbConnection: Connection,
         gallery: String,
         tool: String,
@@ -1322,7 +1383,7 @@ public extension CRUD {
         map: String,
         game: String,
         threshold: Int = 0
-    ) throws -> Void {
+    ) throws -> Int {
         let media = DBMS.visualMedia
         let imageVariant = DBMS.imageVariant
         
@@ -1352,6 +1413,8 @@ public extension CRUD {
                 media.positionColumn > threshold)
             .update(media.positionColumn <- media.positionColumn - 1)
         )
+        
+        return dbConnection.changes
     }
     
     /// For all the first-level variants of `image` whose position isß in [`threshold + 1`..< `gallery.firstLevelImages.count`], this method decreases their position by one.
@@ -1359,7 +1422,7 @@ public extension CRUD {
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
-    internal static func decrementPositionsForVariantsOfMedia(
+    @discardableResult internal static func decrementPositionsForVariantsOfMedia(
         for dbConnection: Connection,
         parent: String,
         gallery: String,
@@ -1368,7 +1431,7 @@ public extension CRUD {
         map: String,
         game: String,
         threshold: Int = 0
-    ) throws -> Void {
+    ) throws -> Int {
         let media = DBMS.visualMedia
         let imageVariant = DBMS.imageVariant
         
@@ -1398,6 +1461,8 @@ public extension CRUD {
                 media.positionColumn > threshold)
             .update(media.positionColumn <- media.positionColumn - 1)
         )
+        
+        return dbConnection.changes
     }
     
     /// For all the visual medias in the specified (`tool`, `map`, `game`), their `tab` is set to `targetTab`.
@@ -1626,14 +1691,14 @@ public extension CRUD {
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func decrementPositionsForFirstLevelGalleriesInTool(
+    @discardableResult internal static func decrementPositionsForFirstLevelGalleriesInTool(
         for dbConnection: Connection,
         tool: String,
         tab: String,
         map: String,
         game: String,
         threshold: Int = 0
-    ) throws -> Void {
+    ) throws -> Int {
         let gallery = DBMS.gallery
         let slaves = DBMS.subgallery
         
@@ -1661,6 +1726,8 @@ public extension CRUD {
                 gallery.positionColumn > threshold)
             .update(gallery.positionColumn <- gallery.positionColumn - 1)
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -1669,7 +1736,7 @@ public extension CRUD {
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func decrementPositionsForImmediateSubgalleriesOfMaster(
+    @discardableResult internal static func decrementPositionsForImmediateSubgalleriesOfMaster(
         for dbConnection: Connection,
         parent: String,
         tool: String,
@@ -1677,7 +1744,7 @@ public extension CRUD {
         map: String,
         game: String,
         threshold: Int = 0
-    ) throws -> Void {
+    ) throws -> Int {
         let gallery = DBMS.gallery
         let subgallery = DBMS.subgallery
         
@@ -1705,6 +1772,8 @@ public extension CRUD {
                 gallery.positionColumn > threshold)
             .update(gallery.positionColumn <- gallery.positionColumn - 1)
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -2268,13 +2337,13 @@ public extension CRUD {
     /// - `TOOL(name, position, assetsImageName, tab, map, game)`
     /// - `PK(name, tab, map, game)`
     /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func decrementPositionsForToolsOfTab(
+    @discardableResult internal static func decrementPositionsForToolsOfTab(
         for dbConnection: Connection,
         tab: String,
         map: String,
         game: String,
         threshold: Int = 0
-    ) throws -> Void {
+    ) throws -> Int {
         let tools = DBMS.tool
         
         try dbConnection.run(
@@ -2285,6 +2354,8 @@ public extension CRUD {
                 tools.positionColumn > threshold)
             .update(tools.positionColumn <- tools.positionColumn - 1)
         )
+        
+        return dbConnection.changes
     }
     
     /// For all the tools in the specified tab whose position is [`threshold`..< `tab.tools.count`], this method increases their position by one.
@@ -2582,12 +2653,12 @@ public extension CRUD {
     /// - `TAB(name, position, iconName, map, game)`
     /// - `PK(name, map, game)`
     /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func decrementPositionsForTabsInMap(
+    @discardableResult internal static func decrementPositionsForTabsInMap(
         for dbConnection: Connection,
         map: String,
         game: String,
         threshold: Int = 0
-    ) throws -> Void {
+    ) throws -> Int {
         let tabs = DBMS.tab
         
         try dbConnection.run(
@@ -2597,6 +2668,8 @@ public extension CRUD {
                 tabs.positionColumn > threshold)
             .update(tabs.positionColumn <- tabs.positionColumn - 1)
         )
+        
+        return dbConnection.changes
     }
     
     /// - `TAB(name, position, iconName, map, game)`
@@ -2843,11 +2916,11 @@ public extension CRUD {
     /// - `MAP(name, position, assetsImageName, game)`
     /// - `PK(name, game)`
     /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func decrementPositionsForFirstLevelMapsInGame(
+    @discardableResult internal static func decrementPositionsForFirstLevelMapsInGame(
         for dbConnection: Connection,
         game: String,
         threshold: Int = 0
-    ) throws -> Void {
+    ) throws -> Int {
         let maps = DBMS.map
         let submaps = DBMS.hasSubmap
         
@@ -2866,6 +2939,8 @@ public extension CRUD {
                 maps.positionColumn > threshold)
             .update(maps.positionColumn <- maps.positionColumn - 1)
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -2874,12 +2949,12 @@ public extension CRUD {
     /// - `MAP(name, position, assetsImageName, game)`
     /// - `PK(name, game)`
     /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func decrementPositionsForSubmapsOfMaster(
+    @discardableResult internal static func decrementPositionsForSubmapsOfMaster(
         for dbConnection: Connection,
         master: String,
         game: String,
         threshold: Int = 0
-    ) throws -> Void {
+    ) throws -> Int {
         let maps = DBMS.map
         let submaps = DBMS.hasSubmap
         
@@ -2899,6 +2974,8 @@ public extension CRUD {
                 maps.positionColumn > threshold)
             .update(maps.positionColumn <- maps.positionColumn - 1)
         )
+        
+        return dbConnection.changes
     }
     
     // MARK: - GAME
@@ -2907,10 +2984,10 @@ public extension CRUD {
     /// - `GAME(name, position, assetsImageName, studio)`
     /// - `PK(name)`
     /// - `FK(studio) REFERENCES STUDIO(name) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func decrementPositionsForGames(
+    @discardableResult internal static func decrementPositionsForGames(
         for dbConnection: Connection,
         threshold: Int = 0
-    ) throws -> Void {
+    ) throws -> Int {
         let gameTable = DBMS.game
         
         try dbConnection.run(
@@ -2918,17 +2995,19 @@ public extension CRUD {
                 gameTable.positionColumn > threshold)
             .update(gameTable.positionColumn <- gameTable.positionColumn - 1)
         )
+        
+        return dbConnection.changes
     }
     
     /// - `GAME(name, position, assetsImageName, studio)`
     /// - `PK(name)`
     /// - `FK(studio) REFERENCES STUDIO(name) ON DELETE CASCADE ON UPDATE CASCADE`
-     internal static func updateGamePosition(
+     @discardableResult internal static func updateGamePosition(
         for dbConnection: Connection,
         newPosition: Int,
         game: String,
         threshold: Int = 0
-    ) throws -> Void {
+    ) throws -> Int {
         assert(newPosition >= 0)
         let gameTable = DBMS.game
         
@@ -2938,17 +3017,19 @@ public extension CRUD {
             )
             .update(gameTable.positionColumn <- newPosition)
         )
+        
+        return dbConnection.changes
     }
     
     
     /// - `MAP(name, position, assetsImageName, game)`
     /// - `PK(name, game)`
     /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func updateGames(
+    @discardableResult static func updateGames(
         for dbConnection: Connection,
         produce: @escaping (inout SerializedGameModel.WritableDraft) -> Void,
         validate: @escaping ([SerializedGameModel]) -> Bool
-    ) throws -> Void {
+    ) throws -> Int {
         guard let allGames = (try Self.readAllGames(
             for: dbConnection,
             options: [.games]
@@ -2969,6 +3050,7 @@ public extension CRUD {
         })) else { fatalError("Unable to validate models. Aborting") }
         
         
+        var changedGamesCount: Int = 0
         try gamesDrafts.forEach { gameModelDraft in
             if gameModelDraft.didPositionChange() {
                 try Self.updateGamePosition(
@@ -2976,8 +3058,12 @@ public extension CRUD {
                     newPosition: gameModelDraft.getPosition(),
                     game: gameModelDraft.getName()
                 )
+                
+                changedGamesCount += dbConnection.changes
             }
         }
+        
+        return changedGamesCount
     }
 }
 

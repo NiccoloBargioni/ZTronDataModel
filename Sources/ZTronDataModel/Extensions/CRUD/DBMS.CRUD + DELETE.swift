@@ -4,24 +4,29 @@ import SQLite
 
 public extension CRUD {
     
-    static func deleteStudio(for dbConnection: Connection, studio: String) throws {
+    @discardableResult static func deleteStudio(for dbConnection: Connection, studio: String) throws -> Int {
         let studioModel = DomainModel.studio
         
         try dbConnection.run(
             studioModel.table.filter(studioModel.nameColumn == studio).delete()
         )
+        
+        return dbConnection.changes
     }
     
-    static func deleteGame(for dbConnection: Connection, game: String, studio: String) throws {
+    
+    @discardableResult static func deleteGame(for dbConnection: Connection, game: String, studio: String) throws -> Int {
         let gameModel = DomainModel.game
         
         try dbConnection.run(
             gameModel.table.filter(gameModel.nameColumn == game && gameModel.foreignKeys.studioColumn == studio).delete()
         )
+        
+        return dbConnection.changes
     }
     
     // MARK: - OUTLINE
-    static func deleteOutlineForImage(
+    @discardableResult static func deleteOutlineForImage(
         for dbConnection: Connection,
         image: String,
         gallery: String,
@@ -29,7 +34,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         let outlineTable = DBMS.outline
         
         try dbConnection.run(
@@ -42,11 +47,13 @@ public extension CRUD {
                 outlineTable.foreignKeys.galleryColumn == gallery.lowercased()
             ).delete()
         )
+        
+        return dbConnection.changes
     }
     
     
     // MARK: - BOUNDING CIRCLE
-    static func deleteBoundingCircleForImage(
+    @discardableResult static func deleteBoundingCircleForImage(
         for dbConnection: Connection,
         image: String,
         gallery: String,
@@ -54,7 +61,7 @@ public extension CRUD {
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         let boundingCircleTable = DBMS.boundingCircle
         
         try dbConnection.run(
@@ -67,6 +74,8 @@ public extension CRUD {
                 boundingCircleTable.foreignKeys.galleryColumn == gallery.lowercased()
             ).delete()
         )
+        
+        return dbConnection.changes
     }
     
     
@@ -77,11 +86,12 @@ public extension CRUD {
     ///
     /// - Note: Deleting an image cascading deletes all the associated overlays and variants
     /// - Note: Deleting an image could or not cascading decreasee by one all the other first level images' positions in the same gallery whose position is greater than that of the deleted image. If the reference was dangling then the updated model already had the new positions corrected, otherwise specify that decreasing is needed.
+    /// - Returns: The number of deleted images, if `shouldDecreasePositions` is zero, the number of deleted images + the number of updated position otherwise.
     ///
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
-    static func deleteFirstLevelImageForGallery(
+    @discardableResult static func deleteFirstLevelImageForGallery(
         for dbConnection: Connection,
         image: String,
         gallery: String,
@@ -90,7 +100,7 @@ public extension CRUD {
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
         guard let positionOfImageToDelete = try Self.readImagePosition(
             for: dbConnection,
             image: image,
@@ -101,7 +111,7 @@ public extension CRUD {
             gallery: gallery
         ) else {
             self.logger.warning("Attempted to read position of image to delete but no such image found.")
-            return
+            return 0
         }
         
         let visualMediaTable = DBMS.visualMedia
@@ -119,9 +129,12 @@ public extension CRUD {
         try dbConnection.run(
             findImageQuery.delete()
         )
-
+        
+        let deletedImagesCount = dbConnection.changes
+        var numberOfDecrements: Int = 0
+        
         if shouldDecreasePositions {
-            try Self.decrementPositionsForFirstLevelImagesInGallery(
+            numberOfDecrements = try Self.decrementPositionsForFirstLevelImagesInGallery(
                 for: dbConnection,
                 gallery: gallery,
                 tool: tool,
@@ -131,6 +144,8 @@ public extension CRUD {
                 threshold: positionOfImageToDelete
             )
         }
+        
+        return deletedImagesCount + numberOfDecrements
     }
     
     
@@ -144,7 +159,7 @@ public extension CRUD {
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
-    static func deleteImageVariant(
+    @discardableResult static func deleteImageVariant(
         for dbConnection: Connection,
         variant: String,
         gallery: String,
@@ -153,7 +168,7 @@ public extension CRUD {
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
         func delete() throws -> Void {
             let visualMediaTable = DBMS.visualMedia
             
@@ -171,6 +186,7 @@ public extension CRUD {
         
         if !shouldDecreasePositions {
             try delete()
+            return dbConnection.changes
         } else {
             guard let positionOfImageToDelete = try Self.readImagePosition(
                 for: dbConnection,
@@ -182,9 +198,10 @@ public extension CRUD {
                 gallery: gallery.lowercased()
             ) else {
                 self.logger.warning("Attempted to read position of image to delete but no such image found.")
-                return
+                return 0
             }
             
+            var updatedPositionsCount: Int = 0
             if shouldDecreasePositions {
                 if let masterImage = try Self.readImageMaster(
                     for: dbConnection,
@@ -195,7 +212,7 @@ public extension CRUD {
                     tool: tool.lowercased(),
                     gallery: gallery.lowercased()
                 ) {
-                    try Self.decrementPositionsForVariantsOfMedia(
+                    updatedPositionsCount += try Self.decrementPositionsForVariantsOfMedia(
                         for: dbConnection,
                         parent: masterImage.getName(),
                         gallery: gallery.lowercased(),
@@ -211,6 +228,7 @@ public extension CRUD {
             }
             
             try delete()
+            return dbConnection.changes + updatedPositionsCount
         }
     }
     
@@ -220,7 +238,7 @@ public extension CRUD {
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
-    static func batchDeleteFirstLevelImagesForGallery(
+    @discardableResult static func batchDeleteFirstLevelImagesForGallery(
         for dbConnection: Connection,
         gallery: String,
         tool: String,
@@ -229,7 +247,7 @@ public extension CRUD {
         game: String,
         shouldDecreasePositions: Bool = false,
         shouldRemove: @escaping (any SerializedVisualMediaModel) -> Bool
-    ) throws -> Void {
+    ) throws -> Int {
         if let firstLevelImages = try Self.readFirstLevelMasterImagesForGallery(
             for: dbConnection,
             game: game,
@@ -239,6 +257,8 @@ public extension CRUD {
             gallery: gallery,
             options: [.medias]
         )[.medias] as? [any SerializedVisualMediaModel] {
+            var deletedMediasCount: Int = 0
+            
             try firstLevelImages.forEach { firstLevelMedia in
                 if shouldRemove(firstLevelMedia) {
                     try Self.deleteFirstLevelImageForGallery(
@@ -251,10 +271,15 @@ public extension CRUD {
                         game: game.lowercased(),
                         shouldDecreasePositions: shouldDecreasePositions
                     )
+                    
+                    deletedMediasCount += dbConnection.changes
                 }
             }
+            
+            return deletedMediasCount
         } else {
             Self.logger.warning("Attempted to process first-level images of \(gallery) in an attempt to delete some, but such gallery has no associated image. Aborting.")
+            return 0
         }
     }
     
@@ -264,7 +289,7 @@ public extension CRUD {
     /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
     /// - `PK(name, gallery, tool, tab, map, game)`
     /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
-    static func batchDeleteFirstSlaveImagesForImage(
+    @discardableResult static func batchDeleteFirstSlaveImagesForImage(
         for dbConnection: Connection,
         master: String,
         gallery: String,
@@ -274,7 +299,7 @@ public extension CRUD {
         game: String,
         shouldDecreasePositions: Bool = false,
         shouldRemove: @escaping (any SerializedVisualMediaModel) -> Bool
-    ) throws -> Void {
+    ) throws -> Int {
         let slaveImages = try Self.readAllVariants(
             for: dbConnection,
             master: master.lowercased(),
@@ -285,6 +310,8 @@ public extension CRUD {
             gallery: gallery.lowercased()
         )
             
+        var deletedMediasCount: Int = 0
+        
         try slaveImages.forEach { slaveMedia in
             if shouldRemove(slaveMedia) {
                 try Self.deleteFirstLevelImageForGallery(
@@ -297,21 +324,25 @@ public extension CRUD {
                     game: game.lowercased(),
                     shouldDecreasePositions: shouldDecreasePositions
                 )
+                
+                deletedMediasCount += dbConnection.changes
             }
         }
+        
+        return deletedMediasCount
     }
     
     
     // MARK: - GALLERIES
     
-    private static func deleteGallery(
+    @discardableResult private static func deleteGallery(
         for dbConnection: Connection,
         gallery: String,
         tool: String,
         tab: String,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         let galleryTable = DBMS.gallery
         
         let findGalleryQuery = galleryTable.table.filter(
@@ -323,6 +354,8 @@ public extension CRUD {
         )
         
         try dbConnection.run(findGalleryQuery.delete())
+        
+        return dbConnection.changes
     }
 
     
@@ -331,7 +364,7 @@ public extension CRUD {
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func deleteFirstLevelGalleryForTool(
+    @discardableResult static func deleteFirstLevelGalleryForTool(
         for dbConnection: Connection,
         gallery: String,
         tool: String,
@@ -339,7 +372,7 @@ public extension CRUD {
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
         guard !(try Self.galleryMasterExists(
             for: dbConnection,
             gallery: gallery,
@@ -356,8 +389,9 @@ public extension CRUD {
                 map: map,
                 game: game
             )
-            return
+            return dbConnection.changes
         }
+        
         let subtreeOfGallery = try Self.readSubgalleryTree(
             for: dbConnection,
             master: gallery.lowercased(),
@@ -366,6 +400,8 @@ public extension CRUD {
             tab: tab.lowercased(),
             tool: tool.lowercased()
         )
+        
+        var decreasedPositionsCount: Int = 0
         
         if shouldDecreasePositions {
             if let posOfGalleryToDelete = try Self.readGalleryPosition(
@@ -376,7 +412,7 @@ public extension CRUD {
                 tab: tab,
                 tool: tool
             ) {
-                try Self.decrementPositionsForFirstLevelGalleriesInTool(
+                decreasedPositionsCount += try Self.decrementPositionsForFirstLevelGalleriesInTool(
                     for: dbConnection,
                     tool: tool,
                     tab: tab,
@@ -386,8 +422,11 @@ public extension CRUD {
                 )
             } else {
                 Self.logger.warning("Attempted to delete gallery named \(gallery) but no such gallery was found. Aborting")
+                return 0
             }
         }
+        
+        var deletedSubgalleriesCount: Int = 0
         
         try subtreeOfGallery.forEach { galleryToDelete in
             try deleteGallery(
@@ -398,8 +437,13 @@ public extension CRUD {
                 map: map,
                 game: game
             )
+            
+            deletedSubgalleriesCount += dbConnection.changes
         }
+        
+        return decreasedPositionsCount + deletedSubgalleriesCount
     }
+    
     
     /// Deletes the specified gallery from the subtree rooted in its master, along with all the subtree rooted in it. If `shouldDecreasePositions` is set to `true`, all the peer galleries whose position is greater than that of the deleted gallery
     ///
@@ -408,7 +452,7 @@ public extension CRUD {
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func deleteSubgalleryFromTool(
+    @discardableResult static func deleteSubgalleryFromTool(
         for dbConnection: Connection,
         master: String? = nil,
         gallery: String,
@@ -417,9 +461,7 @@ public extension CRUD {
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
-        
-        
+    ) throws -> Int {
         let fetchedMasterModel: SerializedGalleryModel? = (master == nil) ? try Self.readMasterForGallery(
             for: dbConnection,
             gallery: gallery,
@@ -439,8 +481,9 @@ public extension CRUD {
                 game: game,
                 shouldDecreasePositions: shouldDecreasePositions
             )
-        } else {
             
+            return dbConnection.changes
+        } else {
             let subtreeOfGallery = try Self.readSubgalleryTree(
                 for: dbConnection,
                 master: gallery.lowercased(),
@@ -450,6 +493,7 @@ public extension CRUD {
                 tool: tool.lowercased()
             )
             
+            var decreasedPositionsCount: Int = 0
             if shouldDecreasePositions {
                 if let posOfGalleryToDelete = try Self.readGalleryPosition(
                     for: dbConnection,
@@ -459,7 +503,7 @@ public extension CRUD {
                     tab: tab,
                     tool: tool
                 ) {
-                    try Self.decrementPositionsForImmediateSubgalleriesOfMaster(
+                    decreasedPositionsCount += try Self.decrementPositionsForImmediateSubgalleriesOfMaster(
                         for: dbConnection,
                         parent: master ?? fetchedMasterModel!.getName(),
                         tool: tool,
@@ -473,6 +517,7 @@ public extension CRUD {
                 }
             }
             
+            var deletedSubgalleriesCount: Int = 0
             try subtreeOfGallery.forEach { galleryToDelete in
                 try deleteGallery(
                     for: dbConnection,
@@ -482,7 +527,11 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                deletedSubgalleriesCount += dbConnection.changes
             }
+            
+            return decreasedPositionsCount + deletedSubgalleriesCount
         }
     }
     
@@ -492,7 +541,7 @@ public extension CRUD {
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func batchDeleteFirstLevelGalleryForTool(
+    @discardableResult static func batchDeleteFirstLevelGalleryForTool(
         for dbConnection: Connection,
         tool: String,
         tab: String,
@@ -500,8 +549,7 @@ public extension CRUD {
         game: String,
         shouldRemove: (SerializedGalleryModel) -> Bool,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
-        
+    ) throws -> Int {
         if let firstLevelOfGalleries = try Self.readFirstLevelOfGalleriesForTool(
             for: dbConnection,
             game: game,
@@ -510,6 +558,8 @@ public extension CRUD {
             tool: tool,
             options: [.galleries]
         )[.galleries] as? [SerializedGalleryModel] {
+            var deletedGalleriesCount: Int = 0
+            
             try firstLevelOfGalleries.forEach { gallery in
                 if shouldRemove(gallery) {
                     try Self.deleteFirstLevelGalleryForTool(
@@ -521,8 +571,12 @@ public extension CRUD {
                         game: game,
                         shouldDecreasePositions: shouldDecreasePositions
                     )
+                    
+                    deletedGalleriesCount += dbConnection.changes
                 }
             }
+            
+            return deletedGalleriesCount
         } else {
             fatalError("Attempted to read first level of galleries for \(tool) but failed")
         }
@@ -535,7 +589,7 @@ public extension CRUD {
     /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
     /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func batchDeleteSubgalleriesOfMasterForTool(
+    @discardableResult static func batchDeleteSubgalleriesOfMasterForTool(
         for dbConnection: Connection,
         master: String,
         tool: String,
@@ -544,7 +598,7 @@ public extension CRUD {
         game: String,
         shouldRemove: (SerializedGalleryModel) -> Bool,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
         if let immediateSubgalleriesOfMaster = try Self.readFirstLevelOfSubgalleriesForGallery(
             for: dbConnection,
             game: game,
@@ -554,6 +608,7 @@ public extension CRUD {
             gallery: master,
             options: [.galleries]
         )[.galleries] as? [SerializedGalleryModel] {
+            var deletedGalleriesCount: Int = 0
             
             try immediateSubgalleriesOfMaster.forEach { gallery in
                 if shouldRemove(gallery) {
@@ -567,8 +622,12 @@ public extension CRUD {
                         game: game,
                         shouldDecreasePositions: shouldDecreasePositions
                     )
+                    
+                    deletedGalleriesCount += dbConnection.changes
                 }
             }
+            
+            return deletedGalleriesCount
         } else {
             fatalError("Attempted to read first level of subgalleries for \(master) in \(tool) but failed")
         }
@@ -578,14 +637,14 @@ public extension CRUD {
     /// - `TOOL(name, position, assetsImageName, tab, map, game)`
     /// - `PK(name, tab, map, game)`
     /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func deleteTool(
+    @discardableResult internal static func deleteTool(
         for dbConnection: Connection,
         tool: String,
         tab: String,
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
         let toolTable = DBMS.tool
         
         func delete() throws {
@@ -599,6 +658,7 @@ public extension CRUD {
             try dbConnection.run(findToolQuery.delete())
         }
         
+        var decreasedToolsPositionsCount: Int = 0
         if shouldDecreasePositions {
             guard let position = try Self.readToolPosition(
                 for: dbConnection,
@@ -610,7 +670,7 @@ public extension CRUD {
                 fatalError("Attempted to delete a tool but could not find its position.")
             }
             
-            try Self.decrementPositionsForToolsOfTab(
+            decreasedToolsPositionsCount = try Self.decrementPositionsForToolsOfTab(
                 for: dbConnection,
                 tab: tab,
                 map: map,
@@ -619,8 +679,10 @@ public extension CRUD {
             )
             
             try delete()
+            return dbConnection.changes + decreasedToolsPositionsCount
         } else {
             try delete()
+            return dbConnection.changes
         }
         
     }
@@ -629,14 +691,14 @@ public extension CRUD {
     /// - `TOOL(name, position, assetsImageName, tab, map, game)`
     /// - `PK(name, tab, map, game)`
     /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func batchDeleteToolsForTab(
+    @discardableResult static func batchDeleteToolsForTab(
         for dbConnection: Connection,
         tab: String,
         map: String,
         game: String,
         shouldRemove: (SerializedToolModel) -> Bool,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
         let toolsForThisTab = try Self.readToolsForTab(
             for: dbConnection,
             game: game,
@@ -644,6 +706,7 @@ public extension CRUD {
             tab: tab
         )
         
+        var deletedToolsCount: Int = 0
         try toolsForThisTab.forEach { toolModel in
             if shouldRemove(toolModel) {
                 try Self.deleteTool(
@@ -654,8 +717,12 @@ public extension CRUD {
                     game: game,
                     shouldDecreasePositions: shouldDecreasePositions
                 )
+                
+                deletedToolsCount += dbConnection.changes
             }
         }
+        
+        return deletedToolsCount
     }
     
     
@@ -663,13 +730,13 @@ public extension CRUD {
     /// - `TAB(name, position, iconName, map, game)`
     /// - `PK(name, map, game)`
     /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func deleteTab(
+    @discardableResult internal static func deleteTab(
         for dbConnection: Connection,
         tab: String,
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
         let tabTable = DBMS.tab
         
         func delete() throws {
@@ -682,6 +749,7 @@ public extension CRUD {
             try dbConnection.run(findTabQuery.delete())
         }
         
+        var decreasedPositionsCount: Int = 0
         if shouldDecreasePositions {
             guard let position = try Self.readTabPosition(
                 for: dbConnection,
@@ -692,7 +760,7 @@ public extension CRUD {
                 fatalError("Attempted to delete a tab but could not find its position.")
             }
             
-            try Self.decrementPositionsForTabsInMap(
+            decreasedPositionsCount += try Self.decrementPositionsForTabsInMap(
                 for: dbConnection,
                 map: map,
                 game: game,
@@ -700,8 +768,10 @@ public extension CRUD {
             )
             
             try delete()
+            return dbConnection.changes + decreasedPositionsCount
         } else {
             try delete()
+            return dbConnection.changes
         }
     }
     
@@ -709,22 +779,24 @@ public extension CRUD {
     /// - `TAB(name, position, iconName, map, game)`
     /// - `PK(name, map, game)`
     /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func batchDeleteTabsForMap(
+    @discardableResult static func batchDeleteTabsForMap(
         for dbConnection: Connection,
         map: String,
         game: String,
         shouldRemove: (SerializedTabModel) -> Bool,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
         let tabsForThisMap = try Self.readTabsForMap(
             for: dbConnection,
             game: game,
             map: map
         )
         
+        var changesCount: Int = 0
+        
         try tabsForThisMap.forEach { tabModel in
             if shouldRemove(tabModel) {
-                try Self.deleteTab(
+                changesCount += try Self.deleteTab(
                     for: dbConnection,
                     tab: tabModel.getName(),
                     map: map,
@@ -733,17 +805,19 @@ public extension CRUD {
                 )
             }
         }
+        
+        return changesCount
     }
     
     // MARK: - MAPS
     /// - `MAP(name, position, assetsImageName, game)`
     /// - `PK(name, game)`
     /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func deleteMap(
+    @discardableResult internal static func deleteMap(
         for dbConnection: Connection,
         map: String,
         game: String
-    ) throws -> Void {
+    ) throws -> Int {
         let mapTable = DBMS.map
         
         let subtreeOfMap = try Self.readSubmapsTree(
@@ -752,6 +826,8 @@ public extension CRUD {
             game: game.lowercased()
         )
 
+        var deletedMapsCount: Int = 0
+        
         try subtreeOfMap.forEach { mapModel in
             let findMapQuery = mapTable.table.filter(
                 mapTable.nameColumn == map.lowercased() &&
@@ -759,18 +835,21 @@ public extension CRUD {
             )
 
             try dbConnection.run(findMapQuery.delete())
+            deletedMapsCount += dbConnection.changes
         }
+        
+        return deletedMapsCount
     }
     
     /// - `MAP(name, position, assetsImageName, game)`
     /// - `PK(name, game)`
     /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func deleteFirstLevelMap(
+    @discardableResult internal static func deleteFirstLevelMap(
         for dbConnection: Connection,
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
                 
         if shouldDecreasePositions {
             guard let position = try Self.readMapPosition(
@@ -781,15 +860,17 @@ public extension CRUD {
                 fatalError("Attempted to delete a map but could not find its position.")
             }
             
-            try Self.decrementPositionsForFirstLevelMapsInGame(
+            let decrementsCount: Int = try Self.decrementPositionsForFirstLevelMapsInGame(
                 for: dbConnection,
                 game: game,
                 threshold: position
             )
             
             try deleteMap(for: dbConnection, map: map, game: game)
+            return dbConnection.changes + decrementsCount
         } else {
             try deleteMap(for: dbConnection, map: map, game: game)
+            return dbConnection.changes
         }
     }
     
@@ -797,15 +878,15 @@ public extension CRUD {
     /// - `MAP(name, position, assetsImageName, game)`
     /// - `PK(name, game)`
     /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
-    internal static func deleteSubmapOfMap(
+    @discardableResult internal static func deleteSubmapOfMap(
         for dbConnection: Connection,
         map: String,
         game: String,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
         guard let masterOfThisMap = try Self.readMapMaster(for: dbConnection, map: map, game: game) else {
             Self.logger.error("Attempted to delete immediate submap of map but couldn't find its master")
-            return
+            return 0
         }
         
         if shouldDecreasePositions {
@@ -817,7 +898,7 @@ public extension CRUD {
                 fatalError("Attempted to delete a submap but could not find its position.")
             }
             
-            try Self.decrementPositionsForSubmapsOfMaster(
+            let numberOfDecrements: Int = try Self.decrementPositionsForSubmapsOfMaster(
                 for: dbConnection,
                 master: masterOfThisMap.getName(),
                 game: game,
@@ -825,8 +906,10 @@ public extension CRUD {
             )
             
             try deleteMap(for: dbConnection, map: map, game: game)
+            return dbConnection.changes + numberOfDecrements
         } else {
             try deleteMap(for: dbConnection, map: map, game: game)
+            return dbConnection.changes
         }
     }
     
@@ -893,11 +976,11 @@ public extension CRUD {
     }
     
     // MARK: - GAME
-    internal static func deleteGame(
+    @discardableResult internal static func deleteGame(
         for dbConnection: Connection,
         game: String,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
         let gameTable = DBMS.game
         
         func delete() throws {
@@ -916,11 +999,13 @@ public extension CRUD {
                 fatalError("Attempted to delete a game but could not find its position.")
             }
             
-            try Self.decrementPositionsForGames(for: dbConnection, threshold: position)
+            let decreasedPositionsCount: Int = try Self.decrementPositionsForGames(for: dbConnection, threshold: position)
             
             try delete()
+            return dbConnection.changes + decreasedPositionsCount
         } else {
             try delete()
+            return dbConnection.changes
         }
     }
     
@@ -928,11 +1013,11 @@ public extension CRUD {
     /// - `MAP(name, position, assetsImageName, game)`
     /// - `PK(name, game)`
     /// - `FK(game) REFERENCES GAME(name) ON DELETE CASCADE ON UPDATE CASCADE`
-    static func batchDeleteGames(
+    @discardableResult static func batchDeleteGames(
         for dbConnection: Connection,
         shouldRemove: (SerializedGameModel) -> Bool,
         shouldDecreasePositions: Bool = false
-    ) throws -> Void {
+    ) throws -> Int {
         guard let games = (try Self.readAllGames(
             for: dbConnection,
             options: [.games]
@@ -940,14 +1025,18 @@ public extension CRUD {
             fatalError("Attempted but failed to read list of all games")
         }
         
+        var deletionsCount: Int = 0
+        
         try games.forEach { gameModel in
             if shouldRemove(gameModel) {
-                try Self.deleteGame(
+                deletionsCount += try Self.deleteGame(
                     for: dbConnection,
                     game: gameModel.getName(),
                     shouldDecreasePositions: shouldDecreasePositions
                 )
             }
         }
+        
+        return deletionsCount
     }
 }
