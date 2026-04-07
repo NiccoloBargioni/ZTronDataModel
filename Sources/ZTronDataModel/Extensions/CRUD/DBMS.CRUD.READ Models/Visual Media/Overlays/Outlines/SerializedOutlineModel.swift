@@ -338,7 +338,7 @@ public final class SerializedOutlineModel: ReadImageOptional {
                 boundingBoxWidthColumn: self.boundingBox.size.width,
                 boundingBoxHeightColumn: self.boundingBox.size.height,
                 image: owner.image,
-                gallery: owner.game,
+                gallery: owner.gallery,
                 tool: owner.tool,
                 tab: owner.tab,
                 map: owner.map,

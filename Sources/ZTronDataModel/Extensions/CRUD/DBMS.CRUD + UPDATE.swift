@@ -349,6 +349,10 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                #if DEBUG
+                self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
+                #endif
             }
             
             if outlineDraft.didColorHexChange() {
@@ -363,6 +367,10 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                #if DEBUG
+                self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
+                #endif
             }
             
             if outlineDraft.didIsActiveChange() {
@@ -376,6 +384,10 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                #if DEBUG
+                self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
+                #endif
             }
             
             if outlineDraft.didBoundingBoxChange() {
@@ -392,6 +404,10 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                #if DEBUG
+                self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
+                #endif
             }
             
             if outlineDraft.didResourceNameChange() {
@@ -405,6 +421,10 @@ public extension CRUD {
                     map: map,
                     game: game
                 )
+                
+                #if DEBUG
+                self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
+                #endif
             }
         }
     }
