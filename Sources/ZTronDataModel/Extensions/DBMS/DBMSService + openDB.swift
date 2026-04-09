@@ -15,7 +15,7 @@ extension DBMSService {
             throw SQLQueryError.documentsPathNotFoundException(reason: "documentDirectory not found in userDomainMask")
         }
 
-        let dbURL = documentsDirPath.appendingPathComponent(dbName).relativePath
+        let dbURL = documentsDirPath.appendingPathComponent(dbName).path
         
         do {
             print("dbConnection URL: \(dbURL) from \(caller)")
@@ -56,7 +56,7 @@ extension DBMSService {
         }
 
         var db: OpaquePointer?
-        let dbURL = documentsDirPath.appendingPathComponent(dbName).relativePath
+        let dbURL = documentsDirPath.appendingPathComponent(dbName).path
         
         print("dbConnection URL: \(dbURL) from \(caller)")
         
