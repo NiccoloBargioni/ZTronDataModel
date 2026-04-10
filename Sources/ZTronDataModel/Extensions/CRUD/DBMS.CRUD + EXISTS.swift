@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 import SQLite
 
-extension DBMS.CRUD {
+extension CRUD {
     // MARK: - GALLERY EXISTS
     /// - `GALLERY(name, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`

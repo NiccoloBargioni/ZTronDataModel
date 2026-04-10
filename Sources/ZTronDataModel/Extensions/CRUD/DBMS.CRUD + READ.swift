@@ -5,7 +5,7 @@ import SQLite
 extension String: ReadImageOptional { }
 extension String: ReadGalleryOptional {  }
 
-extension DBMS.CRUD {
+extension CRUD {
     // MARK: - READ GAMES
     internal static func readGamePosition(
         for dbConnection: Connection,
@@ -44,7 +44,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfMaps) {
             result[.numberOfMaps] = []
             for game in theGames {
-                try result[.numberOfMaps]?.append(DBMS.CRUD.countMapsForGame(for: dbConnection, game: game.getName()))
+                try result[.numberOfMaps]?.append(CRUD.countMapsForGame(for: dbConnection, game: game.getName()))
             }
         }
         
@@ -139,7 +139,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfSlaves) {
             result[.numberOfSlaves] = []
             for map in theMaps {
-                try result[.numberOfSlaves]?.append(DBMS.CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfSlaves]?.append(CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -147,7 +147,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTabs) {
             result[.numberOfTabs] = []
             for map in theMaps {
-                try result[.numberOfTabs]?.append(DBMS.CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTabs]?.append(CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -155,7 +155,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTools) {
             result[.numberOfTools] = []
             for map in theMaps {
-                try result[.numberOfTools]?.append(DBMS.CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTools]?.append(CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -205,7 +205,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfSlaves) {
             result[.numberOfSlaves] = []
             for map in theMaps {
-                try result[.numberOfSlaves]?.append(DBMS.CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfSlaves]?.append(CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -213,7 +213,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTabs) {
             result[.numberOfTabs] = []
             for map in theMaps {
-                try result[.numberOfTabs]?.append(DBMS.CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTabs]?.append(CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -221,7 +221,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTools) {
             result[.numberOfTools] = []
             for map in theMaps {
-                try result[.numberOfTools]?.append(DBMS.CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTools]?.append(CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -798,7 +798,7 @@ extension DBMS.CRUD {
         return result
     }
     
-    private static func readOutlinesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedOutlineModel?] {
+    internal static func readOutlinesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedOutlineModel?] {
         let outline = DBMS.outline
         
         var outlines: [SerializedOutlineModel?] = []
@@ -1031,43 +1031,43 @@ extension DBMS.CRUD {
         
         let findMasterQuery = imagesTable.table
             .select(
-                imagesTable.nameColumn,
-                imagesTable.descriptionColumn,
-                imagesTable.positionColumn,
-                imagesTable.searchLabelColumn,
-                imagesTable.typeColumn,
-                imagesTable.extensionColumn,
-                imagesTable.foreignKeys.gameColumn,
-                imagesTable.foreignKeys.mapColumn,
-                imagesTable.foreignKeys.tabColumn,
-                imagesTable.foreignKeys.toolColumn,
-                imagesTable.foreignKeys.galleryColumn
+                imagesTable.table[imagesTable.nameColumn],
+                imagesTable.table[imagesTable.descriptionColumn],
+                imagesTable.table[imagesTable.positionColumn],
+                imagesTable.table[imagesTable.searchLabelColumn],
+                imagesTable.table[imagesTable.typeColumn],
+                imagesTable.table[imagesTable.extensionColumn],
+                imagesTable.table[imagesTable.foreignKeys.gameColumn],
+                imagesTable.table[imagesTable.foreignKeys.mapColumn],
+                imagesTable.table[imagesTable.foreignKeys.tabColumn],
+                imagesTable.table[imagesTable.foreignKeys.toolColumn],
+                imagesTable.table[imagesTable.foreignKeys.galleryColumn]
             )
             .join(
                 slavesTable.table,
-                on: slavesTable.slaveColumn == slave &&
-                slavesTable.masterColumn == imagesTable.nameColumn &&
-                slavesTable.foreignKeys.gameColumn == imagesTable.foreignKeys.gameColumn &&
-                slavesTable.foreignKeys.mapColumn == imagesTable.foreignKeys.mapColumn &&
-                slavesTable.foreignKeys.tabColumn == imagesTable.foreignKeys.tabColumn &&
-                slavesTable.foreignKeys.toolColumn == imagesTable.foreignKeys.toolColumn &&
-                slavesTable.foreignKeys.galleryColumn == imagesTable.foreignKeys.galleryColumn
+                on: slavesTable.table[slavesTable.slaveColumn] == slave &&
+                slavesTable.table[slavesTable.masterColumn] == imagesTable.table[imagesTable.nameColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.gameColumn] == imagesTable.table[imagesTable.foreignKeys.gameColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.mapColumn] == imagesTable.table[imagesTable.foreignKeys.mapColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.tabColumn] == imagesTable.table[imagesTable.foreignKeys.tabColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.toolColumn] == imagesTable.table[imagesTable.foreignKeys.toolColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.galleryColumn] == imagesTable.table[imagesTable.foreignKeys.galleryColumn]
         )
         
         let masters: [any SerializedVisualMediaModel] = try dbConnection.prepare(findMasterQuery).map { result in
             switch result[imagesTable.typeColumn] {
             case "image":
-                return SerializedImageModel(result)
+                return SerializedImageModel(result, namespaceColumns: true)
                 
             case "video":
-                return SerializedVideoModel(result)
+                return SerializedVideoModel(result, namespaceColumns: true)
                 
             default:
                 fatalError("Unable to make READ model for media of type \(result[imagesTable.typeColumn])")
             }
         }
 
-        assert(masters.count <= 0)
+        assert(masters.count <= 1)
         return masters.first
     }
     
@@ -1428,7 +1428,7 @@ extension DBMS.CRUD {
             var imagesCounts: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                imagesCounts[index] = try DBMS.CRUD.countImagesForGallery(
+                imagesCounts[index] = try CRUD.countImagesForGallery(
                     includeVariants: false,
                     for: dbConnection,
                     game: game,
@@ -1446,7 +1446,7 @@ extension DBMS.CRUD {
             var subgalleriesCount: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                subgalleriesCount[index] = try DBMS.CRUD.countSubgalleriesForGallery(
+                subgalleriesCount[index] = try CRUD.countSubgalleriesForGallery(
                     for: dbConnection,
                     master: gallery.getName(),
                     game: game,
@@ -1598,7 +1598,7 @@ extension DBMS.CRUD {
             var imagesCounts: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                imagesCounts[index] = try DBMS.CRUD.countImagesForGallery(
+                imagesCounts[index] = try CRUD.countImagesForGallery(
                     includeVariants: false,
                     for: dbConnection,
                     game: game,
@@ -1616,7 +1616,7 @@ extension DBMS.CRUD {
             var subgalleriesCount: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                subgalleriesCount[index] = try DBMS.CRUD.countSubgalleriesForGallery(
+                subgalleriesCount[index] = try CRUD.countSubgalleriesForGallery(
                     for: dbConnection,
                     master: gallery.getName(),
                     game: game,
@@ -1633,7 +1633,7 @@ extension DBMS.CRUD {
             var maxDepths: [Int?] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                maxDepths[index] = try DBMS.CRUD.readMaxDepthOfSubgalleryRootedInGallery(
+                maxDepths[index] = try CRUD.readMaxDepthOfSubgalleryRootedInGallery(
                     for: dbConnection,
                     master: gallery.getName(),
                     game: game,
@@ -1651,7 +1651,7 @@ extension DBMS.CRUD {
             var nestingLevels: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                nestingLevels[index] = try DBMS.CRUD.readGalleryNestingDepth(
+                nestingLevels[index] = try CRUD.readGalleryNestingDepth(
                     for: dbConnection,
                     game: game,
                     map: map,

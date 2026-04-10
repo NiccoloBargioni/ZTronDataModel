@@ -193,6 +193,31 @@ public final class AnySerializedVisualMediaModel: SerializedVisualMediaModel {
         public func getSearchLabel() -> String? {
             return self.searchLabel
         }
+        
+        public func getGallery() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getGallery()
+        }
+        
+        public func getTool() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getTool()
+        }
+        
+        public func getTab() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getTab()
+        }
+        
+        public func getMap() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getMap()
+        }
+        
+        public func getGame() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getGame()
+        }
     }
 }
 

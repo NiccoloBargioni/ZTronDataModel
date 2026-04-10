@@ -275,6 +275,13 @@ public final class SerializedImageModel: SerializedVisualMediaModel {
             return owner.game
         }
         
+        public final func getGallery() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `gallery`.")
+            }
+            return owner.gallery
+        }
+        
         /// - Note: Unsafe. One could make an immutable copy from this and pass it around as if it was fetched from db.
         public final func getImmutableCopy() -> SerializedImageModel {
             guard let owner = self.owner else {
