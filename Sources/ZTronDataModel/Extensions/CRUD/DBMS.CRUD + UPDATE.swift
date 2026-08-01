@@ -337,105 +337,108 @@ public extension CRUD {
             return model.getMutableCopy()
         }
         
-        for i in 0..<outlinesModelsDrafts.count {
-            produce(&outlinesModelsDrafts[i])
-        }
-        
-        guard validate(outlinesModelsDrafts.map ({ draft in
-            return draft.getImmutableCopy()
-        })) else { fatalError("Unable to validate models. Aborting") }
-        
-        
         var changesCount: Int = 0
-        try outlinesModelsDrafts.forEach { outlineDraft in
-            if outlineDraft.didOpacityChange() {
-                
-                changesCount += try Self.updateOutlineOpacity(
-                    for: dbConnection,
-                    opacity: outlineDraft.getOpacity(),
-                    image: image,
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-                
-                #if DEBUG
-                self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
-                #endif
+        
+        try withExtendedLifetime(outlinesModels) {
+            for i in 0..<outlinesModelsDrafts.count {
+                produce(&outlinesModelsDrafts[i])
             }
             
-            if outlineDraft.didColorHexChange() {
-                changesCount += try Self.updateOutlineColor(
-                    for: dbConnection,
-                    colorHex: outlineDraft.getColorHex(),
-                    opacity: outlineDraft.getOpacity(),
-                    image: image,
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-                
-                #if DEBUG
-                self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
-                #endif
-            }
+            guard validate(outlinesModelsDrafts.map ({ draft in
+                return draft.getImmutableCopy()
+            })) else { fatalError("Unable to validate models. Aborting") }
             
-            if outlineDraft.didIsActiveChange() {
-                changesCount += try Self.updateIsOutlineActive(
-                    for: dbConnection,
-                    isActive: outlineDraft.isActive(),
-                    image: image,
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-                
-                #if DEBUG
-                self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
-                #endif
-            }
             
-            if outlineDraft.didBoundingBoxChange() {
-                let newBoundingBox = outlineDraft.getBoundingBox()
+            try outlinesModelsDrafts.forEach { outlineDraft in
+                if outlineDraft.didOpacityChange() {
+                    
+                    changesCount += try Self.updateOutlineOpacity(
+                        for: dbConnection,
+                        opacity: outlineDraft.getOpacity(),
+                        image: image,
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    #if DEBUG
+                    self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
+                    #endif
+                }
                 
-                changesCount += try Self.updateOutlineBoundingBox(
-                    for: dbConnection,
-                    newOrigin: newBoundingBox.origin,
-                    newSize: newBoundingBox.size,
-                    image: image,
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
+                if outlineDraft.didColorHexChange() {
+                    changesCount += try Self.updateOutlineColor(
+                        for: dbConnection,
+                        colorHex: outlineDraft.getColorHex(),
+                        opacity: outlineDraft.getOpacity(),
+                        image: image,
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    #if DEBUG
+                    self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
+                    #endif
+                }
                 
-                #if DEBUG
-                self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
-                #endif
-            }
-            
-            if outlineDraft.didResourceNameChange() {
-                changesCount += try Self.updateOutlineResourceName(
-                    for: dbConnection,
-                    newResourceName: outlineDraft.getResourceName(),
-                    image: image,
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
+                if outlineDraft.didIsActiveChange() {
+                    changesCount += try Self.updateIsOutlineActive(
+                        for: dbConnection,
+                        isActive: outlineDraft.isActive(),
+                        image: image,
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    #if DEBUG
+                    self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
+                    #endif
+                }
                 
-                #if DEBUG
-                self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
-                #endif
+                if outlineDraft.didBoundingBoxChange() {
+                    let newBoundingBox = outlineDraft.getBoundingBox()
+                    
+                    changesCount += try Self.updateOutlineBoundingBox(
+                        for: dbConnection,
+                        newOrigin: newBoundingBox.origin,
+                        newSize: newBoundingBox.size,
+                        image: image,
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    #if DEBUG
+                    self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
+                    #endif
+                }
+                
+                if outlineDraft.didResourceNameChange() {
+                    changesCount += try Self.updateOutlineResourceName(
+                        for: dbConnection,
+                        newResourceName: outlineDraft.getResourceName(),
+                        image: image,
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    #if DEBUG
+                    self.logger.info("Updated \(dbConnection.changes) rows in \(#function)")
+                    #endif
+                }
             }
         }
         
@@ -804,91 +807,93 @@ public extension CRUD {
             return bcModel.getMutableCopy()
         }
         
-        for i in 0..<boundingCirclesModelsDrafts.count {
-            produce(&boundingCirclesModelsDrafts[i])
-        }
-        
-        guard validate(boundingCirclesModelsDrafts.map ({ draft in
-            return draft.getImmutableCopy()
-        })) else { fatalError("Unable to validate models. Aborting") }
-        
         var changesCount: Int = 0
         
-        try boundingCirclesModelsDrafts.forEach { boundingCircleDraft in
-            if boundingCircleDraft.didOpacityChange() {
-                try Self.updateBoundingCircleOpacity(
-                    for: dbConnection,
-                    opacity: boundingCircleDraft.getOpacity(),
-                    image: image,
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-                
-                changesCount += dbConnection.changes
+        try withExtendedLifetime(boundingCirclesModels) {
+            for i in 0..<boundingCirclesModelsDrafts.count {
+                produce(&boundingCirclesModelsDrafts[i])
             }
             
-            if boundingCircleDraft.didColorHexChange() {
-                try Self.updateBoundingCircleColor(
-                    for: dbConnection,
-                    colorHex: boundingCircleDraft.getColorHex(),
-                    opacity: boundingCircleDraft.getOpacity(),
-                    image: image,
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-                
-                changesCount += dbConnection.changes
-            }
+            guard validate(boundingCirclesModelsDrafts.map ({ draft in
+                return draft.getImmutableCopy()
+            })) else { fatalError("Unable to validate models. Aborting") }
             
-            if boundingCircleDraft.didIsActiveChange() {
-                try Self.updateIsBoundingCircleActive(
-                    for: dbConnection,
-                    isActive: boundingCircleDraft.isActive(),
-                    image: image,
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
+            try boundingCirclesModelsDrafts.forEach { boundingCircleDraft in
+                if boundingCircleDraft.didOpacityChange() {
+                    try Self.updateBoundingCircleOpacity(
+                        for: dbConnection,
+                        opacity: boundingCircleDraft.getOpacity(),
+                        image: image,
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    changesCount += dbConnection.changes
+                }
                 
-                changesCount += dbConnection.changes
-            }
-            
-            if boundingCircleDraft.didIdleDiameterChange() {
-                try Self.updateBoundingCircleIdleDiameter(
-                    for: dbConnection,
-                    newDiameter: boundingCircleDraft.getIdleDiameter(),
-                    image: image,
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
+                if boundingCircleDraft.didColorHexChange() {
+                    try Self.updateBoundingCircleColor(
+                        for: dbConnection,
+                        colorHex: boundingCircleDraft.getColorHex(),
+                        opacity: boundingCircleDraft.getOpacity(),
+                        image: image,
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    changesCount += dbConnection.changes
+                }
                 
-                changesCount += dbConnection.changes
-            }
-            
-            if boundingCircleDraft.didNormalizedCenterChange() {
-                try Self.updateBoundingCircleCenter(
-                    for: dbConnection,
-                    newCenter: boundingCircleDraft.getNormalizedCenter(),
-                    image: image,
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
+                if boundingCircleDraft.didIsActiveChange() {
+                    try Self.updateIsBoundingCircleActive(
+                        for: dbConnection,
+                        isActive: boundingCircleDraft.isActive(),
+                        image: image,
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    changesCount += dbConnection.changes
+                }
                 
-                changesCount += dbConnection.changes
+                if boundingCircleDraft.didIdleDiameterChange() {
+                    try Self.updateBoundingCircleIdleDiameter(
+                        for: dbConnection,
+                        newDiameter: boundingCircleDraft.getIdleDiameter(),
+                        image: image,
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    changesCount += dbConnection.changes
+                }
+                
+                if boundingCircleDraft.didNormalizedCenterChange() {
+                    try Self.updateBoundingCircleCenter(
+                        for: dbConnection,
+                        newCenter: boundingCircleDraft.getNormalizedCenter(),
+                        image: image,
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    changesCount += dbConnection.changes
+                }
             }
         }
         
@@ -1043,71 +1048,73 @@ public extension CRUD {
         }
         
         
-        for i in 0..<variantsDrafts.count {
-            produce(&variantsDrafts[i])
-        }
-        
-        guard validate(variantsDrafts.map({ model in
-            return model.getImmutableCopy()
-        })) else {
-            fatalError("Failed to validate variants drafts model")
-        }
-        
         var changesCount: Int = 0
         
-        try variantsDrafts.forEach { variantDraftModel in
-            if variantDraftModel.didBottomBarIconUpdate() {
-                try Self.updateImageVariantBottomBarIcon(
-                    for: dbConnection,
-                    bottomBarIcon: variantDraftModel.getBottomBarIcon(),
-                    master: master,
-                    slave: variantDraftModel.getSlave(),
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-                
-                changesCount += dbConnection.changes
+        try withExtendedLifetime(variantsModels) {
+            for i in 0..<variantsDrafts.count {
+                produce(&variantsDrafts[i])
             }
             
-            if variantDraftModel.didGoBackBottomBarIconUpdate() {
-                try Self.updateImageVariantGoBackBottomBarIcon(
-                    for: dbConnection,
-                    goBackBottomBarIcon: variantDraftModel.getGoBackBottomBarIcon(),
-                    master: master,
-                    slave: variantDraftModel.getSlave(),
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-                
-                changesCount += dbConnection.changes
+            guard validate(variantsDrafts.map({ model in
+                return model.getImmutableCopy()
+            })) else {
+                fatalError("Failed to validate variants drafts model")
             }
             
-            if variantDraftModel.didOriginUpdate() || variantDraftModel.didSizeUpdate() {
-                let updatedOrigin = variantDraftModel.getOrigin()
-                let updatedSize = variantDraftModel.getSize()
+            try variantsDrafts.forEach { variantDraftModel in
+                if variantDraftModel.didBottomBarIconUpdate() {
+                    try Self.updateImageVariantBottomBarIcon(
+                        for: dbConnection,
+                        bottomBarIcon: variantDraftModel.getBottomBarIcon(),
+                        master: master,
+                        slave: variantDraftModel.getSlave(),
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    changesCount += dbConnection.changes
+                }
                 
-                assert(updatedSize != nil && updatedOrigin != nil || updatedSize == nil && updatedOrigin == nil)
+                if variantDraftModel.didGoBackBottomBarIconUpdate() {
+                    try Self.updateImageVariantGoBackBottomBarIcon(
+                        for: dbConnection,
+                        goBackBottomBarIcon: variantDraftModel.getGoBackBottomBarIcon(),
+                        master: master,
+                        slave: variantDraftModel.getSlave(),
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    changesCount += dbConnection.changes
+                }
                 
-                try Self.updateImageVariantBoundingFrame(
-                    for: dbConnection,
-                    origin: updatedOrigin,
-                    size: updatedSize,
-                    master: master,
-                    slave: variantDraftModel.getSlave(),
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-                
-                changesCount += dbConnection.changes
+                if variantDraftModel.didOriginUpdate() || variantDraftModel.didSizeUpdate() {
+                    let updatedOrigin = variantDraftModel.getOrigin()
+                    let updatedSize = variantDraftModel.getSize()
+                    
+                    assert(updatedSize != nil && updatedOrigin != nil || updatedSize == nil && updatedOrigin == nil)
+                    
+                    try Self.updateImageVariantBoundingFrame(
+                        for: dbConnection,
+                        origin: updatedOrigin,
+                        size: updatedSize,
+                        master: master,
+                        slave: variantDraftModel.getSlave(),
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                    
+                    changesCount += dbConnection.changes
+                }
             }
         }
         
@@ -1522,69 +1529,71 @@ public extension CRUD {
             return media.getMutableCopy()
         }
         
-        for i in 0..<draftForMasterMedia.count {
-            produce(&draftForMasterMedia[i])
-        }
-        
-        guard validate(draftForMasterMedia.map ({ draft in
-            return draft.getImmutableCopy()
-        })) else { fatalError("Unable to validate models. Aborting") }
-        
-        try draftForMasterMedia.forEach { mediaModelDraft in
-            guard let neededUpdates = mediaModelDraft as? SerializedVisualMediaModelWritableDraftUpdateBearer else {
-                fatalError("Cannot fetch requested updates info from visual media model.")
+        try withExtendedLifetime(masterVariantsForThisImage) {
+            for i in 0..<draftForMasterMedia.count {
+                produce(&draftForMasterMedia[i])
             }
             
-            if neededUpdates.didPositionUpdate() {
-                try Self.updateVisualMediaPosition(
-                    for: dbConnection,
-                    position: mediaModelDraft.getPosition(),
-                    image: mediaModelDraft.getPreviousName(),
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-            }
+            guard validate(draftForMasterMedia.map ({ draft in
+                return draft.getImmutableCopy()
+            })) else { fatalError("Unable to validate models. Aborting") }
             
-            if neededUpdates.didDescriptionUpdate() {
-                try Self.updateVisualMediaCaption(
-                    for: dbConnection,
-                    caption: mediaModelDraft.getDescription(),
-                    image: mediaModelDraft.getPreviousName(),
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-            }
-            
-            if neededUpdates.didSearchLabelUpdate() {
-                try Self.updateVisualMediaSearchLabel(
-                    for: dbConnection,
-                    searchLabel: mediaModelDraft.getSearchLabel(),
-                    image: mediaModelDraft.getPreviousName(),
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-            }
-            
-            if neededUpdates.didNameUpdate() {
-                try Self.updateVisualMediaName(
-                    for: dbConnection,
-                    newName: mediaModelDraft.getName(),
-                    currentName: mediaModelDraft.getPreviousName(),
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
+            try draftForMasterMedia.forEach { mediaModelDraft in
+                guard let neededUpdates = mediaModelDraft as? SerializedVisualMediaModelWritableDraftUpdateBearer else {
+                    fatalError("Cannot fetch requested updates info from visual media model.")
+                }
+                
+                if neededUpdates.didPositionUpdate() {
+                    try Self.updateVisualMediaPosition(
+                        for: dbConnection,
+                        position: mediaModelDraft.getPosition(),
+                        image: mediaModelDraft.getPreviousName(),
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
+                
+                if neededUpdates.didDescriptionUpdate() {
+                    try Self.updateVisualMediaCaption(
+                        for: dbConnection,
+                        caption: mediaModelDraft.getDescription(),
+                        image: mediaModelDraft.getPreviousName(),
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
+                
+                if neededUpdates.didSearchLabelUpdate() {
+                    try Self.updateVisualMediaSearchLabel(
+                        for: dbConnection,
+                        searchLabel: mediaModelDraft.getSearchLabel(),
+                        image: mediaModelDraft.getPreviousName(),
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
+                
+                if neededUpdates.didNameUpdate() {
+                    try Self.updateVisualMediaName(
+                        for: dbConnection,
+                        newName: mediaModelDraft.getName(),
+                        currentName: mediaModelDraft.getPreviousName(),
+                        gallery: gallery,
+                        tool: tool,
+                        tab: tab,
+                        map: map,
+                        game: game
+                    )
+                }
             }
         }
     }
@@ -2042,49 +2051,51 @@ public extension CRUD {
                 return galleryModel.getMutableCopy()
             }
             
-            for i in 0..<firstLevelGalleriesForThisTool.count {
-                produce(&galleryDraft[i])
-            }
+            try withExtendedLifetime(firstLevelGalleriesForThisTool) {
+                for i in 0..<firstLevelGalleriesForThisTool.count {
+                    produce(&galleryDraft[i])
+                }
 
-            guard validate(galleryDraft.map ({ draft in
-                return draft.getImmutableCopy()
-            })) else { fatalError("Unable to validate models. Aborting") }
-            
-            try galleryDraft.forEach { galleryDraftModel in
-                if galleryDraftModel.didPositionUpdate() {
-                    try Self.updateGalleryPosition(
-                        for: dbConnection,
-                        position: galleryDraftModel.getPosition(),
-                        gallery: galleryDraftModel.getPreviousName(),
-                        tool: tool,
-                        tab: tab,
-                        map: map,
-                        game: game
-                    )
-                }
+                guard validate(galleryDraft.map ({ draft in
+                    return draft.getImmutableCopy()
+                })) else { fatalError("Unable to validate models. Aborting") }
                 
-                if galleryDraftModel.didAssetsImageNameUpdate() {
-                    try Self.updateGalleryAssetsImageName(
-                        for: dbConnection,
-                        assetsImageName: galleryDraftModel.getAssetsImageName(),
-                        gallery: galleryDraftModel.getPreviousName(),
-                        tool: tool,
-                        tab: tab,
-                        map: map,
-                        game: game
-                    )
-                }
-                
-                if galleryDraftModel.didNameUpdate() {
-                    try Self.updateGalleryName(
-                        for: dbConnection,
-                        newGalleryName: galleryDraftModel.getName(),
-                        gallery: galleryDraftModel.getPreviousName(),
-                        tool: tool,
-                        tab: tab,
-                        map: map,
-                        game: game
-                    )
+                try galleryDraft.forEach { galleryDraftModel in
+                    if galleryDraftModel.didPositionUpdate() {
+                        try Self.updateGalleryPosition(
+                            for: dbConnection,
+                            position: galleryDraftModel.getPosition(),
+                            gallery: galleryDraftModel.getPreviousName(),
+                            tool: tool,
+                            tab: tab,
+                            map: map,
+                            game: game
+                        )
+                    }
+                    
+                    if galleryDraftModel.didAssetsImageNameUpdate() {
+                        try Self.updateGalleryAssetsImageName(
+                            for: dbConnection,
+                            assetsImageName: galleryDraftModel.getAssetsImageName(),
+                            gallery: galleryDraftModel.getPreviousName(),
+                            tool: tool,
+                            tab: tab,
+                            map: map,
+                            game: game
+                        )
+                    }
+                    
+                    if galleryDraftModel.didNameUpdate() {
+                        try Self.updateGalleryName(
+                            for: dbConnection,
+                            newGalleryName: galleryDraftModel.getName(),
+                            gallery: galleryDraftModel.getPreviousName(),
+                            tool: tool,
+                            tab: tab,
+                            map: map,
+                            game: game
+                        )
+                    }
                 }
             }
         } else {
@@ -2120,49 +2131,51 @@ public extension CRUD {
                 return galleryModel.getMutableCopy()
             }
             
-            for i in 0..<firstLevelMasters.count {
-                produce(&galleryDraft[i])
-            }
+            try withExtendedLifetime(firstLevelMasters) {
+                for i in 0..<firstLevelMasters.count {
+                    produce(&galleryDraft[i])
+                }
 
-            guard validate(galleryDraft.map ({ draft in
-                return draft.getImmutableCopy()
-            })) else { fatalError("Unable to validate models. Aborting") }
-            
-            try galleryDraft.forEach { galleryDraftModel in
-                if galleryDraftModel.didPositionUpdate() {
-                    try Self.updateGalleryPosition(
-                        for: dbConnection,
-                        position: galleryDraftModel.getPosition(),
-                        gallery: galleryDraftModel.getPreviousName(),
-                        tool: tool,
-                        tab: tab,
-                        map: map,
-                        game: game
-                    )
-                }
+                guard validate(galleryDraft.map ({ draft in
+                    return draft.getImmutableCopy()
+                })) else { fatalError("Unable to validate models. Aborting") }
                 
-                if galleryDraftModel.didAssetsImageNameUpdate() {
-                    try Self.updateGalleryAssetsImageName(
-                        for: dbConnection,
-                        assetsImageName: galleryDraftModel.getAssetsImageName(),
-                        gallery: galleryDraftModel.getPreviousName(),
-                        tool: tool,
-                        tab: tab,
-                        map: map,
-                        game: game
-                    )
-                }
-                
-                if galleryDraftModel.didNameUpdate() {
-                    try Self.updateGalleryName(
-                        for: dbConnection,
-                        newGalleryName: galleryDraftModel.getName(),
-                        gallery: galleryDraftModel.getPreviousName(),
-                        tool: tool,
-                        tab: tab,
-                        map: map,
-                        game: game
-                    )
+                try galleryDraft.forEach { galleryDraftModel in
+                    if galleryDraftModel.didPositionUpdate() {
+                        try Self.updateGalleryPosition(
+                            for: dbConnection,
+                            position: galleryDraftModel.getPosition(),
+                            gallery: galleryDraftModel.getPreviousName(),
+                            tool: tool,
+                            tab: tab,
+                            map: map,
+                            game: game
+                        )
+                    }
+                    
+                    if galleryDraftModel.didAssetsImageNameUpdate() {
+                        try Self.updateGalleryAssetsImageName(
+                            for: dbConnection,
+                            assetsImageName: galleryDraftModel.getAssetsImageName(),
+                            gallery: galleryDraftModel.getPreviousName(),
+                            tool: tool,
+                            tab: tab,
+                            map: map,
+                            game: game
+                        )
+                    }
+                    
+                    if galleryDraftModel.didNameUpdate() {
+                        try Self.updateGalleryName(
+                            for: dbConnection,
+                            newGalleryName: galleryDraftModel.getName(),
+                            gallery: galleryDraftModel.getPreviousName(),
+                            tool: tool,
+                            tab: tab,
+                            map: map,
+                            game: game
+                        )
+                    }
                 }
             }
         } else {
@@ -2568,69 +2581,71 @@ public extension CRUD {
             return tabModel.getMutableCopy()
         }
         
-        for i in 0..<toolsDrafts.count {
-            produce(&toolsDrafts[i])
-        }
-        
-        guard validate(toolsDrafts.map ({ draft in
-            return draft.getImmutableCopy()
-        })) else { fatalError("Unable to validate models. Aborting") }
-        
-        try toolsDrafts.forEach { toolDraftModel in
-            if toolDraftModel.didPositionChange() {
-                try Self.updateToolPosition(
-                    for: dbConnection,
-                    position: toolDraftModel.getPosition(),
-                    tool: toolDraftModel.getPreviousName(),
-                    game: game,
-                    map: map,
-                    tab: toolDraftModel.getPreviousTab()
-                )
+        try withExtendedLifetime(toolsForThisTab) {
+            for i in 0..<toolsDrafts.count {
+                produce(&toolsDrafts[i])
             }
             
-            if toolDraftModel.didAssetsImageNameChange() {
-                try Self.updateToolAssetsImageName(
-                    for: dbConnection,
-                    newAssetsImageName: toolDraftModel.getAssetsImageName(),
-                    tool: toolDraftModel.getPreviousName(),
-                    game: game,
-                    map: map,
-                    tab: toolDraftModel.getPreviousTab()
-                )
-            }
+            guard validate(toolsDrafts.map ({ draft in
+                return draft.getImmutableCopy()
+            })) else { fatalError("Unable to validate models. Aborting") }
             
-            if toolDraftModel.didIsSolverChange() {
-                try Self.updateIsToolASolver(
-                    for: dbConnection,
-                    isSolver: toolDraftModel.isSolver(),
-                    tool: toolDraftModel.getPreviousName(),
-                    game: game,
-                    map: map,
-                    tab: toolDraftModel.getPreviousTab()
-                )
-            }
-            
-            if toolDraftModel.didTabChange() {
-                try Self.updateTabForTool(
-                    for: dbConnection,
-                    newTab: toolDraftModel.getTab(),
-                    tool: toolDraftModel.getPreviousName(),
-                    tab: toolDraftModel.getPreviousTab(),
-                    map: map,
-                    game: game
-                )
-            }
-            
-            if toolDraftModel.didNameChange() {
-                try Self.updateTabName(
-                    for: dbConnection,
-                    newTabName: toolDraftModel.getName(),
-                    game: game,
-                    map: map,
-                    tab: toolDraftModel.getTab()
-                )
-            }
+            try toolsDrafts.forEach { toolDraftModel in
+                if toolDraftModel.didPositionChange() {
+                    try Self.updateToolPosition(
+                        for: dbConnection,
+                        position: toolDraftModel.getPosition(),
+                        tool: toolDraftModel.getPreviousName(),
+                        game: game,
+                        map: map,
+                        tab: toolDraftModel.getPreviousTab()
+                    )
+                }
+                
+                if toolDraftModel.didAssetsImageNameChange() {
+                    try Self.updateToolAssetsImageName(
+                        for: dbConnection,
+                        newAssetsImageName: toolDraftModel.getAssetsImageName(),
+                        tool: toolDraftModel.getPreviousName(),
+                        game: game,
+                        map: map,
+                        tab: toolDraftModel.getPreviousTab()
+                    )
+                }
+                
+                if toolDraftModel.didIsSolverChange() {
+                    try Self.updateIsToolASolver(
+                        for: dbConnection,
+                        isSolver: toolDraftModel.isSolver(),
+                        tool: toolDraftModel.getPreviousName(),
+                        game: game,
+                        map: map,
+                        tab: toolDraftModel.getPreviousTab()
+                    )
+                }
+                
+                if toolDraftModel.didTabChange() {
+                    try Self.updateTabForTool(
+                        for: dbConnection,
+                        newTab: toolDraftModel.getTab(),
+                        tool: toolDraftModel.getPreviousName(),
+                        tab: toolDraftModel.getPreviousTab(),
+                        map: map,
+                        game: game
+                    )
+                }
+                
+                if toolDraftModel.didNameChange() {
+                    try Self.updateTabName(
+                        for: dbConnection,
+                        newTabName: toolDraftModel.getName(),
+                        game: game,
+                        map: map,
+                        tab: toolDraftModel.getTab()
+                    )
+                }
 
+            }
         }
     }
     
@@ -2744,43 +2759,45 @@ public extension CRUD {
             return mapModel.getMutableCopy()
         }
         
-        for i in 0..<tabsDrafts.count {
-            produce(&tabsDrafts[i])
-        }
-        
-        guard validate(tabsDrafts.map ({ draft in
-            return draft.getImmutableCopy()
-        })) else { fatalError("Unable to validate models. Aborting") }
-        
-        try tabsDrafts.forEach { tabModelDraft in
-            if tabModelDraft.didPositionChange() {
-                try Self.updateTabPosition(
-                    for: dbConnection,
-                    position: tabModelDraft.getPosition(),
-                    game: game,
-                    map: map,
-                    tab: tabModelDraft.getPreviousName()
-                )
+        try withExtendedLifetime(tabsForThisMap) {
+            for i in 0..<tabsDrafts.count {
+                produce(&tabsDrafts[i])
             }
             
-            if tabModelDraft.didNameChange() {
-                try Self.updateTabName(
-                    for: dbConnection,
-                    newTabName: tabModelDraft.getName(),
-                    game: game,
-                    map: map,
-                    tab: tabModelDraft.getPreviousName()
-                )
-            }
+            guard validate(tabsDrafts.map ({ draft in
+                return draft.getImmutableCopy()
+            })) else { fatalError("Unable to validate models. Aborting") }
             
-            if tabModelDraft.didRatingChange() {
-                try Self.updateTabRating(
-                    for: dbConnection,
-                    rating: tabModelDraft.getRating(),
-                    game: game,
-                    map: map,
-                    tab: tabModelDraft.getPreviousName()
-                )
+            try tabsDrafts.forEach { tabModelDraft in
+                if tabModelDraft.didPositionChange() {
+                    try Self.updateTabPosition(
+                        for: dbConnection,
+                        position: tabModelDraft.getPosition(),
+                        game: game,
+                        map: map,
+                        tab: tabModelDraft.getPreviousName()
+                    )
+                }
+                
+                if tabModelDraft.didNameChange() {
+                    try Self.updateTabName(
+                        for: dbConnection,
+                        newTabName: tabModelDraft.getName(),
+                        game: game,
+                        map: map,
+                        tab: tabModelDraft.getPreviousName()
+                    )
+                }
+                
+                if tabModelDraft.didRatingChange() {
+                    try Self.updateTabRating(
+                        for: dbConnection,
+                        rating: tabModelDraft.getRating(),
+                        game: game,
+                        map: map,
+                        tab: tabModelDraft.getPreviousName()
+                    )
+                }
             }
         }
     }
@@ -2830,23 +2847,25 @@ public extension CRUD {
             return gameModel.getMutableCopy()
         }
         
-        for i in 0..<mapsDrafts.count {
-            produce(&mapsDrafts[i])
-        }
-        
-        guard validate(mapsDrafts.map ({ draft in
-            return draft.getImmutableCopy()
-        })) else { fatalError("Unable to validate models. Aborting") }
-        
-        
-        try mapsDrafts.forEach { mapModelDraft in
-            if mapModelDraft.didPositionChange() {
-                try Self.updateMapPosition(
-                    for: dbConnection,
-                    newPosition: mapModelDraft.getPosition(),
-                    game: game,
-                    map: mapModelDraft.getName()
-                )
+        try withExtendedLifetime(mapsForThisGame) {
+            for i in 0..<mapsDrafts.count {
+                produce(&mapsDrafts[i])
+            }
+            
+            guard validate(mapsDrafts.map ({ draft in
+                return draft.getImmutableCopy()
+            })) else { fatalError("Unable to validate models. Aborting") }
+            
+            
+            try mapsDrafts.forEach { mapModelDraft in
+                if mapModelDraft.didPositionChange() {
+                    try Self.updateMapPosition(
+                        for: dbConnection,
+                        newPosition: mapModelDraft.getPosition(),
+                        game: game,
+                        map: mapModelDraft.getName()
+                    )
+                }
             }
         }
     }
@@ -2875,24 +2894,26 @@ public extension CRUD {
             return mapsModel.getMutableCopy()
         }
         
-        for i in 0..<mapsDrafts.count {
-            produce(&mapsDrafts[i])
-        }
-        
-        guard validate(mapsDrafts.map ({ draft in
-            return draft.getImmutableCopy()
-        })) else { fatalError("Unable to validate models. Aborting") }
-        
-        
-        try mapsDrafts.forEach { mapModelDraft in
-            if mapModelDraft.didPositionChange() {
-                try Self.updateMapPosition(
-                    for: dbConnection,
-                    newPosition: mapModelDraft.getPosition(),
-                    game: game,
-                    map: mapModelDraft.getName()
-                )
-            }            
+        try withExtendedLifetime(mapsForThisGame) {
+            for i in 0..<mapsDrafts.count {
+                produce(&mapsDrafts[i])
+            }
+            
+            guard validate(mapsDrafts.map ({ draft in
+                return draft.getImmutableCopy()
+            })) else { fatalError("Unable to validate models. Aborting") }
+            
+            
+            try mapsDrafts.forEach { mapModelDraft in
+                if mapModelDraft.didPositionChange() {
+                    try Self.updateMapPosition(
+                        for: dbConnection,
+                        newPosition: mapModelDraft.getPosition(),
+                        game: game,
+                        map: mapModelDraft.getName()
+                    )
+                }
+            }
         }
     }
     
@@ -3028,25 +3049,28 @@ public extension CRUD {
             return gameModel.getMutableCopy()
         })
         
-        for i in 0..<gamesDrafts.count {
-            produce(&gamesDrafts[i])
-        }
-        
-        guard validate(gamesDrafts.map ({ draft in
-            return draft.getImmutableCopy()
-        })) else { fatalError("Unable to validate models. Aborting") }
-        
-        
         var changedGamesCount: Int = 0
-        try gamesDrafts.forEach { gameModelDraft in
-            if gameModelDraft.didPositionChange() {
-                try Self.updateGamePosition(
-                    for: dbConnection,
-                    newPosition: gameModelDraft.getPosition(),
-                    game: gameModelDraft.getName()
-                )
-                
-                changedGamesCount += dbConnection.changes
+        
+        try withExtendedLifetime(allGames) {
+            for i in 0..<gamesDrafts.count {
+                produce(&gamesDrafts[i])
+            }
+            
+            guard validate(gamesDrafts.map ({ draft in
+                return draft.getImmutableCopy()
+            })) else { fatalError("Unable to validate models. Aborting") }
+            
+            
+            try gamesDrafts.forEach { gameModelDraft in
+                if gameModelDraft.didPositionChange() {
+                    try Self.updateGamePosition(
+                        for: dbConnection,
+                        newPosition: gameModelDraft.getPosition(),
+                        game: gameModelDraft.getName()
+                    )
+                    
+                    changedGamesCount += dbConnection.changes
+                }
             }
         }
         
