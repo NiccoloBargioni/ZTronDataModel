@@ -1648,17 +1648,17 @@ extension CRUD {
         }
         
         if options.contains(.nestingLevel) {
-            var nestingLevels: [Int] = .init(repeating: 0, count: galleries.count)
+            var nestingLevels: [Int] = .init(repeating: -1, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
                 nestingLevels[index] = try CRUD.readGalleryNestingDepth(
                     for: dbConnection,
-                    game: game,
-                    map: map,
-                    tab: tab,
-                    tool: tool,
-                    gallery: gallery.getName()
-                ) ?? 0
+                    gallery: gallery.getName(),
+                    tool: game,
+                    tab: map,
+                    map: tab,
+                    game: tool
+                ) ?? -1
             }
             
             galleriesWithOptions[.nestingLevel] = nestingLevels
