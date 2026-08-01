@@ -1618,69 +1618,56 @@ public extension CRUD {
             return media.getMutableCopy()
         }
         
-        for i in 0..<draftForMasterMedia.count {
-            produce(&draftForMasterMedia[i])
-        }
         
-        guard validate(draftForMasterMedia.map ({ draft in
-            return draft.getImmutableCopy()
-        })) else { fatalError("Unable to validate models. Aborting") }
-        
-        try draftForMasterMedia.forEach { mediaModelDraft in
-            guard let neededUpdates = mediaModelDraft as? SerializedVisualMediaModelWritableDraftUpdateBearer else {
-                fatalError("Cannot fetch requested updates info from visual media model.")
+        try withExtendedLifetime(masterImagesForThisGallery) {
+            for i in 0..<draftForMasterMedia.count {
+                produce(&draftForMasterMedia[i])
             }
             
-            if neededUpdates.didPositionUpdate() {
-                try Self.updateVisualMediaPosition(
-                    for: dbConnection,
-                    position: mediaModelDraft.getPosition(),
-                    image: mediaModelDraft.getPreviousName(),
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-            }
+            guard validate(draftForMasterMedia.map ({ draft in
+                return draft.getImmutableCopy()
+            })) else { fatalError("Unable to validate models. Aborting") }
             
-            if neededUpdates.didDescriptionUpdate() {
-                try Self.updateVisualMediaCaption(
-                    for: dbConnection,
-                    caption: mediaModelDraft.getDescription(),
-                    image: mediaModelDraft.getPreviousName(),
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-            }
-            
-            if neededUpdates.didSearchLabelUpdate() {
-                try Self.updateVisualMediaSearchLabel(
-                    for: dbConnection,
-                    searchLabel: mediaModelDraft.getSearchLabel(),
-                    image: mediaModelDraft.getPreviousName(),
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
-            }
-            
-            if neededUpdates.didNameUpdate() {
-                try Self.updateVisualMediaName(
-                    for: dbConnection,
-                    newName: mediaModelDraft.getName(),
-                    currentName: mediaModelDraft.getPreviousName(),
-                    gallery: gallery,
-                    tool: tool,
-                    tab: tab,
-                    map: map,
-                    game: game
-                )
+            try draftForMasterMedia.forEach { mediaModelDraft in
+                guard let neededUpdates = mediaModelDraft as? SerializedVisualMediaModelWritableDraftUpdateBearer else {
+                    fatalError("Cannot fetch requested updates info from visual media model.")
+                }
+                
+                if neededUpdates.didPositionUpdate() {
+                    try Self.updateVisualMediaPosition(
+                        for: dbConnection,
+                        position: mediaModelDraft.getPosition(),
+                        image: mediaModelDraft.getPreviousName(),
+                        gallery: gallery, tool: tool, tab: tab, map: map, game: game
+                    )
+                }
+                
+                if neededUpdates.didDescriptionUpdate() {
+                    try Self.updateVisualMediaCaption(
+                        for: dbConnection,
+                        caption: mediaModelDraft.getDescription(),
+                        image: mediaModelDraft.getPreviousName(),
+                        gallery: gallery, tool: tool, tab: tab, map: map, game: game
+                    )
+                }
+                
+                if neededUpdates.didSearchLabelUpdate() {
+                    try Self.updateVisualMediaSearchLabel(
+                        for: dbConnection,
+                        searchLabel: mediaModelDraft.getSearchLabel(),
+                        image: mediaModelDraft.getPreviousName(),
+                        gallery: gallery, tool: tool, tab: tab, map: map, game: game
+                    )
+                }
+                
+                if neededUpdates.didNameUpdate() {
+                    try Self.updateVisualMediaName(
+                        for: dbConnection,
+                        newName: mediaModelDraft.getName(),
+                        currentName: mediaModelDraft.getPreviousName(),
+                        gallery: gallery, tool: tool, tab: tab, map: map, game: game
+                    )
+                }
             }
         }
     }

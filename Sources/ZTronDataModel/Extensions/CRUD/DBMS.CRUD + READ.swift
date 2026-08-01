@@ -1653,11 +1653,11 @@ extension CRUD {
             for (index, gallery) in galleries.enumerated() {
                 nestingLevels[index] = try CRUD.readGalleryNestingDepth(
                     for: dbConnection,
-                    gallery: gallery.getName(),
-                    tool: game,
-                    tab: map,
-                    map: tab,
-                    game: tool
+                    game: game,
+                    map: map,
+                    tab: tab,
+                    tool: tool,
+                    gallery: gallery.getName()
                 ) ?? -1
             }
             
