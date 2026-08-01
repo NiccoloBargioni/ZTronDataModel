@@ -8,7 +8,7 @@ Each table is thoroughly documented in its own swift file, as well as their resp
 
 ## Usage Warnings
 
-The structure of the tables is subject to variations. The programmer commits to the interfaces defined under ZTronDataModel / Extentions / CRUD / DBMS.CRUD.READ Models, in the sense that existing fields will be supported long term and not be removed, and their semantics and representation will not be altered. Though, the owner grants himself the right to add new fields in the future to such interfaces.
+The structure of the tables is subject to variations. The programmer commits to the interfaces defined under ZTronDataModel / Extentions / CRUD / CRUD.READ Models, in the sense that existing fields will be supported long term and not be removed, and their semantics and representation will not be altered. Though, the owner grants himself the right to add new fields in the future to such interfaces.
 
 This package defines under ZTronDataModel / Extentions / CRUD the API for database crud operations and it's strongly recommended to not perform said operations bypassing the existing interface, because that'd cause the dependent code to be fragile with respect to changes of this package's tables definitions.
 

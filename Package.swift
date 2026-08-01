@@ -34,6 +34,10 @@ let package = Package(
         ),
         .testTarget(
             name: "ZTronDataModelTests",
-            dependencies: ["ZTronDataModel", .product(name: "SQLite", package: "SQLite.swift")]),
+            dependencies: ["ZTronDataModel", .product(name: "SQLite", package: "SQLite.swift")],
+            resources: [
+                .copy("../Dump/ztron_dump.sqlite3")
+            ],
+        ),
     ]
 )

@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 import SQLite
 
-extension DBMS.CRUD {
+extension CRUD {
     
     // MARK: STUDIOS
     public static func countStudios(for dbConnection: Connection) throws -> Int {
@@ -17,6 +17,15 @@ extension DBMS.CRUD {
     public static func countGamesForStudio(for dbConnection: Connection, studio: String) throws -> Int {
         let studios = DBMS.studio
         let countGamesForStudioQuery = studios.table.where(studios.nameColumn == studio).count
+        
+        return try dbConnection.scalar(countGamesForStudioQuery)
+    }
+
+    
+    // MARK: GAMES
+    public static func countGames(for dbConnection: Connection,) throws -> Int {
+        let studios = DBMS.studio
+        let countGamesForStudioQuery = studios.table.count
         
         return try dbConnection.scalar(countGamesForStudioQuery)
     }
@@ -247,15 +256,17 @@ extension DBMS.CRUD {
         image: String
     ) throws -> Int {
         let outline = DBMS.outline
-        let countOutlinesForImageQuery = outline.table.where(
-            outline.foreignKeys.gameColumn == game &&
-            outline.foreignKeys.mapColumn == map &&
-            outline.foreignKeys.tabColumn == tab &&
-            outline.foreignKeys.toolColumn == tool &&
-            outline.foreignKeys.galleryColumn == gallery &&
-            outline.foreignKeys.imageColumn == image
-        ).count
+
         
+        let countOutlinesForImageQuery = outline.table.filter(
+            outline.table[outline.foreignKeys.gameColumn] == game &&
+            outline.table[outline.foreignKeys.mapColumn] == map &&
+            outline.table[outline.foreignKeys.tabColumn] == tab &&
+            outline.table[outline.foreignKeys.toolColumn] == tool &&
+            outline.table[outline.foreignKeys.galleryColumn] == gallery &&
+            outline.table[outline.foreignKeys.imageColumn] == image
+        ).count
+
         return try dbConnection.scalar(countOutlinesForImageQuery)
     }
 

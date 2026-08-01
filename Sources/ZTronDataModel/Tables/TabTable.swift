@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 @preconcurrency import SQLite
 
-/// - `TAB(name, position, iconName, map, game)`
+/// - `TAB(name, position, rating, map, game)`
 /// - `PK(name, map, game)`
 /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
 ///
@@ -26,7 +26,7 @@ public final class Tab: DBTableCreator {
     
     let nameColumn: SQLite.Expression<String>
     let positionColumn: SQLite.Expression<Int>
-    let iconNameColumn: SQLite.Expression<String>
+    let ratingColumn: SQLite.Expression<Int>
     let foreignKeys: Tab.ForeignKeys
     let table: SQLite.Table
     
@@ -34,7 +34,7 @@ public final class Tab: DBTableCreator {
         self.table = Table(tableName)
         self.nameColumn = SQLite.Expression<String>("name")
         self.positionColumn = SQLite.Expression<Int>("position")
-        self.iconNameColumn = SQLite.Expression<String>("iconName")
+        self.ratingColumn = SQLite.Expression<Int>("rating")
         self.foreignKeys = Tab.ForeignKeys()
     }
     
@@ -46,7 +46,7 @@ public final class Tab: DBTableCreator {
                 CREATE TABLE IF NOT EXISTS \(self.tableName) (
                     \(self.nameColumn.template) TEXT NOT NULL,
                     \(self.positionColumn.template) INT NOT NULL CHECK(\(self.positionColumn.template) >= 0),
-                    \(self.iconNameColumn.template) TEXT NOT NULL,
+                    \(self.ratingColumn.template) INT NOT NULL,
                     \(self.foreignKeys.gameColumn.template) TEXT NOT NULL,
                     \(self.foreignKeys.mapColumn.template) TEXT NOT NULL,
                     PRIMARY KEY (

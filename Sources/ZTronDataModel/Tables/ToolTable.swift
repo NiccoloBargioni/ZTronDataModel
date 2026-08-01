@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 @preconcurrency import SQLite
 
-/// - `TOOL(name, position, assetsImageName, tab, map, game)`
+/// - `TOOL(name, position, assetsImageName, isSolver, tab, map, game)`
 /// - `PK(name, tab, map, game)`
 /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
 ///
@@ -32,6 +32,7 @@ public final class Tool: DBTableCreator {
     let nameColumn: SQLite.Expression<String>
     let positionColumn: SQLite.Expression<Int>
     let assetsImageNameColumn: SQLite.Expression<String>
+    let isSolver: SQLite.Expression<Bool>
     let foreignKeys: Tool.ForeignKeys
     let table: SQLite.Table
     
@@ -41,6 +42,7 @@ public final class Tool: DBTableCreator {
         self.positionColumn = SQLite.Expression<Int>("position")
         self.foreignKeys = Tool.ForeignKeys()
         self.assetsImageNameColumn = SQLite.Expression<String>("assetsImageName")
+        self.isSolver = SQLite.Expression<Bool>("isSolver")
     }
     
     func makeTable(for dbConnection: OpaquePointer) throws {
@@ -52,6 +54,7 @@ public final class Tool: DBTableCreator {
                     \(self.nameColumn.template) TEXT NOT NULL,
                     \(self.positionColumn.template) INT NOT NULL CHECK(\(self.positionColumn.template) >= 0),
                     \(self.assetsImageNameColumn.template) TEXT NOT NULL,
+                    \(self.isSolver.template) INT NOT NULL,
                     \(self.foreignKeys.tabColumn.template) TEXT NOT NULL,
                     \(self.foreignKeys.gameColumn.template) TEXT NOT NULL,
                     \(self.foreignKeys.mapColumn.template) TEXT NOT NULL,

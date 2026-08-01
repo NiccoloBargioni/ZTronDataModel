@@ -7,7 +7,16 @@
       "location" : "https://github.com/stephencelis/SQLite.swift.git",
       "state" : {
         "branch" : "master",
-        "revision" : "a95fc6df17d108bd99210db5e8a9bac90fe984b8"
+        "revision" : "eb9b2ee9d9b7f941ac883b0843557469ed567af2"
+      }
+    },
+    {
+      "identity" : "swift-toolchain-sqlite",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-toolchain-sqlite",
+      "state" : {
+        "revision" : "b626d3002773b1a1304166643e7f118f724b2132",
+        "version" : "1.0.4"
       }
     }
   ],

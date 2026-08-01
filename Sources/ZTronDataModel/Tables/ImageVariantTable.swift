@@ -92,7 +92,7 @@ public final class ImageVariant: DBTableCreator {
                         \(self.foreignKeys.gameColumn.template)
                     ),
                     FOREIGN KEY (
-                        \(self.slaveColumn),
+                        \(self.slaveColumn.template),
                         \(self.foreignKeys.galleryColumn.template),
                         \(self.foreignKeys.toolColumn.template),
                         \(self.foreignKeys.tabColumn.template),

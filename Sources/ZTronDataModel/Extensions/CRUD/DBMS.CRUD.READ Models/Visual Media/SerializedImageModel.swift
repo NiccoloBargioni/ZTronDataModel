@@ -120,4 +120,190 @@ public final class SerializedImageModel: SerializedVisualMediaModel {
         )
         """
     }
+    
+    public final func getMutableCopy() -> SerializedImageModel.WritableDraft {
+        return Self.WritableDraft(fromParent: self)
+    }
+    
+    public final class WritableDraft: SerializedVisualMediaModelWritableDraft {
+        public typealias M = SerializedImageModel
+        
+        private var name: String
+        private var description: String
+        private var position: Int
+        private var searchLabel: String?
+        weak private var owner: SerializedImageModel?
+        
+        private(set) fileprivate var didNameChange: Bool = false
+        private(set) fileprivate var didDescriptionChange: Bool = false
+        private(set) fileprivate var didPositionChange: Bool = false
+        private(set) fileprivate var didSearchLabelChange: Bool = false
+
+        private init(
+            name: String,
+            description: String,
+            position: Int,
+            searchLabel: String? = nil,
+            owner: SerializedImageModel
+        ) {
+            self.name = name
+            self.description = description
+            self.position = position
+            self.searchLabel = searchLabel
+            self.owner = owner
+        }
+        
+        fileprivate convenience init(fromParent: SerializedImageModel) {
+            self.init(
+                name: fromParent.name,
+                description: fromParent.description,
+                position: fromParent.position,
+                searchLabel: fromParent.searchLabel,
+                owner: fromParent
+            )
+        }
+        
+        @discardableResult public final func withName(_ name: String) -> WritableDraft {
+            self.name = name.lowercased()
+            self.didNameChange = true
+            return self
+        }
+        
+        internal final func didNameUpdate() -> Bool {
+            return self.didNameChange
+        }
+        
+        public final func getName() -> String {
+            return self.name
+        }
+        
+        public final func getPreviousName() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `name`.") }
+            return owner.name
+        }
+        
+        @discardableResult public final func withDescription(_ description: String) -> WritableDraft {
+            if description != self.description {
+                self.description = description.lowercased()
+                self.didDescriptionChange = true
+            }
+            return self
+        }
+        
+        internal final func didDescriptionUpdate() -> Bool {
+            return self.didDescriptionChange
+        }
+        
+        public final func getDescription() -> String {
+            return self.description
+        }
+        
+        public final func getPreviousDescription() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `description`.") }
+            return owner.description
+        }
+        
+        @discardableResult public final func withPosition(_ position: Int) -> WritableDraft {
+            if position != self.position {
+                self.position = position
+                self.didPositionChange = true
+            }
+            return self
+        }
+        
+        internal final func didPositionUpdate() -> Bool {
+            return self.didPositionChange
+        }
+        
+        public final func getPosition() -> Int {
+            return self.position
+        }
+        
+        public final func getPreviousPosition() -> Int {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `position`.") }
+            return owner.position
+        }
+
+        
+        @discardableResult public final func withSearchLabel(_ searchLabel: String?) -> WritableDraft {
+            if searchLabel != self.searchLabel {
+                self.searchLabel = searchLabel?.lowercased()
+                self.didSearchLabelChange = true
+            }
+            return self
+        }
+        
+        
+        internal final func didSearchLabelUpdate() -> Bool {
+            return self.didSearchLabelChange
+        }
+        
+        public final func getSearchLabel() -> String? {
+            return self.searchLabel
+        }
+        
+        public final func getPreviousSearchLabel() -> String? {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before fetching `searchLabel`.") }
+            return owner.searchLabel
+        }
+        
+        public final func getTool() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tool`.")
+            }
+            return owner.tool
+        }
+        
+        public final func getTab() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `tab`.")
+            }
+            return owner.tab
+        }
+        
+        public final func getMap() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `map`.")
+            }
+            return owner.map
+        }
+        
+        public final func getGame() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `game`.")
+            }
+            return owner.game
+        }
+        
+        public final func getGallery() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `gallery`.")
+            }
+            return owner.gallery
+        }
+        
+        /// - Note: Unsafe. One could make an immutable copy from this and pass it around as if it was fetched from db.
+        public final func getImmutableCopy() -> SerializedImageModel {
+            guard let owner = self.owner else {
+                fatalError("Unexpectedly released reference to parent before returning immutable copy")
+            }
+            
+            return SerializedImageModel(
+                name: self.name,
+                description: self.description,
+                position: self.position,
+                searchLabel: self.searchLabel,
+                gallery: owner.gallery,
+                tool: owner.tool,
+                tab: owner.tab,
+                map: owner.map,
+                game: owner.game
+            )
+        }
+    }
+}
+
+
+extension SerializedImageModel.WritableDraft: SerializedVisualMediaModelWritableDraftUpdateBearer {
+    
 }

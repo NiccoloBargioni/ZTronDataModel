@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 import SQLite
 
-extension DBMS.CRUD {
+extension CRUD {
     // MARK: - GALLERY EXISTS
     /// - `GALLERY(name, assetsImageName, tool, tab, map, game)`
     /// - `PK(name, tool, tab, map, game)`
@@ -28,6 +28,30 @@ extension DBMS.CRUD {
         return try dbConnection.scalar(countGalleryQuery) == 1
     }
 
+    
+    internal static func galleryMasterExists(
+        for dbConnection: Connection,
+        gallery: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String
+    ) throws -> Bool {
+        let subgallery = DBMS.subgallery
+        
+        let countMastersQuery = subgallery.table.where(
+            subgallery.slaveColumn == gallery &&
+            subgallery.foreignKeys.gameColumn == game &&
+            subgallery.foreignKeys.mapColumn == map &&
+            subgallery.foreignKeys.tabColumn == tab &&
+            subgallery.foreignKeys.toolColumn == tool
+        ).count
+        
+        return try dbConnection.scalar(countMastersQuery) >= 1
+
+    }
+    
+    
     /// - `HAS_SUBGALLERY(master, slave, tool, tab, map, game)`
     /// - `PK(slave, tool, tab, map, game)`
     /// - `FK(slave, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
@@ -259,6 +283,38 @@ extension DBMS.CRUD {
     }
     
     
+    /// A tool needs migration to a different tab if there exists a (`Tool.name`, `TAB`, `map`, `game`) tuple such that `TAB <> tab`
+    /// At some point during the update process it's likely that two (or more, but unlikely) such tuples exist.
+    ///
+    /// - Note: An assumption is being made that, since the data source is updated with correct indices, the indices update part of the migration will be taken care of later.
+    ///
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    public static func toolExistsInDifferentTab(
+        for dbConnection: Connection,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> Bool {
+        let toolModel = DBMS.tool
+        
+        let allTabsForToolQuery = toolModel.table.filter(
+            toolModel.nameColumn == tool &&
+            toolModel.foreignKeys.tabColumn != tab &&
+            toolModel.foreignKeys.mapColumn == map &&
+            toolModel.foreignKeys.gameColumn == game
+        )
+        
+        let tabs = try dbConnection.prepare(allTabsForToolQuery).map { tabRow in
+            return SerializedTabModel(tabRow)
+        }
+        
+        return tabs.count > 0
+    }
+    
+    
     // MARK: Tab Exists
     /// - `TAB(name, position, iconName, map, game)`
     /// - `PK(name, map, game)`
@@ -280,6 +336,8 @@ extension DBMS.CRUD {
         return try dbConnection.scalar(countQuery) == 1
     }
 
+    
+    
     
     // MARK: Map Exists
     /// - `MAP(name, position, assetsImageName, game)`
@@ -333,3 +391,8 @@ extension DBMS.CRUD {
 
 }
 
+
+public enum OnTabConflictStrategy {
+    case keepCurrent
+    case removeCurrent
+}

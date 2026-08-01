@@ -6,6 +6,7 @@ import SQLite
 public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableObject {
     private let name: String
     private let position: Int
+    private let rating: Int
     private let map: String
     private let game: String
     private let tools: [SerializedToolModel]
@@ -13,12 +14,14 @@ public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableOb
     private init(
         name: String,
         position: Int,
+        rating: Int,
         map: String,
         game: String,
         tools: [SerializedToolModel]
     ) {
         self.name = name
         self.position = position
+        self.rating = rating
         self.map = map
         self.game = game
         self.tools = tools
@@ -30,6 +33,7 @@ public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableOb
     ) {
         self.name = tabModel.getName()
         self.position = tabModel.getPosition()
+        self.rating = tabModel.getRating()
         self.map = tabModel.getMap()
         self.game = tabModel.getGame()
         self.tools = tools
@@ -43,6 +47,7 @@ public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableOb
     public static func == (lhs: SerializedTabModelWithTools, rhs: SerializedTabModelWithTools) -> Bool {
         return lhs.name == rhs.name &&
                 lhs.position == rhs.position &&
+                lhs.rating == rhs.rating &&
                 lhs.map == rhs.map &&
                 lhs.game == rhs.game
     }
@@ -55,11 +60,13 @@ public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableOb
         return self.position
     }
     
+    public func getRating() -> Int {
+        return self.rating
+    }
     
     public func getMap() -> String {
         return self.map
     }
-            
 
     public func getGame() -> String {
         return self.game
@@ -96,7 +103,7 @@ public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableOb
             self.position = from.getPosition()
         }
         
-        public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
+        @discardableResult public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
             self.position = newPosition
             return self
         }
@@ -110,6 +117,7 @@ public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableOb
             return SerializedTabModelWithTools(
                 name: owner.name,
                 position: owner.position,
+                rating: owner.rating,
                 map: owner.map,
                 game: owner.game,
                 tools: owner.tools

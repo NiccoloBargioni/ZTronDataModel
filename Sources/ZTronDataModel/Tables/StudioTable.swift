@@ -25,13 +25,11 @@ public final class Studio: DBTableCreator {
     
     let nameColumn: SQLite.Expression<String>
     let positionColumn: SQLite.Expression<Int>
-    let assetsImageNameColumn: SQLite.Expression<String>
     let table: SQLite.Table
     
     internal init() {
         self.table = Table(self.tableName)
         self.nameColumn = SQLite.Expression<String>("name")
-        self.assetsImageNameColumn = SQLite.Expression<String>("assetsImageName")
         self.positionColumn = SQLite.Expression<Int>("position")
     }
     
@@ -41,7 +39,6 @@ public final class Studio: DBTableCreator {
                 CREATE TABLE IF NOT EXISTS \(self.tableName) (
                     \(self.nameColumn.template) TEXT NOT NULL,
                     \(self.positionColumn.template) INT NOT NULL CHECK(\(self.positionColumn.template)>=0),
-                    \(self.assetsImageNameColumn.template) TEXT NOT NULL,
                     PRIMARY KEY (\(self.nameColumn.template))
                 )
             """

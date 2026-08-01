@@ -7,6 +7,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
     private let name: String
     private let position: Int
     private let assetsImageName: String
+    private let _isSolver: Bool
     private let tab: String
     private let map: String
     private let game: String
@@ -15,6 +16,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         name: String,
         position: Int,
         assetsImageName: String,
+        isSolver: Bool,
         tab: String,
         map: String,
         game: String
@@ -22,6 +24,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         self.name = name
         self.position = position
         self.assetsImageName = assetsImageName
+        self._isSolver = isSolver
         self.tab = tab
         self.map = map
         self.game = game
@@ -34,6 +37,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         self.name = namespaceColumns ? fromRow[tool.table[tool.nameColumn]] :  fromRow[tool.nameColumn]
         self.position = namespaceColumns ? fromRow[tool.table[tool.positionColumn]] : fromRow[tool.positionColumn]
         self.assetsImageName = namespaceColumns ? fromRow[tool.table[tool.assetsImageNameColumn]] : fromRow[tool.assetsImageNameColumn]
+        self._isSolver = namespaceColumns ? fromRow[tool.table[tool.isSolver]] : fromRow[tool.isSolver]
         self.tab = namespaceColumns ? fromRow[tool.table[tool.foreignKeys.tabColumn]] : fromRow[tool.foreignKeys.tabColumn]
         self.map = namespaceColumns ? fromRow[tool.table[tool.foreignKeys.mapColumn]] : fromRow[tool.foreignKeys.mapColumn]
         self.game = namespaceColumns ? fromRow[tool.table[tool.foreignKeys.gameColumn]] : fromRow[tool.foreignKeys.gameColumn]
@@ -67,6 +71,10 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
         return self.assetsImageName
     }
     
+    public final func isSolver() -> Bool {
+        return self._isSolver
+    }
+    
     public func getTab() -> String {
         return self.tab
     }
@@ -87,6 +95,7 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
             name: \(self.name),
             position: \(self.position),
             assetsImageName: \(self.assetsImageName),
+            isSolver: \(self._isSolver),
             tab: \(self.tab),
             map: \(self.map),
             game: \(self.game)
@@ -101,28 +110,162 @@ public final class SerializedToolModel: Hashable, Sendable, ObservableObject {
     public final class WritableDraft {
         weak private var owner: SerializedToolModel?
         private var position: Int
+        private var name: String
+        private var assetsImageName: String
+        private var tab: String
+        private var _isSolver: Bool
+        
+        private var didPositionUpdate: Bool = false
+        private var didNameUpdate: Bool = false
+        private var didAssetsImageNameUpdate: Bool = false
+        private var didTabUpdate: Bool = false
+        private var didIsSolverUpdate: Bool = false
         
         internal init(from: SerializedToolModel) {
             self.owner = from
             self.position = from.getPosition()
+            self.name = from.getName()
+            self._isSolver = from.isSolver()
+            self.assetsImageName = from.getAssetsImageName()
+            self.tab = from.getTab()
         }
         
-        public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
-            self.position = newPosition
+        @discardableResult public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
+            if self.position != newPosition {
+                self.position = newPosition
+                self.didPositionUpdate = true
+            }
             return self
+        }
+        
+        internal final func didPositionChange() -> Bool {
+            return self.didPositionUpdate
+        }
+        
+        public final func getPreviousPosition() -> Int {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `position`.")
+            }
+            return owner.position
+        }
+        
+        @discardableResult public final func withName(_ newName: String) -> Self {
+            if self.name != newName {
+                self.name = newName.lowercased()
+                self.didNameUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didNameChange() -> Bool {
+            return self.didNameUpdate
+        }
+        
+        public final func getPreviousName() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `name`.")
+            }
+            return owner.name
+        }
+
+        
+        @discardableResult public final func withAssetsImageName(_ newAssetsImageName: String) -> Self {
+            if self.assetsImageName != newAssetsImageName {
+                self.assetsImageName = newAssetsImageName
+                self.didAssetsImageNameUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didAssetsImageNameChange() -> Bool {
+            return self.didAssetsImageNameUpdate
+        }
+        
+        public final func getPreviousAssetsImageName() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `assetsImageName`.")
+            }
+            return owner.assetsImageName
+        }
+        
+        @discardableResult public final func withTab(_ newTab: String) -> Self {
+            if self.tab != newTab {
+                self.tab = newTab.lowercased()
+                self.didTabUpdate = true
+            }
+            return self
+        }
+        
+        internal final func didTabChange() -> Bool {
+            return self.didTabUpdate
+        }
+        
+        internal final func getPreviousTab() -> String {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner.getTab()
+        }
+        
+        @discardableResult public final func withIsSolver(_ isSolver: Bool) -> Self {
+            if self._isSolver != isSolver {
+                self._isSolver = isSolver
+                self.didIsSolverUpdate = true
+            }
+            return self
+        }
+        
+        public final func isSolver() -> Bool {
+            return self._isSolver
+        }
+        
+        internal final func didIsSolverChange() -> Bool {
+            return self.didIsSolverUpdate
+        }
+        
+        internal final func wasSolver() -> Bool {
+            guard let owner = self.owner else { fatalError("Failed to retain reference to original copy before committing draft.") }
+            return owner._isSolver
+        }
+        
+        public final func getTab() -> String {
+            return self.tab
         }
         
         public final func getPosition() -> Int {
             return self.position
         }
         
-        public final func getImmutableCopy() -> SerializedToolModel {
+        public final func getName() -> String {
+            return self.name
+        }
+                
+        public final func getAssetsImageName() -> String {
+            return self.assetsImageName
+        }
+        
+        
+        public final func getMap() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `map`.")
+            }
+            return owner.map
+        }
+        
+        public final func getGame() -> String {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `game`.")
+            }
+            return owner.game
+        }
+
+        
+        internal final func getImmutableCopy() -> SerializedToolModel {
             guard let owner = self.owner else { fatalError("Failed to retain reference to mutable parent of type \(String(describing: SerializedToolModel.self))") }
             return SerializedToolModel(
-                name: owner.name,
-                position: owner.position,
-                assetsImageName: owner.assetsImageName,
-                tab: owner.tab,
+                name: self.name,
+                position: self.position,
+                assetsImageName: self.assetsImageName,
+                isSolver: owner._isSolver,
+                tab: self.tab,
                 map: owner.map,
                 game: owner.game
             )

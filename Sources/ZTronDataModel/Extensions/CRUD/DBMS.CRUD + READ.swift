@@ -5,8 +5,28 @@ import SQLite
 extension String: ReadImageOptional { }
 extension String: ReadGalleryOptional {  }
 
-extension DBMS.CRUD {
+extension CRUD {
     // MARK: - READ GAMES
+    internal static func readGamePosition(
+        for dbConnection: Connection,
+        game: String
+    ) throws -> Int? {
+        let gameTable = DBMS.game
+        
+        let findMapQuery = gameTable.table.filter(
+            gameTable.nameColumn == game.lowercased()
+        )
+        
+        let positions = try dbConnection.prepare(findMapQuery).map { result in
+            return result[gameTable.positionColumn]
+        }
+        
+        assert(positions.count <= 1)
+        
+        return positions.first
+    }
+    
+    
     public static func readAllGames(
         for dbConnection: Connection,
         options: Set<ReadGamesOption> = Set<ReadGamesOption>([.games])
@@ -24,7 +44,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfMaps) {
             result[.numberOfMaps] = []
             for game in theGames {
-                try result[.numberOfMaps]?.append(DBMS.CRUD.countMapsForGame(for: dbConnection, game: game.getName()))
+                try result[.numberOfMaps]?.append(CRUD.countMapsForGame(for: dbConnection, game: game.getName()))
             }
         }
         
@@ -33,6 +53,50 @@ extension DBMS.CRUD {
 
     
     // MARK: - READ MAPS
+    internal static func readMapPosition(
+        for dbConnection: Connection,
+        game: String,
+        map: String
+    ) throws -> Int? {
+        let mapTable = DBMS.map
+        
+        let findMapQuery = mapTable.table.filter(
+            mapTable.nameColumn == map.lowercased() &&
+            mapTable.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        let positions = try dbConnection.prepare(findMapQuery).map { result in
+            return result[mapTable.positionColumn]
+        }
+        
+        assert(positions.count <= 1)
+        
+        return positions.first
+    }
+    
+    
+    internal static func readMapMaster(
+        for dbConnection: Connection,
+        map: String,
+        game: String
+    ) throws -> SerializedMapModel? {
+        let submaps = DBMS.hasSubmap
+        
+        let findMapQuery = submaps.table.filter(
+            submaps.slaveColumn == map.lowercased() &&
+            submaps.foreignKeys.gameColumn == game.lowercased()
+        )
+        
+        let masters = try dbConnection.prepare(findMapQuery).map { result in
+            return SerializedMapModel(result)
+        }
+        
+        assert(masters.count <= 1)
+        
+        return masters.first
+    }
+    
+    
     public static func readAllMaps(
         for dbConnection: Connection,
         game: String,
@@ -75,7 +139,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfSlaves) {
             result[.numberOfSlaves] = []
             for map in theMaps {
-                try result[.numberOfSlaves]?.append(DBMS.CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfSlaves]?.append(CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -83,7 +147,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTabs) {
             result[.numberOfTabs] = []
             for map in theMaps {
-                try result[.numberOfTabs]?.append(DBMS.CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTabs]?.append(CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -91,15 +155,14 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTools) {
             result[.numberOfTools] = []
             for map in theMaps {
-                try result[.numberOfTools]?.append(DBMS.CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTools]?.append(CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
         return result
     }
 
-    
-    // MARK: - READ MAPS
+
     public static func readAllSubmaps(
         for dbConnection: Connection,
         master: String,
@@ -142,7 +205,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfSlaves) {
             result[.numberOfSlaves] = []
             for map in theMaps {
-                try result[.numberOfSlaves]?.append(DBMS.CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfSlaves]?.append(CRUD.countSubmapsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -150,7 +213,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTabs) {
             result[.numberOfTabs] = []
             for map in theMaps {
-                try result[.numberOfTabs]?.append(DBMS.CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTabs]?.append(CRUD.countTabsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -158,7 +221,7 @@ extension DBMS.CRUD {
         if options.contains(.numberOfTools) {
             result[.numberOfTools] = []
             for map in theMaps {
-                try result[.numberOfTools]?.append(DBMS.CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
+                try result[.numberOfTools]?.append(CRUD.countToolsForMap(for: dbConnection, map: map.getName(), game: map.getGame()))
             }
         }
         
@@ -166,7 +229,79 @@ extension DBMS.CRUD {
     }
 
     
-    //MARK: - READ IMAGE VARIANTS
+    internal static func readSubmapsTree(
+        for dbConnection: Connection,
+        master: String,
+        game: String
+    ) throws -> [SerializedMapModel] {
+        let mapTable = DBMS.map
+        let slavesTable = DBMS.hasSubmap
+        
+        let findAllSubgalleriesQuery: String = """
+        WITH RECURSIVE SubtreeOfMap AS (
+            SELECT
+                \(mapTable.tableName).\(mapTable.nameColumn.template),
+                \(mapTable.tableName).\(mapTable.positionColumn.template),
+                \(mapTable.tableName).\(mapTable.foreignKeys.gameColumn.template)
+            FROM \(mapTable.tableName)
+            WHERE
+                \(mapTable.tableName).\(mapTable.nameColumn.template) = "\(master.lowercased())"
+                AND \(mapTable.tableName).\(mapTable.foreignKeys.gameColumn.template) = "\(game.lowercased())"
+
+            UNION ALL
+
+            SELECT
+                SUBMAP.\(mapTable.nameColumn.template),
+                SUBMAP.\(mapTable.positionColumn.template),
+                SUBMAP.\(mapTable.foreignKeys.gameColumn.template)
+            FROM
+                \(mapTable.tableName) SUBMAP
+            INNER JOIN \(slavesTable.tableName) ON
+                \(slavesTable.tableName).\(slavesTable.slaveColumn.template) = SUBMAP.\(mapTable.nameColumn.template)
+                AND \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template) = SUBMAP.\(mapTable.foreignKeys.gameColumn.template)
+            INNER JOIN SubtreeOfMap ON 
+                        SubtreeOfMap.\(mapTable.nameColumn.template
+        ) = \(slavesTable.tableName).\(slavesTable.masterColumn.template)
+                AND SubtreeOfMap.\(mapTable.foreignKeys.gameColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template)
+        )
+        SELECT * FROM SubtreeOfMap;
+        """
+        
+        var statement: OpaquePointer?
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        if sqlite3_prepare_v2(dbConnection.handle, findAllSubgalleriesQuery, -1, &statement, nil) == SQLITE_OK {
+            var submaps: [SerializedMapModel] = []
+            
+            while sqlite3_step(statement) == SQLITE_ROW {
+                /*
+                 Column 0: name String
+                 Column 1: position Int
+                 Column 2: game: String
+                 */
+                
+                let nameColumn = String(cString: sqlite3_column_text(statement, 0))
+                let positionColumn = sqlite3_column_int(statement, 1)
+                let gameColumn = String(cString: sqlite3_column_text(statement, 2))
+                
+                submaps.append(SerializedMapModel(
+                    name: nameColumn,
+                    position: Int(positionColumn),
+                    game: gameColumn
+                ))
+            }
+            
+            return submaps
+        } else {
+            let errorMessage = String(cString: sqlite3_errmsg(dbConnection.handle))
+            throw SQLQueryError.genericError(reason: errorMessage)
+        }
+    }
+    
+    //MARK: - READ VISUAL MEDIA
     private static func _readFirstLevelMasterImagesForGallery(
         for dbConnection: Connection,
         game: String,
@@ -663,6 +798,377 @@ extension DBMS.CRUD {
         return result
     }
     
+    internal static func readOutlinesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedOutlineModel?] {
+        let outline = DBMS.outline
+        
+        var outlines: [SerializedOutlineModel?] = []
+        
+        for media in medias {
+            if media.getType() == .image {
+                let outlinesForThisImageQuery = outline.table.filter(
+                    outline.foreignKeys.imageColumn == media.getName() &&
+                    outline.foreignKeys.galleryColumn == media.getGallery() &&
+                    outline.foreignKeys.toolColumn == media.getTool() &&
+                    outline.foreignKeys.tabColumn == media.getTab() &&
+                    outline.foreignKeys.mapColumn == media.getMap() &&
+                    outline.foreignKeys.gameColumn == media.getGame()
+                )
+                
+                let outlinesForThisImage = try dbConnection.prepare(outlinesForThisImageQuery)
+                var countOutlines = 0
+                
+                for outlineRow in outlinesForThisImage {
+                    countOutlines += 1
+                    outlines.append(SerializedOutlineModel(outlineRow))
+                }
+                
+                if countOutlines <= 0 {
+                    outlines.append(nil)
+                }
+            } else {
+                outlines.append(nil)
+            }
+        }
+        
+        return outlines
+    }
+
+    internal static func readBoundingCirclesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedBoundingCircleModel?] {
+        let boundingCircle = DBMS.boundingCircle
+        
+        var boundingCircles: [SerializedBoundingCircleModel?] = []
+        
+        for media in medias {
+            if media.getType() == .image {
+                let boundingCirclesForThisImageQuery = boundingCircle.table.filter(
+                    boundingCircle.foreignKeys.imageColumn == media.getName() &&
+                    boundingCircle.foreignKeys.galleryColumn == media.getGallery() &&
+                    boundingCircle.foreignKeys.toolColumn == media.getTool() &&
+                    boundingCircle.foreignKeys.tabColumn == media.getTab() &&
+                    boundingCircle.foreignKeys.mapColumn == media.getMap() &&
+                    boundingCircle.foreignKeys.gameColumn == media.getGame()
+                )
+                
+                let boundingCirclesForThisImage = try dbConnection.prepare(boundingCirclesForThisImageQuery)
+                var countBoundingCircles = 0
+                
+                for boundingCircle in boundingCirclesForThisImage {
+                    countBoundingCircles += 1
+                    boundingCircles.append(SerializedBoundingCircleModel(boundingCircle))
+                }
+                
+                if countBoundingCircles <= 0 {
+                    boundingCircles.append(nil)
+                }
+            } else {
+                boundingCircles.append(nil)
+            }
+        }
+        
+        return boundingCircles
+    }
+    
+    private static func readLabelsForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedLabelsSet?] {
+        let label = DBMS.label
+        
+        var labels: [SerializedLabelsSet?] = []
+        
+        for media in medias {
+            if media.getType() == .image {
+                let labelsForThisImageQuery = label.table.filter(
+                    label.foreignKeys.imageColumn == media.getName() &&
+                    label.foreignKeys.galleryColumn == media.getGallery() &&
+                    label.foreignKeys.toolColumn == media.getTool() &&
+                    label.foreignKeys.tabColumn == media.getTab() &&
+                    label.foreignKeys.mapColumn == media.getMap() &&
+                    label.foreignKeys.gameColumn == media.getGame()
+                )
+                
+                let labelsForThisImage = try dbConnection.prepare(labelsForThisImageQuery)
+                
+                var iLabels = [SerializedLabelModel].init()
+                
+                for label in labelsForThisImage {
+                    iLabels.append(SerializedLabelModel(label))
+                }
+                
+                if iLabels.count <= 0 {
+                    labels.append(nil)
+                } else {
+                    labels.append(SerializedLabelsSet(labels: iLabels))
+                }
+            } else {
+                labels.append(nil)
+            }
+        }
+        
+        return labels
+    }
+    
+    
+    internal static func readVariantsMetadataForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedImageVariantsMetadataSet?] {
+        let variant = DBMS.imageVariant
+        
+        var variants: [SerializedImageVariantsMetadataSet?] = []
+        
+        for media in medias.enumerated() {
+            if media.element.getType() == .image {
+                let variantsForThisImageQuery = variant.table.filter(
+                    variant.masterColumn == media.element.getName() &&
+                    variant.foreignKeys.galleryColumn == media.element.getGallery() &&
+                    variant.foreignKeys.toolColumn == media.element.getTool() &&
+                    variant.foreignKeys.tabColumn == media.element.getTab() &&
+                    variant.foreignKeys.mapColumn == media.element.getMap() &&
+                    variant.foreignKeys.gameColumn == media.element.getGame()
+                )
+                
+                let variantsForThisImage = try dbConnection.prepare(variantsForThisImageQuery)
+                var iVariants: [SerializedImageVariantMetadataModel] = []
+                
+                for variant in variantsForThisImage {
+                    iVariants.append(SerializedImageVariantMetadataModel(variant))
+                }
+                
+                if iVariants.count <= 0 {
+                    variants.append(nil)
+                } else {
+                    variants.append(SerializedImageVariantsMetadataSet(variants: iVariants))
+                }
+            } else {
+                variants.append(nil)
+            }
+        }
+        
+        return variants
+    }
+    
+    /// Returns from database the set of all the top level `master`s for the specified gallery, along with the requested optionals.
+    ///
+    /// - Parameter gallery: The name of the gallery to load master images for. If `nil`, all the images for the tool are loaded instead
+    /// - Optionals:
+    ///     - **images**: This is always included. The images models are always included regardless of whether or not you explicitly include this option. Also,
+    ///     the associated array never contains optionals, so it's safe to cast to `[SerializedImageModel]`.
+    ///     - **outlines**: If included, a set of all the outlines for each image in `.images` will be included under `.outlines`. If an image doesn't have an outline
+    ///     associated with it, a `nil` value will be included instead. The result is safe to cast to `[SerializedOutlineModel?]`.
+    ///     - **boundingCircles** : If included, a set of all the bounding circles for each image in `.images` will be included under `.boundingCircles`. If an image doesn't
+    ///     have a bounding circle associated with it, a `nil` value will be included instead. The result is safe to cast to `[SerializedBoundingCircleModel?]`.
+    ///     - **labels**: If included, a set of all the labels for each image in `.images` will be included under `.labels`. If an image doesn't
+    ///     have any label associated with it, a `nil` value will be included instead. The result is safe to cast to `[SerializedLabelsSet?]`.
+    ///     - **variantsMetadatas**: If included, a set of all the metadata for variants of each image in `.images` will be included under `.variantsMetadata`.
+    ///      If an image doesn't have any variant associated with it, a `nil` value will be included instead.
+    ///      The result is safe to cast to `[SerializedImageVariantsMetadataSet?]`.
+    ///
+    /// If an option is not included, the associated value in the returned dictionary will be `nil`. This way, it is guaranteed that when an array is not `nil`, it will have the same
+    /// size as `.images`.
+    ///
+    /// The association between an image and its outline, bounding circle, label and so on, is by index. This means that the outline for the first image in `.images` will
+    /// take the first position in `.outlines` and so on.
+    public static func readFirstLevelMasterImagesForGallery(
+        for dbConnection: Connection,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String?,
+        options: Set<ReadImageOption> = Set<ReadImageOption>([.medias])
+    ) throws -> [ReadImageOption: [(any ReadImageOptional)?]] {
+        var imagesWithOptionals: [ReadImageOption: [(any ReadImageOptional)?]] = [:]
+        
+        let medias = try self._readFirstLevelMasterImagesForGallery(
+            for: dbConnection,
+            game: game,
+            map: map,
+            tab: tab,
+            tool: tool,
+            gallery: gallery
+        )
+        
+        if options.contains(.outlines) {
+            imagesWithOptionals[.outlines] = try self.readOutlinesForMediasSet(for: dbConnection, medias: medias)
+        }
+        
+        if options.contains(.boundingCircles) {
+            imagesWithOptionals[.boundingCircles] = try self.readBoundingCirclesForMediasSet(
+                for: dbConnection,
+                medias: medias
+            )
+        }
+        
+        if options.contains(.labels) {
+            imagesWithOptionals[.labels] = try self.readLabelsForMediasSet(for: dbConnection, medias: medias)
+        }
+        
+        if options.contains(.variantsMetadatas) {
+            imagesWithOptionals[.variantsMetadatas] = try self.readVariantsMetadataForMediasSet(
+                for: dbConnection,
+                medias: medias
+            )
+        }
+        
+        if options.contains(.masters) {
+            imagesWithOptionals[.masters] = [String?].init(repeating: nil, count: medias.count)
+        }
+        
+        imagesWithOptionals[.medias] = medias
+        
+        return imagesWithOptionals
+    }
+    
+    /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+    /// - `PK(name, gallery, tool, tab, map, game)`
+    /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    internal static func readImageMaster(
+        for dbConnection: Connection,
+        slave: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String
+    ) throws -> (any SerializedVisualMediaModel)? {
+        let slavesTable = DBMS.imageVariant
+        let imagesTable = DBMS.visualMedia
+        
+        let findMasterQuery = imagesTable.table
+            .select(
+                imagesTable.table[imagesTable.nameColumn],
+                imagesTable.table[imagesTable.descriptionColumn],
+                imagesTable.table[imagesTable.positionColumn],
+                imagesTable.table[imagesTable.searchLabelColumn],
+                imagesTable.table[imagesTable.typeColumn],
+                imagesTable.table[imagesTable.extensionColumn],
+                imagesTable.table[imagesTable.foreignKeys.gameColumn],
+                imagesTable.table[imagesTable.foreignKeys.mapColumn],
+                imagesTable.table[imagesTable.foreignKeys.tabColumn],
+                imagesTable.table[imagesTable.foreignKeys.toolColumn],
+                imagesTable.table[imagesTable.foreignKeys.galleryColumn]
+            )
+            .join(
+                slavesTable.table,
+                on: slavesTable.table[slavesTable.slaveColumn] == slave &&
+                slavesTable.table[slavesTable.masterColumn] == imagesTable.table[imagesTable.nameColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.gameColumn] == imagesTable.table[imagesTable.foreignKeys.gameColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.mapColumn] == imagesTable.table[imagesTable.foreignKeys.mapColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.tabColumn] == imagesTable.table[imagesTable.foreignKeys.tabColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.toolColumn] == imagesTable.table[imagesTable.foreignKeys.toolColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.galleryColumn] == imagesTable.table[imagesTable.foreignKeys.galleryColumn]
+        )
+        
+        let masters: [any SerializedVisualMediaModel] = try dbConnection.prepare(findMasterQuery).map { result in
+            switch result[imagesTable.typeColumn] {
+            case "image":
+                return SerializedImageModel(result, namespaceColumns: true)
+                
+            case "video":
+                return SerializedVideoModel(result, namespaceColumns: true)
+                
+            default:
+                fatalError("Unable to make READ model for media of type \(result[imagesTable.typeColumn])")
+            }
+        }
+
+        assert(masters.count <= 1)
+        return masters.first
+    }
+    
+    /// Reads the first level of slave visual medias for the specified master
+    ///
+    /// - `VisualMedia(type, extension, name, description, position, searchLabel, gallery, tool, tab, map, game)`
+    /// - `PK(name, gallery, tool, tab, map, game)`
+    /// - `FK(gallery, tool, tab, map, game) REFERENCES GALLERY(name, tool, tab, map, game)`
+    internal static func readAllVariants(
+        for dbConnection: Connection,
+        master: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String
+    ) throws -> [any SerializedVisualMediaModel] {
+        let slavesTable = DBMS.imageVariant
+        let imagesTable = DBMS.visualMedia
+        
+        let findSlavesQuery = imagesTable.table
+            .select(
+                imagesTable.table[imagesTable.nameColumn],
+                imagesTable.table[imagesTable.descriptionColumn],
+                imagesTable.table[imagesTable.positionColumn],
+                imagesTable.table[imagesTable.searchLabelColumn],
+                imagesTable.table[imagesTable.typeColumn],
+                imagesTable.table[imagesTable.extensionColumn],
+                imagesTable.table[imagesTable.foreignKeys.gameColumn],
+                imagesTable.table[imagesTable.foreignKeys.mapColumn],
+                imagesTable.table[imagesTable.foreignKeys.tabColumn],
+                imagesTable.table[imagesTable.foreignKeys.toolColumn],
+                imagesTable.table[imagesTable.foreignKeys.galleryColumn]
+            )
+            .join(
+                slavesTable.table,
+                on: slavesTable.table[slavesTable.slaveColumn] == imagesTable.table[imagesTable.nameColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.gameColumn] == imagesTable.table[imagesTable.foreignKeys.gameColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.mapColumn] == imagesTable.table[imagesTable.foreignKeys.mapColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.tabColumn] == imagesTable.table[imagesTable.foreignKeys.tabColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.toolColumn] == imagesTable.table[imagesTable.foreignKeys.toolColumn] &&
+                slavesTable.table[slavesTable.foreignKeys.galleryColumn] == imagesTable.table[imagesTable.foreignKeys.galleryColumn]
+            )
+            .filter(
+                slavesTable.table[slavesTable.foreignKeys.gameColumn] == game.lowercased() &&
+                slavesTable.table[slavesTable.foreignKeys.mapColumn] == map.lowercased() &&
+                slavesTable.table[slavesTable.foreignKeys.tabColumn] == tab.lowercased() &&
+                slavesTable.table[slavesTable.foreignKeys.toolColumn] == tool.lowercased() &&
+                slavesTable.table[slavesTable.foreignKeys.galleryColumn] == gallery.lowercased() &&
+                slavesTable.table[slavesTable.masterColumn] == master.lowercased()
+            )
+            .order(imagesTable.table[imagesTable.positionColumn])
+        
+        
+        let variants: [any SerializedVisualMediaModel] = try dbConnection.prepare(findSlavesQuery).map { result in
+            switch result[imagesTable.typeColumn] {
+                case "image":
+                    return SerializedImageModel(result, namespaceColumns: true)
+                    
+                case "video":
+                    return SerializedVideoModel(result, namespaceColumns: true)
+                    
+                default:
+                    fatalError("Unable to create serialized READ model from type \(result[imagesTable.typeColumn])")
+                }
+        }
+        
+        return variants
+    }
+    
+    
+    internal static func readImagePosition(
+        for dbConnection: Connection,
+        image: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String
+    ) throws -> Int? {
+        let visualMediaTable = DBMS.visualMedia
+        
+        let findImageQuery = visualMediaTable.table.filter(
+            visualMediaTable.nameColumn == image.lowercased() &&
+            visualMediaTable.foreignKeys.gameColumn == game.lowercased() &&
+            visualMediaTable.foreignKeys.mapColumn == map.lowercased() &&
+            visualMediaTable.foreignKeys.tabColumn == tab.lowercased() &&
+            visualMediaTable.foreignKeys.toolColumn == tool.lowercased() &&
+            visualMediaTable.foreignKeys.galleryColumn == gallery.lowercased()
+        )
+        
+        
+        let positions = try dbConnection.prepare(findImageQuery).map { result in
+            return result[visualMediaTable.positionColumn]
+        }
+        
+        assert(positions.count <= 1)
+        
+        return positions.first
+    }
+    
     //MARK: - READ FIRST LAYER OF GALLERIES
     private static func readFirstLevelOfGalleriesForTool(
         for dbConnection: Connection,
@@ -822,223 +1328,7 @@ extension DBMS.CRUD {
         return result
     }
     
-    
-    private static func readOutlinesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedOutlineModel?] {
-        let outline = DBMS.outline
-        
-        var outlines: [SerializedOutlineModel?] = []
-        
-        for media in medias {
-            if media.getType() == .image {
-                let outlinesForThisImageQuery = outline.table.filter(
-                    outline.foreignKeys.imageColumn == media.getName() &&
-                    outline.foreignKeys.galleryColumn == media.getGallery() &&
-                    outline.foreignKeys.toolColumn == media.getTool() &&
-                    outline.foreignKeys.tabColumn == media.getTab() &&
-                    outline.foreignKeys.mapColumn == media.getMap() &&
-                    outline.foreignKeys.gameColumn == media.getGame()
-                )
-                
-                let outlinesForThisImage = try dbConnection.prepare(outlinesForThisImageQuery)
-                var countOutlines = 0
-                
-                for outlineRow in outlinesForThisImage {
-                    countOutlines += 1
-                    outlines.append(SerializedOutlineModel(outlineRow))
-                }
-                
-                if countOutlines <= 0 {
-                    outlines.append(nil)
-                }
-            } else {
-                outlines.append(nil)
-            }
-        }
-        
-        return outlines
-    }
 
-    private static func readBoundingCirclesForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedBoundingCircleModel?] {
-        let boundingCircle = DBMS.boundingCircle
-        
-        var boundingCircles: [SerializedBoundingCircleModel?] = []
-        
-        for media in medias {
-            if media.getType() == .image {
-                let boundingCirclesForThisImageQuery = boundingCircle.table.filter(
-                    boundingCircle.foreignKeys.imageColumn == media.getName() &&
-                    boundingCircle.foreignKeys.galleryColumn == media.getGallery() &&
-                    boundingCircle.foreignKeys.toolColumn == media.getTool() &&
-                    boundingCircle.foreignKeys.tabColumn == media.getTab() &&
-                    boundingCircle.foreignKeys.mapColumn == media.getMap() &&
-                    boundingCircle.foreignKeys.gameColumn == media.getGame()
-                )
-                
-                let boundingCirclesForThisImage = try dbConnection.prepare(boundingCirclesForThisImageQuery)
-                var countBoundingCircles = 0
-                
-                for boundingCircle in boundingCirclesForThisImage {
-                    countBoundingCircles += 1
-                    boundingCircles.append(SerializedBoundingCircleModel(boundingCircle))
-                }
-                
-                if countBoundingCircles <= 0 {
-                    boundingCircles.append(nil)
-                }
-            } else {
-                boundingCircles.append(nil)
-            }
-        }
-        
-        return boundingCircles
-    }
-    
-    private static func readLabelsForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedLabelsSet?] {
-        let label = DBMS.label
-        
-        var labels: [SerializedLabelsSet?] = []
-        
-        for media in medias {
-            if media.getType() == .image {
-                let labelsForThisImageQuery = label.table.filter(
-                    label.foreignKeys.imageColumn == media.getName() &&
-                    label.foreignKeys.galleryColumn == media.getGallery() &&
-                    label.foreignKeys.toolColumn == media.getTool() &&
-                    label.foreignKeys.tabColumn == media.getTab() &&
-                    label.foreignKeys.mapColumn == media.getMap() &&
-                    label.foreignKeys.gameColumn == media.getGame()
-                )
-                
-                let labelsForThisImage = try dbConnection.prepare(labelsForThisImageQuery)
-                
-                var iLabels = [SerializedLabelModel].init()
-                
-                for label in labelsForThisImage {
-                    iLabels.append(SerializedLabelModel(label))
-                }
-                
-                if iLabels.count <= 0 {
-                    labels.append(nil)
-                } else {
-                    labels.append(SerializedLabelsSet(labels: iLabels))
-                }
-            } else {
-                labels.append(nil)
-            }
-        }
-        
-        return labels
-    }
-    
-    private static func readVariantsMetadataForMediasSet(for dbConnection: Connection, medias: [any SerializedVisualMediaModel]) throws -> [SerializedImageVariantsMetadataSet?] {
-        let variant = DBMS.imageVariant
-        
-        var variants: [SerializedImageVariantsMetadataSet?] = []
-        
-        for media in medias.enumerated() {
-            if media.element.getType() == .image {
-                let variantsForThisImageQuery = variant.table.filter(
-                    variant.masterColumn == media.element.getName() &&
-                    variant.foreignKeys.galleryColumn == media.element.getGallery() &&
-                    variant.foreignKeys.toolColumn == media.element.getTool() &&
-                    variant.foreignKeys.tabColumn == media.element.getTab() &&
-                    variant.foreignKeys.mapColumn == media.element.getMap() &&
-                    variant.foreignKeys.gameColumn == media.element.getGame()
-                )
-                
-                let variantsForThisImage = try dbConnection.prepare(variantsForThisImageQuery)
-                var iVariants: [SerializedImageVariantMetadataModel] = []
-                
-                for variant in variantsForThisImage {
-                    iVariants.append(SerializedImageVariantMetadataModel(variant))
-                }
-                
-                if iVariants.count <= 0 {
-                    variants.append(nil)
-                } else {
-                    variants.append(SerializedImageVariantsMetadataSet(variants: iVariants))
-                }
-            } else {
-                variants.append(nil)
-            }
-        }
-        
-        return variants
-    }
-    
-    /// Returns from database the set of all the top level `master`s for the specified gallery, along with the requested optionals.
-    ///
-    /// - Parameter gallery: The name of the gallery to load master images for. If `nil`, all the images for the tool are loaded instead
-    /// - Optionals:
-    ///     - **images**: This is always included. The images models are always included regardless of whether or not you explicitly include this option. Also,
-    ///     the associated array never contains optionals, so it's safe to cast to `[SerializedImageModel]`.
-    ///     - **outlines**: If included, a set of all the outlines for each image in `.images` will be included under `.outlines`. If an image doesn't have an outline
-    ///     associated with it, a `nil` value will be included instead. The result is safe to cast to `[SerializedOutlineModel?]`.
-    ///     - **boundingCircles** : If included, a set of all the bounding circles for each image in `.images` will be included under `.boundingCircles`. If an image doesn't
-    ///     have a bounding circle associated with it, a `nil` value will be included instead. The result is safe to cast to `[SerializedBoundingCircleModel?]`.
-    ///     - **labels**: If included, a set of all the labels for each image in `.images` will be included under `.labels`. If an image doesn't
-    ///     have any label associated with it, a `nil` value will be included instead. The result is safe to cast to `[SerializedLabelsSet?]`.
-    ///     - **variantsMetadatas**: If included, a set of all the metadata for variants of each image in `.images` will be included under `.variantsMetadata`.
-    ///      If an image doesn't have any variant associated with it, a `nil` value will be included instead. 
-    ///      The result is safe to cast to `[SerializedImageVariantsMetadataSet?]`.
-    ///
-    /// If an option is not included, the associated value in the returned dictionary will be `nil`. This way, it is guaranteed that when an array is not `nil`, it will have the same
-    /// size as `.images`.
-    ///
-    /// The association between an image and its outline, bounding circle, label and so on, is by index. This means that the outline for the first image in `.images` will
-    /// take the first position in `.outlines` and so on.
-    public static func readFirstLevelMasterImagesForGallery(
-        for dbConnection: Connection,
-        game: String,
-        map: String,
-        tab: String,
-        tool: String,
-        gallery: String?,
-        options: Set<ReadImageOption> = Set<ReadImageOption>([.medias])
-    ) throws -> [ReadImageOption: [(any ReadImageOptional)?]] {
-        var imagesWithOptionals: [ReadImageOption: [(any ReadImageOptional)?]] = [:]
-        
-        let medias = try self._readFirstLevelMasterImagesForGallery(
-            for: dbConnection,
-            game: game,
-            map: map,
-            tab: tab,
-            tool: tool,
-            gallery: gallery
-        )
-        
-        if options.contains(.outlines) {
-            imagesWithOptionals[.outlines] = try self.readOutlinesForMediasSet(for: dbConnection, medias: medias)
-        }
-        
-        if options.contains(.boundingCircles) {
-            imagesWithOptionals[.boundingCircles] = try self.readBoundingCirclesForMediasSet(
-                for: dbConnection,
-                medias: medias
-            )
-        }
-        
-        if options.contains(.labels) {
-            imagesWithOptionals[.labels] = try self.readLabelsForMediasSet(for: dbConnection, medias: medias)
-        }
-        
-        if options.contains(.variantsMetadatas) {
-            imagesWithOptionals[.variantsMetadatas] = try self.readVariantsMetadataForMediasSet(
-                for: dbConnection,
-                medias: medias
-            )
-        }
-        
-        if options.contains(.masters) {
-            imagesWithOptionals[.masters] = [String?].init(repeating: nil, count: medias.count)
-        }
-        
-        imagesWithOptionals[.medias] = medias
-        
-        return imagesWithOptionals
-    }
-    
-    
     // MARK: - GALLERIES
     public static func readSearchToken(
         for dbConnection: Connection,
@@ -1085,7 +1375,7 @@ extension DBMS.CRUD {
     ///     - **master:** The id of the master of the specified image if exists, nil otherwise.
     ///     - **subgalleriesCount:** The number slaves galleries for the specified gallery.
     ///     - **nestedLevel:** The depth at which the specified gallery appears in the galleries graph.
-    ///
+    ///     - **maxDepth:** The maximum depth of a gallery for this tool. Returned as an array of a single element
     ///
     /// The association between a gallery and its outline, bounding circle, label and so on, is by foreign key. In general, a gallery and a token that occupy the same index in the output arrays won't be associated
     /// with one another.
@@ -1138,7 +1428,7 @@ extension DBMS.CRUD {
             var imagesCounts: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                imagesCounts[index] = try DBMS.CRUD.countImagesForGallery(
+                imagesCounts[index] = try CRUD.countImagesForGallery(
                     includeVariants: false,
                     for: dbConnection,
                     game: game,
@@ -1156,7 +1446,7 @@ extension DBMS.CRUD {
             var subgalleriesCount: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                subgalleriesCount[index] = try DBMS.CRUD.countSubgalleriesForGallery(
+                subgalleriesCount[index] = try CRUD.countSubgalleriesForGallery(
                     for: dbConnection,
                     master: gallery.getName(),
                     game: game,
@@ -1171,6 +1461,18 @@ extension DBMS.CRUD {
         
         if options.contains(.nestingLevel) {
             galleriesWithOptions[.nestingLevel] = .init(repeating: 0, count: galleries.count)
+        }
+        
+        if options.contains(.maxDepth) {
+            let maxDepth = try Self.readMaxDepthOfGalleryForTool(
+                for: dbConnection,
+                game: game,
+                map: map,
+                tab: tab,
+                tool: tool
+            )
+            
+            galleriesWithOptions[.maxDepth] = [maxDepth]
         }
         
         return galleriesWithOptions
@@ -1249,7 +1551,6 @@ extension DBMS.CRUD {
             master: gallery
         )
         
-        
         galleriesWithOptions[.galleries] = galleries
         
         if options.contains(.searchToken) {
@@ -1297,7 +1598,7 @@ extension DBMS.CRUD {
             var imagesCounts: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                imagesCounts[index] = try DBMS.CRUD.countImagesForGallery(
+                imagesCounts[index] = try CRUD.countImagesForGallery(
                     includeVariants: false,
                     for: dbConnection,
                     game: game,
@@ -1315,7 +1616,7 @@ extension DBMS.CRUD {
             var subgalleriesCount: [Int] = .init(repeating: 0, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                subgalleriesCount[index] = try DBMS.CRUD.countSubgalleriesForGallery(
+                subgalleriesCount[index] = try CRUD.countSubgalleriesForGallery(
                     for: dbConnection,
                     master: gallery.getName(),
                     game: game,
@@ -1328,11 +1629,29 @@ extension DBMS.CRUD {
             galleriesWithOptions[.subgalleriesCount] = subgalleriesCount
         }
         
+        if options.contains(.maxDepth) {
+            var maxDepths: [Int?] = .init(repeating: 0, count: galleries.count)
+            
+            for (index, gallery) in galleries.enumerated() {
+                maxDepths[index] = try CRUD.readMaxDepthOfSubgalleryRootedInGallery(
+                    for: dbConnection,
+                    master: gallery.getName(),
+                    game: game,
+                    map: map,
+                    tab: tab,
+                    tool: tool
+                )
+            }
+
+            
+            galleriesWithOptions[.subgalleriesCount] = maxDepths
+        }
+        
         if options.contains(.nestingLevel) {
             var nestingLevels: [Int] = .init(repeating: -1, count: galleries.count)
             
             for (index, gallery) in galleries.enumerated() {
-                nestingLevels[index] = try DBMS.CRUD.readGalleryNestingDepth(
+                nestingLevels[index] = try CRUD.readGalleryNestingDepth(
                     for: dbConnection,
                     gallery: gallery.getName(),
                     tool: game,
@@ -1349,6 +1668,8 @@ extension DBMS.CRUD {
         return galleriesWithOptions
     }
     
+    
+    // MARK: - TAB
     
     /// - `TAB(name, position, iconName, map, game)`
     public static func readTabsForMap(
@@ -1384,34 +1705,41 @@ extension DBMS.CRUD {
     }
     
     
-    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
-    public static func readToolsForTab(
+    /// - `TAB(name, position, iconName, map, game)`
+    /// - `PK(name, map, game)`
+    /// - `FK(map, game) REFERENCES MAP(name, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func readTabPosition(
         for dbConnection: Connection,
         game: String,
         map: String,
         tab: String
-    ) throws -> [SerializedToolModel] {
-        let tools = DBMS.tool
+    ) throws -> Int? {
+        let tabTable = DBMS.tab
         
-        let findToolsQuery = tools.table
-            .filter(
-                tools.foreignKeys.gameColumn == game &&
-                tools.foreignKeys.mapColumn == map &&
-                tools.foreignKeys.tabColumn == tab
-            ).order(tools.positionColumn)
+        let findToolQuery = tabTable.table.filter(
+            tabTable.nameColumn == tab.lowercased() &&
+            tabTable.foreignKeys.gameColumn == game.lowercased() &&
+            tabTable.foreignKeys.mapColumn == map.lowercased()
+        )
         
-        return try dbConnection.prepare(findToolsQuery).map { result in
-            return SerializedToolModel(result)
+        let positions = try dbConnection.prepare(findToolQuery).map { result in
+            return result[tabTable.positionColumn]
         }
+        
+        assert(positions.count <= 1)
+        
+        return positions.first
     }
+    
+    
     
     public static func readGalleryNestingDepth(
         for dbConnection: Connection,
-        gallery: String,
-        tool: String,
-        tab: String,
-        map: String,
         game: String,
+        map: String,
+        tab: String,
+        tool: String,
+        gallery: String
     ) throws -> Int? {
         let galleryTable = DBMS.gallery
         let slavesTable = DBMS.subgallery
@@ -1427,10 +1755,10 @@ extension DBMS.CRUD {
                 0 AS depth
             FROM \(galleryTable.tableName)
             WHERE \(galleryTable.tableName).\(galleryTable.nameColumn.template) = "\(gallery)"
-              AND \(galleryTable.foreignKeys.toolColumn.template) = "\(tool)"
-              AND \(galleryTable.foreignKeys.tabColumn.template) = "\(tab)"
-              AND \(galleryTable.foreignKeys.mapColumn.template) = "\(map)"
-              AND \(galleryTable.foreignKeys.gameColumn.template) = "\(game)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template) = "\(tool)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template) = "\(tab)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template) = "\(map)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template) = "\(game)"
 
             UNION ALL
 
@@ -1444,10 +1772,10 @@ extension DBMS.CRUD {
             FROM GALLERY_SLAVES
             JOIN \(slavesTable.tableName)
               ON \(slavesTable.tableName).\(slavesTable.slaveColumn.template) = GALLERY_SLAVES.\(galleryTable.nameColumn.template)
-             AND \(slavesTable.tableName).tool = GALLERY_SLAVES.\(galleryTable.foreignKeys.toolColumn.template)
-             AND \(slavesTable.tableName).tab = GALLERY_SLAVES.\(galleryTable.foreignKeys.tabColumn.template)
-             AND \(slavesTable.tableName).map = GALLERY_SLAVES.\(galleryTable.foreignKeys.mapColumn.template)
-             AND \(slavesTable.tableName).game = GALLERY_SLAVES.\(galleryTable.foreignKeys.gameColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template) = GALLERY_SLAVES.\(galleryTable.foreignKeys.toolColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template) = GALLERY_SLAVES.\(galleryTable.foreignKeys.tabColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template) = GALLERY_SLAVES.\(galleryTable.foreignKeys.mapColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template) = GALLERY_SLAVES.\(galleryTable.foreignKeys.gameColumn.template)
             JOIN \(galleryTable.tableName) GALLERY_MASTERS
               ON GALLERY_MASTERS.\(galleryTable.nameColumn.template) = \(slavesTable.tableName).\(slavesTable.masterColumn.template)
              AND GALLERY_MASTERS.\(galleryTable.foreignKeys.toolColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template)
@@ -1470,8 +1798,12 @@ extension DBMS.CRUD {
         if sqlite3_prepare_v2(dbConnection.handle, query, -1, &statement, nil) == SQLITE_OK {
             var depths: [Int] = []
             while sqlite3_step(statement) == SQLITE_ROW {
-                let depth = sqlite3_column_int(statement, 0)
-                depths.append(Int(depth))
+                if sqlite3_column_type(statement, 0) == SQLITE_NULL {
+                    return nil
+                } else {
+                    let depth = sqlite3_column_int(statement, 0)
+                    depths.append(Int(depth))
+                }
             }
             
             assert(depths.count == 1)
@@ -1482,7 +1814,419 @@ extension DBMS.CRUD {
         }
         
     }
+    
+    
+    public static func readMaxDepthOfGalleryForTool(
+        for dbConnection: Connection,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String
+    ) throws -> Int? {
+        let galleryTable = DBMS.gallery
+        let slavesTable = DBMS.subgallery
+        
+        let maxDepthQuery: String = """
+        WITH RECURSIVE GalleryDepth(\(galleryTable.nameColumn.template), \(galleryTable.foreignKeys.toolColumn.template), \(galleryTable.foreignKeys.tabColumn.template), \(galleryTable.foreignKeys.mapColumn.template), \((galleryTable.foreignKeys.gameColumn.template)), depth) AS (
+            SELECT \(galleryTable.tableName).\(galleryTable.nameColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template),
+                   CASE
+                       WHEN (SELECT COUNT(*) 
+                             FROM \(galleryTable.tableName) g2
+                             WHERE g2.\(galleryTable.foreignKeys.toolColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template)
+                               AND g2.\(galleryTable.foreignKeys.tabColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template)
+                               AND g2.\(galleryTable.foreignKeys.mapColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template)
+                               AND g2.\(galleryTable.foreignKeys.gameColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template)
+                            ) = 1
+                       THEN 0
+                       ELSE 1
+                   END AS depth
+            FROM \(galleryTable.tableName)
+            WHERE \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template) = "\(tool)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template)  = "\(tab)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template)  = "\(map)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template)  = "\(game)"
+
+            UNION ALL
+
+            SELECT child.\(galleryTable.nameColumn.template), child.\(galleryTable.foreignKeys.toolColumn.template), child.\(galleryTable.foreignKeys.tabColumn.template), child.\(galleryTable.foreignKeys.mapColumn.template), child.\(galleryTable.foreignKeys.gameColumn.template), gd.depth + 1
+            FROM GalleryDepth gd
+            JOIN \(slavesTable.tableName)
+              ON \(slavesTable.tableName).\(slavesTable.masterColumn.template) = gd.\(galleryTable.nameColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template) = gd.\(galleryTable.foreignKeys.toolColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template) = gd.\(galleryTable.foreignKeys.tabColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template) = gd.\(galleryTable.foreignKeys.mapColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template) = gd.\(galleryTable.foreignKeys.gameColumn.template)
+            JOIN \(galleryTable.tableName) child
+              ON child.\(galleryTable.nameColumn.template) = \(slavesTable.tableName).\(slavesTable.slaveColumn.template)
+             AND child.\(galleryTable.foreignKeys.toolColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template)
+             AND child.\(galleryTable.foreignKeys.tabColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template)
+             AND child.\(galleryTable.foreignKeys.mapColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template)
+             AND child.\(galleryTable.foreignKeys.gameColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template)
+        )
+        SELECT MAX(depth) AS max_depth
+        FROM GalleryDepth;
+        """
+        
+        var statement: OpaquePointer?
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        if sqlite3_prepare_v2(dbConnection.handle, maxDepthQuery, -1, &statement, nil) == SQLITE_OK {
+            var depths: [Int] = []
+            while sqlite3_step(statement) == SQLITE_ROW {
+                if sqlite3_column_type(statement, 0) == SQLITE_NULL {
+                    return nil
+                } else {
+                    let depth = sqlite3_column_int(statement, 0)
+                    depths.append(Int(depth))
+                }
+            }
+            
+            assert(depths.count == 1)
+            return depths.first
+        } else {
+            let errorMessage = String(cString: sqlite3_errmsg(dbConnection.handle))
+            throw SQLQueryError.genericError(reason: errorMessage)
+        }
+        
+    }
+    
+    /// Returns the depth of a tree with root in the specified master gallery. It returns
+    public static func readMaxDepthOfSubgalleryRootedInGallery(
+        for dbConnection: Connection,
+        master: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String
+    ) throws -> Int? {
+        let galleryTable = DBMS.gallery
+        let slavesTable = DBMS.subgallery
+        
+        let maxDepthQuery: String = """
+        WITH RECURSIVE GalleryDepth(\(galleryTable.nameColumn), \(galleryTable.foreignKeys.toolColumn.template), \(galleryTable.foreignKeys.tabColumn.template), \(galleryTable.foreignKeys.mapColumn.template), \(galleryTable.foreignKeys.gameColumn.template), depth) AS (
+            SELECT \(galleryTable.tableName).\(galleryTable.nameColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template), \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template),
+                   0 AS depth
+            FROM GALLERY
+            WHERE \(galleryTable.tableName).\(galleryTable.nameColumn.template) = "\(master)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template) = "\(tool)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template) = "\(tab)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template) = "\(map)"
+              AND \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template) =  "\(game)"
+
+            UNION ALL
+
+            SELECT child.\(galleryTable.nameColumn.template), child.\(galleryTable.foreignKeys.toolColumn.template), child.\(galleryTable.foreignKeys.tabColumn.template), child.\(galleryTable.foreignKeys.mapColumn.template), child.\(galleryTable.foreignKeys.gameColumn.template), gd.depth + 1
+            FROM GalleryDepth gd
+            JOIN \(slavesTable.tableName)
+              ON \(slavesTable.tableName).\(slavesTable.masterColumn.template) = gd.\(galleryTable.nameColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template) = gd.\(galleryTable.foreignKeys.toolColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template) = gd.\(galleryTable.foreignKeys.tabColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template) = gd.\(galleryTable.foreignKeys.mapColumn.template)
+             AND \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template) = gd.\(galleryTable.foreignKeys.gameColumn.template)
+            JOIN \(galleryTable.tableName) child
+              ON child.\(galleryTable.nameColumn.template) = \(slavesTable.tableName).\(slavesTable.slaveColumn.template)
+             AND child.\(galleryTable.foreignKeys.toolColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template)
+             AND child.\(galleryTable.foreignKeys.tabColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template)
+             AND child.\(galleryTable.foreignKeys.mapColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template)
+             AND child.\(galleryTable.foreignKeys.gameColumn.template) = \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template)
+        )
+        SELECT MAX(depth) AS max_depth
+        FROM GalleryDepth;
+        """
+        
+        var statement: OpaquePointer?
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        if sqlite3_prepare_v2(dbConnection.handle, maxDepthQuery, -1, &statement, nil) == SQLITE_OK {
+            var depths: [Int] = []
+            while sqlite3_step(statement) == SQLITE_ROW {
+                if sqlite3_column_type(statement, 0) == SQLITE_NULL {
+                    return nil
+                } else {
+                    let depth = sqlite3_column_int(statement, 0)
+                    depths.append(Int(depth))
+                }
+            }
+            
+            assert(depths.count == 1)
+            return depths.first
+        } else {
+            let errorMessage = String(cString: sqlite3_errmsg(dbConnection.handle))
+            throw SQLQueryError.genericError(reason: errorMessage)
+        }
+    }
+    
+    
+    /// Returns a flat list of the subtree of all the galleries with root in the specified master
+    ///
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func readSubgalleryTree(
+        for dbConnection: Connection,
+        master: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String
+    ) throws -> [SerializedGalleryModel] {
+        let galleryTable = DBMS.gallery
+        let slavesTable = DBMS.subgallery
+        
+        let findAllSubgalleriesQuery: String = """
+        WITH RECURSIVE SubtreeOfGallery AS (
+            SELECT
+                \(galleryTable.tableName).\(galleryTable.nameColumn.template),
+                \(galleryTable.tableName).\(galleryTable.positionColumn.template),
+                \(galleryTable.tableName).\(galleryTable.assetsImageNameColumn.template),
+                \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template),
+                \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template),
+                \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template),
+                \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template)
+            FROM \(galleryTable.tableName)
+            WHERE
+                \(galleryTable.tableName).\(galleryTable.nameColumn.template) = "\(master.lowercased())"
+                AND \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template) = "\(tool.lowercased())"
+                AND \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template) = "\(tab.lowercased())"
+                AND \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template) = "\(map.lowercased())"
+                AND \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template) = "\(game.lowercased())"
+
+            UNION ALL
+
+            SELECT
+                SUBGALLERY.\(galleryTable.nameColumn.template),
+                SUBGALLERY.\(galleryTable.positionColumn.template),
+                SUBGALLERY.\(galleryTable.assetsImageNameColumn.template),
+                SUBGALLERY.\(galleryTable.foreignKeys.toolColumn.template),
+                SUBGALLERY.\(galleryTable.foreignKeys.tabColumn.template),
+                SUBGALLERY.\(galleryTable.foreignKeys.mapColumn.template),
+                SUBGALLERY.\(galleryTable.foreignKeys.gameColumn.template)
+            FROM
+                \(galleryTable.tableName) SUBGALLERY
+            INNER JOIN \(slavesTable.tableName) ON
+                \(slavesTable.tableName).\(slavesTable.slaveColumn.template) = SUBGALLERY.\(galleryTable.nameColumn.template)
+                AND \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template) = SUBGALLERY.\(galleryTable.foreignKeys.toolColumn.template)
+                AND \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template) = SUBGALLERY.\(galleryTable.foreignKeys.tabColumn.template)
+                AND \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template) = SUBGALLERY.\(galleryTable.foreignKeys.mapColumn.template)
+                AND \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template) = SUBGALLERY.\(galleryTable.foreignKeys.gameColumn.template)
+            INNER JOIN SubtreeOfGallery ON 
+                SubtreeOfGallery.\(galleryTable.nameColumn.template
+        ) = \(slavesTable.tableName).\(slavesTable.masterColumn.template)
+                AND SubtreeOfGallery.\(galleryTable.foreignKeys.toolColumn) = \(slavesTable.tableName).\(slavesTable.foreignKeys.toolColumn.template)
+                AND SubtreeOfGallery.\(galleryTable.foreignKeys.tabColumn) = \(slavesTable.tableName).\(slavesTable.foreignKeys.tabColumn.template)
+                AND SubtreeOfGallery.\(galleryTable.foreignKeys.mapColumn) = \(slavesTable.tableName).\(slavesTable.foreignKeys.mapColumn.template)
+                AND SubtreeOfGallery.\(galleryTable.foreignKeys.gameColumn) = \(slavesTable.tableName).\(slavesTable.foreignKeys.gameColumn.template)
+        )
+        SELECT * FROM SubtreeOfGallery;
+        """
+        
+        var statement: OpaquePointer?
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        if sqlite3_prepare_v2(dbConnection.handle, findAllSubgalleriesQuery, -1, &statement, nil) == SQLITE_OK {
+            var subgalleries: [SerializedGalleryModel] = []
+            
+            while sqlite3_step(statement) == SQLITE_ROW {
+                /*
+                 Column 0: name String
+                 Column 1: position Int
+                 Column 2: assetsImageName: String?
+                 Column 3: tool: String
+                 Column 4: tab: String
+                 Column 5: map: String
+                 Column 6: game: String
+                 */
+                
+                let nameColumn = String(cString: sqlite3_column_text(statement, 0))
+                let positionColumn = sqlite3_column_int(statement, 1)
+                let assetsImageNameColumn = sqlite3_column_type(statement, 2) != SQLITE_NULL ? String(cString: sqlite3_column_text(statement,2)) : nil
+                let toolColumn = String(cString: sqlite3_column_text(statement, 3))
+                let tabColumn = String(cString: sqlite3_column_text(statement, 4))
+                let mapColumn = String(cString: sqlite3_column_text(statement, 5))
+                let gameColumn = String(cString: sqlite3_column_text(statement, 6))
+                
+                subgalleries.append(SerializedGalleryModel(
+                    name: nameColumn,
+                    position: Int(positionColumn),
+                    assetsImageName: assetsImageNameColumn,
+                    tool: toolColumn,
+                    tab: tabColumn,
+                    map: mapColumn,
+                    game: gameColumn
+                ))
+            }
+            
+            return subgalleries
+        } else {
+            let errorMessage = String(cString: sqlite3_errmsg(dbConnection.handle))
+            throw SQLQueryError.genericError(reason: errorMessage)
+        }
+    }
+    
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func readGalleryPosition(
+        for dbConnection: Connection,
+        gallery: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String
+    ) throws -> Int? {
+        let findImageQuery = DBMS.gallery
+        
+        let findGalleryQuery = findImageQuery.table.filter(
+            findImageQuery.nameColumn == gallery.lowercased() &&
+            findImageQuery.foreignKeys.gameColumn == game.lowercased() &&
+            findImageQuery.foreignKeys.mapColumn == map.lowercased() &&
+            findImageQuery.foreignKeys.tabColumn == tab.lowercased() &&
+            findImageQuery.foreignKeys.toolColumn == tool.lowercased()
+        )
+        
+        
+        let positions = try dbConnection.prepare(findGalleryQuery).map { result in
+            return result[findImageQuery.positionColumn]
+        }
+        
+        assert(positions.count <= 1)
+        
+        return positions.first
+    }
+    
+    /// - `GALLERY(name, position, assetsImageName, tool, tab, map, game)`
+    /// - `PK(name, tool, tab, map, game)`
+    /// - `FK(tool, tab, map, game) REFERENCES TOOL(name, tab, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func readMasterForGallery(
+        for dbConnection: Connection,
+        gallery: String,
+        game: String,
+        map: String,
+        tab: String,
+        tool: String
+    ) throws -> SerializedGalleryModel? {
+        let slavesTable = DBMS.subgallery
+        let galleryTable = DBMS.gallery
+        
+        let findMasterQuery = galleryTable.table
+            .select(
+                galleryTable.nameColumn,
+                galleryTable.assetsImageNameColumn,
+                galleryTable.positionColumn,
+                galleryTable.foreignKeys.gameColumn,
+                galleryTable.foreignKeys.mapColumn,
+                galleryTable.foreignKeys.tabColumn,
+                galleryTable.foreignKeys.toolColumn
+            )
+            .join(
+                slavesTable.table,
+                on: slavesTable.slaveColumn == gallery &&
+                slavesTable.masterColumn == galleryTable.nameColumn &&
+                slavesTable.foreignKeys.gameColumn == galleryTable.foreignKeys.gameColumn &&
+                slavesTable.foreignKeys.mapColumn == galleryTable.foreignKeys.mapColumn &&
+                slavesTable.foreignKeys.tabColumn == galleryTable.foreignKeys.tabColumn &&
+                slavesTable.foreignKeys.toolColumn == galleryTable.foreignKeys.toolColumn
+        )
+        
+        let masters = try dbConnection.prepare(findMasterQuery).map { result in
+            return SerializedGalleryModel(result)
+        }
+
+        assert(masters.count <= 0)
+        return masters.first
+    }
+    
+    // MARK: - TOOLS
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    public static func readToolsForTab(
+        for dbConnection: Connection,
+        game: String,
+        map: String,
+        tab: String
+    ) throws -> [SerializedToolModel] {
+        let tools = DBMS.tool
+        
+        let findToolsQuery = tools.table
+            .filter(
+                tools.foreignKeys.gameColumn == game &&
+                tools.foreignKeys.mapColumn == map &&
+                tools.foreignKeys.tabColumn == tab
+            ).order(tools.positionColumn)
+        
+        return try dbConnection.prepare(findToolsQuery).map { result in
+            return SerializedToolModel(result)
+        }
+    }
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func readToolPosition(
+        for dbConnection: Connection,
+        tool: String,
+        game: String,
+        map: String,
+        tab: String
+    ) throws -> Int? {
+        let toolTable = DBMS.tool
+        
+        let findToolQuery = toolTable.table.filter(
+            toolTable.nameColumn == tool.lowercased() &&
+            toolTable.foreignKeys.gameColumn == game.lowercased() &&
+            toolTable.foreignKeys.mapColumn == map.lowercased() &&
+            toolTable.foreignKeys.tabColumn == tab.lowercased()
+        )
+        
+        let positions = try dbConnection.prepare(findToolQuery).map { result in
+            return result[toolTable.positionColumn]
+        }
+        
+        assert(positions.count <= 1)
+        
+        return positions.first
+    }
+    
+    
+    /// - `TOOL(name, position, assetsImageName, tab, map, game)`
+    /// - `PK(name, tab, map, game)`
+    /// - `FK(tab, map, game) REFERENCES TAB(name, map, game) ON DELETE CASCADE ON UPDATE CASCADE`
+    internal static func readTabForTool(
+        for dbConnection: Connection,
+        tool: String,
+        game: String,
+        map: String
+    ) throws -> SerializedTabModel? {
+        let toolTable = DBMS.tool
+        
+        let findTabQuery = toolTable.table.filter(
+            toolTable.nameColumn == tool.lowercased() &&
+            toolTable.foreignKeys.gameColumn == game.lowercased() &&
+            toolTable.foreignKeys.mapColumn == map.lowercased()
+        )
+        
+        let tabs = try dbConnection.prepare(findTabQuery).map { result in
+            return SerializedTabModel(result)
+        }
+        
+        assert(tabs.count <= 1)
+        
+        return tabs.first
+    }
 }
+
+
 
 
 public enum ReadGamesOption: Sendable {
@@ -1514,6 +2258,7 @@ public enum ReadGalleryOption: Sendable {
     case imagesCount
     case subgalleriesCount
     case nestingLevel
+    case maxDepth
 }
 
 
