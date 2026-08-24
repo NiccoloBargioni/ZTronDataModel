@@ -56,4 +56,20 @@ final class ReadTests: XCTestCase {
         }
     }
     
+    public final func testReadGalleryCompletion() throws {
+        try DBMSMockProvider.transaction { dbConnection in
+            let completions = try CRUD.readGalleryCompletionRanges(
+                for: dbConnection,
+                tool: "bo4.dotn.easter.egg.silver.bullets.tool.name",
+                tab: "easter egg",
+                map: "dead of the night",
+                game: "black ops 4"
+            )
+            
+            print("Estimated completions")
+            
+            return .rollback
+        }
+    }
+    
 }

@@ -1222,6 +1222,11 @@ extension CRUD {
         let subgalleries = DBMS.subgallery
         let searchToken = DBMS.gallerySearchToken
         
+        let completionRanges: [SerializedGalleryCompletionModel]? =
+            options.contains(.completionRange) ?
+        try? CRUD.readGalleryCompletionRanges(for: dbConnection, tool: tool, tab: tab, map: map, game: game) : nil
+
+        
         try dbConnection.run(
             masterSlavesGalleriesView.create(
                 gallery.table.join(
@@ -1287,13 +1292,14 @@ extension CRUD {
         var result: [ReadGalleryOption: [(any ReadGalleryOptional)?]] = [
             .galleries: [],
             .master: [],
-            .searchToken: []
+            .searchToken: [],
+            .completionRange: []
         ]
         
         let searchTokenTitle = SQLite.Expression<String?>(
             searchToken.titleColumn.template.droppingQuotes()
         )
-                
+        
         try dbConnection.prepare(findGalleriesQuery).forEach { row in
             let theGallery = SerializedGalleryModel(row, namespaceColumns: true)
             result[.galleries]?.append(theGallery)
@@ -1321,6 +1327,16 @@ extension CRUD {
                 result[.master]?.append(
                     row[masterSlavesGalleriesView[SQLite.Expression<String?>("master")]]
                 )
+            }
+            
+            if options.contains(.completionRange) {
+                if let completionRanges = completionRanges {
+                    if let matchingRange = completionRanges.first(where: { candidate in
+                        return candidate.getName() == theGallery.getName()
+                    }) {
+                        result[.completionRange]?.append(matchingRange)
+                    }
+                }
             }
             
         }
@@ -1553,6 +1569,11 @@ extension CRUD {
         
         galleriesWithOptions[.galleries] = galleries
         
+        let completionRanges: [SerializedGalleryCompletionModel]? =
+            options.contains(.completionRange) ?
+        try? CRUD.readGalleryCompletionRanges(for: dbConnection, tool: tool, tab: tab, map: map, game: game) : nil
+
+        
         if options.contains(.searchToken) {
             var allTokens: [SerializedSearchTokenModel] = []
             
@@ -1612,6 +1633,21 @@ extension CRUD {
             galleriesWithOptions[.imagesCount] = imagesCounts
         }
         
+        if options.contains(.completionRange) {
+            galleriesWithOptions[.completionRange] = []
+            
+            for gallery in galleries {
+                if let completionRanges = completionRanges {
+                    if let matchingRange = completionRanges.first(where: { candidate in
+                        return candidate.getName() == gallery.getName()
+                    }) {
+                        galleriesWithOptions[.completionRange]?.append(matchingRange)
+                    }
+                }
+            }
+        }
+
+        
         if options.contains(.subgalleriesCount) {
             var subgalleriesCount: [Int] = .init(repeating: 0, count: galleries.count)
             
@@ -1668,6 +1704,149 @@ extension CRUD {
         return galleriesWithOptions
     }
     
+    
+    public static func readGalleryCompletionRanges(
+        for dbConnection: Connection,
+        tool: String,
+        tab: String,
+        map: String,
+        game: String
+    ) throws -> [SerializedGalleryCompletionModel] {
+        let galleryTable = DBMS.gallery
+        let subgalleriesTable = DBMS.subgallery
+        let mediaTable = DBMS.visualMedia
+        let variantsTable = DBMS.imageVariant
+
+        let readGalleryCompletionQuery: String = """
+        WITH RECURSIVE GalleryPath AS (
+            SELECT
+                \(galleryTable.tableName).\(galleryTable.nameColumn.template),
+                \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template),
+                \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template),
+                \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template),
+                \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template),
+                0 AS depth,
+                printf('%08d', \(galleryTable.tableName).\(galleryTable.positionColumn.template)) AS sortKey
+            FROM \(galleryTable.tableName)
+            WHERE
+                \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template) = "\(tool.lowercased())"
+                AND \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template) = "\(tab.lowercased())"
+                AND \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template) = "\(map.lowercased())"
+                AND \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template) = "\(game.lowercased())"
+                AND NOT EXISTS (
+                    SELECT 1 FROM \(subgalleriesTable.tableName)
+                    WHERE \(subgalleriesTable.tableName).\(subgalleriesTable.slaveColumn.template) = \(galleryTable.tableName).\(galleryTable.nameColumn.template)
+                        AND \(subgalleriesTable.tableName).\(subgalleriesTable.foreignKeys.toolColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.toolColumn.template)
+                        AND \(subgalleriesTable.tableName).\(subgalleriesTable.foreignKeys.tabColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.tabColumn.template)
+                        AND \(subgalleriesTable.tableName).\(subgalleriesTable.foreignKeys.mapColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.mapColumn.template)
+                        AND \(subgalleriesTable.tableName).\(subgalleriesTable.foreignKeys.gameColumn.template) = \(galleryTable.tableName).\(galleryTable.foreignKeys.gameColumn.template)
+                )
+
+            UNION ALL
+
+            SELECT
+                CHILD_GALLERY.\(galleryTable.nameColumn.template),
+                CHILD_GALLERY.\(galleryTable.foreignKeys.toolColumn.template),
+                CHILD_GALLERY.\(galleryTable.foreignKeys.tabColumn.template),
+                CHILD_GALLERY.\(galleryTable.foreignKeys.mapColumn.template),
+                CHILD_GALLERY.\(galleryTable.foreignKeys.gameColumn.template),
+                GalleryPath.depth + 1,
+                GalleryPath.sortKey || '.' || printf('%08d', CHILD_GALLERY.\(galleryTable.positionColumn.template))
+            FROM \(galleryTable.tableName) CHILD_GALLERY
+            INNER JOIN \(subgalleriesTable.tableName) ON
+                \(subgalleriesTable.tableName).\(subgalleriesTable.slaveColumn.template) = CHILD_GALLERY.\(galleryTable.nameColumn.template)
+                AND \(subgalleriesTable.tableName).\(subgalleriesTable.foreignKeys.toolColumn.template) = CHILD_GALLERY.\(galleryTable.foreignKeys.toolColumn.template)
+                AND \(subgalleriesTable.tableName).\(subgalleriesTable.foreignKeys.tabColumn.template) = CHILD_GALLERY.\(galleryTable.foreignKeys.tabColumn.template)
+                AND \(subgalleriesTable.tableName).\(subgalleriesTable.foreignKeys.mapColumn.template) = CHILD_GALLERY.\(galleryTable.foreignKeys.mapColumn.template)
+                AND \(subgalleriesTable.tableName).\(subgalleriesTable.foreignKeys.gameColumn.template) = CHILD_GALLERY.\(galleryTable.foreignKeys.gameColumn.template)
+            INNER JOIN GalleryPath ON
+                GalleryPath.\(galleryTable.nameColumn.template) = \(subgalleriesTable.tableName).\(subgalleriesTable.masterColumn.template)
+                AND GalleryPath.\(galleryTable.foreignKeys.toolColumn.template) = CHILD_GALLERY.\(galleryTable.foreignKeys.toolColumn.template)
+                AND GalleryPath.\(galleryTable.foreignKeys.tabColumn.template) = CHILD_GALLERY.\(galleryTable.foreignKeys.tabColumn.template)
+                AND GalleryPath.\(galleryTable.foreignKeys.mapColumn.template) = CHILD_GALLERY.\(galleryTable.foreignKeys.mapColumn.template)
+                AND GalleryPath.\(galleryTable.foreignKeys.gameColumn.template) = CHILD_GALLERY.\(galleryTable.foreignKeys.gameColumn.template)
+        ),
+        MasterMedia AS (
+            SELECT
+                GalleryPath.sortKey AS gallerySortKey,
+                GalleryPath.sortKey || '.' || printf('%08d', \(mediaTable.tableName).\(mediaTable.positionColumn.template)) AS mediaSortKey
+            FROM \(mediaTable.tableName)
+            INNER JOIN GalleryPath ON
+                GalleryPath.\(galleryTable.nameColumn.template) = \(mediaTable.tableName).\(mediaTable.foreignKeys.galleryColumn.template)
+                AND GalleryPath.\(galleryTable.foreignKeys.toolColumn.template) = \(mediaTable.tableName).\(mediaTable.foreignKeys.toolColumn.template)
+                AND GalleryPath.\(galleryTable.foreignKeys.tabColumn.template) = \(mediaTable.tableName).\(mediaTable.foreignKeys.tabColumn.template)
+                AND GalleryPath.\(galleryTable.foreignKeys.mapColumn.template) = \(mediaTable.tableName).\(mediaTable.foreignKeys.mapColumn.template)
+                AND GalleryPath.\(galleryTable.foreignKeys.gameColumn.template) = \(mediaTable.tableName).\(mediaTable.foreignKeys.gameColumn.template)
+            WHERE
+                \(mediaTable.tableName).\(mediaTable.foreignKeys.toolColumn.template) = "\(tool.lowercased())"
+                AND \(mediaTable.tableName).\(mediaTable.foreignKeys.tabColumn.template) = "\(tab.lowercased())"
+                AND \(mediaTable.tableName).\(mediaTable.foreignKeys.mapColumn.template) = "\(map.lowercased())"
+                AND \(mediaTable.tableName).\(mediaTable.foreignKeys.gameColumn.template) = "\(game.lowercased())"
+                AND NOT EXISTS (
+                    SELECT 1 FROM \(variantsTable.tableName)
+                    WHERE \(variantsTable.tableName).\(variantsTable.slaveColumn.template) = \(mediaTable.tableName).\(mediaTable.nameColumn.template)
+                        AND \(variantsTable.tableName).\(variantsTable.foreignKeys.galleryColumn.template) = \(mediaTable.tableName).\(mediaTable.foreignKeys.galleryColumn.template)
+                        AND \(variantsTable.tableName).\(variantsTable.foreignKeys.toolColumn.template) = \(mediaTable.tableName).\(mediaTable.foreignKeys.toolColumn.template)
+                        AND \(variantsTable.tableName).\(variantsTable.foreignKeys.tabColumn.template) = \(mediaTable.tableName).\(mediaTable.foreignKeys.tabColumn.template)
+                        AND \(variantsTable.tableName).\(variantsTable.foreignKeys.mapColumn.template) = \(mediaTable.tableName).\(mediaTable.foreignKeys.mapColumn.template)
+                        AND \(variantsTable.tableName).\(variantsTable.foreignKeys.gameColumn.template) = \(mediaTable.tableName).\(mediaTable.foreignKeys.gameColumn.template)
+                )
+        ),
+        MediaCompletion AS (
+            SELECT
+                MasterMedia.gallerySortKey,
+                ROW_NUMBER() OVER (ORDER BY MasterMedia.mediaSortKey) AS rn,
+                COUNT(*) OVER () AS totalCount
+            FROM MasterMedia
+        )
+        SELECT
+            GalleryPath.\(galleryTable.nameColumn.template),
+            GalleryPath.depth,
+            MIN(CAST(MediaCompletion.rn AS REAL) / MediaCompletion.totalCount),
+            MAX(CAST(MediaCompletion.rn AS REAL) / MediaCompletion.totalCount)
+        FROM GalleryPath
+        LEFT JOIN MediaCompletion ON
+            (MediaCompletion.gallerySortKey = GalleryPath.sortKey)
+            OR (MediaCompletion.gallerySortKey LIKE (GalleryPath.sortKey || '.%'))
+        GROUP BY GalleryPath.\(galleryTable.nameColumn.template), GalleryPath.sortKey, GalleryPath.depth
+        ORDER BY GalleryPath.sortKey;
+        """
+
+        var statement: OpaquePointer?
+
+        defer {
+            sqlite3_finalize(statement)
+        }
+
+        if sqlite3_prepare_v2(dbConnection.handle, readGalleryCompletionQuery, -1, &statement, nil) == SQLITE_OK {
+            var galleries: [SerializedGalleryCompletionModel] = []
+
+            while sqlite3_step(statement) == SQLITE_ROW {
+
+                let nameColumn = String(cString: sqlite3_column_text(statement, 0))
+                let depthColumn = sqlite3_column_int(statement, 1)
+                let completionMinColumn: Double? = sqlite3_column_type(statement, 2) == SQLITE_NULL
+                    ? nil
+                    : sqlite3_column_double(statement, 2)
+                let completionMaxColumn: Double? = sqlite3_column_type(statement, 3) == SQLITE_NULL
+                    ? nil
+                    : sqlite3_column_double(statement, 3)
+
+                galleries.append(SerializedGalleryCompletionModel(
+                    name: nameColumn,
+                    depth: Int(depthColumn),
+                    completionMin: completionMinColumn,
+                    completionMax: completionMaxColumn
+                ))
+            }
+
+            return galleries
+        } else {
+            let errorMessage = String(cString: sqlite3_errmsg(dbConnection.handle))
+            throw SQLQueryError.genericError(reason: errorMessage)
+        }
+    }
+
     
     // MARK: - TAB
     
@@ -2259,6 +2438,7 @@ public enum ReadGalleryOption: Sendable {
     case subgalleriesCount
     case nestingLevel
     case maxDepth
+    case completionRange
 }
 
 
