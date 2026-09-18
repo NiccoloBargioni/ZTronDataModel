@@ -516,7 +516,7 @@ extension CRUD {
         }
 
         
-        let sql = visualMediasTable.table.join(
+        let joinedWithVariants: Table = visualMediasTable.table.join(
             .leftOuter,
             imageVariants.table,
             on: visualMediasTable.table[visualMediasTable.nameColumn] == imageVariants.table[imageVariants.masterColumn] &&
@@ -525,7 +525,9 @@ extension CRUD {
             visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == imageVariants.table[imageVariants.foreignKeys.tabColumn] &&
             visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == imageVariants.table[imageVariants.foreignKeys.mapColumn] &&
             visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == imageVariants.table[imageVariants.foreignKeys.gameColumn]
-        ).join(
+        )
+
+        let joinedWithParentView: Table = joinedWithVariants.join(
             .leftOuter,
             parentView,
             on: visualMediasTable.table[visualMediasTable.nameColumn] == parentView[parentViewChild] &&
@@ -534,7 +536,9 @@ extension CRUD {
             visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == parentView[visualMediasTable.foreignKeys.tabColumn] &&
             visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == parentView[visualMediasTable.foreignKeys.mapColumn] &&
             visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == parentView[visualMediasTable.foreignKeys.gameColumn]
-        ).join(
+        )
+
+        let joinedWithOutline: Table = joinedWithParentView.join(
             .leftOuter,
             outline.table,
             on: visualMediasTable.table[visualMediasTable.nameColumn] == outline.table[outline.foreignKeys.imageColumn] &&
@@ -543,7 +547,9 @@ extension CRUD {
             visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == outline.table[outline.foreignKeys.tabColumn] &&
             visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == outline.table[outline.foreignKeys.mapColumn] &&
             visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == outline.table[outline.foreignKeys.gameColumn]
-        ).join(
+        )
+
+        let joinedWithBoundingCircle: Table = joinedWithOutline.join(
             .leftOuter,
             boundingCircle.table,
             on: visualMediasTable.table[visualMediasTable.nameColumn] == boundingCircle.table[boundingCircle.foreignKeys.imageColumn] &&
@@ -552,7 +558,9 @@ extension CRUD {
             visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == boundingCircle.table[boundingCircle.foreignKeys.tabColumn] &&
             visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == boundingCircle.table[boundingCircle.foreignKeys.mapColumn] &&
             visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == boundingCircle.table[boundingCircle.foreignKeys.gameColumn]
-        ).join(
+        )
+
+        let joinedWithLabel: Table = joinedWithBoundingCircle.join(
             .leftOuter,
             label.table,
             on: visualMediasTable.table[visualMediasTable.nameColumn] == label.table[label.foreignKeys.imageColumn] &&
@@ -561,14 +569,18 @@ extension CRUD {
             visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == label.table[label.foreignKeys.tabColumn] &&
             visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == label.table[label.foreignKeys.mapColumn] &&
             visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == label.table[label.foreignKeys.gameColumn]
-        ).filter(
+        )
+
+        let filtered: Table = joinedWithLabel.filter(
             visualMediasTable.table[visualMediasTable.nameColumn] == image &&
             visualMediasTable.table[visualMediasTable.foreignKeys.galleryColumn] == gallery &&
             visualMediasTable.table[visualMediasTable.foreignKeys.toolColumn] == tool &&
             visualMediasTable.table[visualMediasTable.foreignKeys.tabColumn] == tab &&
             visualMediasTable.table[visualMediasTable.foreignKeys.mapColumn] == map &&
             visualMediasTable.table[visualMediasTable.foreignKeys.gameColumn] == game
-        ).select(
+        )
+
+        let sql: Table = filtered.select(
             visualMediasTable.table[visualMediasTable.nameColumn],
             visualMediasTable.table[visualMediasTable.descriptionColumn],
             visualMediasTable.table[visualMediasTable.positionColumn],
