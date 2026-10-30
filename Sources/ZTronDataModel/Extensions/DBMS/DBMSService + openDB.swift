@@ -20,6 +20,7 @@ extension DBMSService {
         do {
             print("dbConnection URL: \(dbURL) from \(caller)")
             let dbConnection = try Connection(dbURL)
+            dbConnection.busyTimeout = 5
             try dbConnection.run("PRAGMA recursive_triggers = 1")
             try dbConnection.run("PRAGMA foreign_keys = 1")
             return dbConnection
@@ -34,6 +35,7 @@ extension DBMSService {
         do {
             print("dbConnection URL: \(path) from \(caller)")
             let dbConnection = try Connection(path)
+            dbConnection.busyTimeout = 5
             try dbConnection.run("PRAGMA recursive_triggers = 1")
             try dbConnection.run("PRAGMA foreign_keys = 1")
             return dbConnection
@@ -62,6 +64,7 @@ extension DBMSService {
         
         if sqlite3_open(dbURL, &db) == SQLITE_OK {
             if let db = db {
+                sqlite3_busy_timeout(db, 5_000)
                 try self.performSQLStatement(for: db, query: "PRAGMA foreign_keys = 1")
                 try self.performSQLStatement(for: db, query: "PRAGMA recursive_triggers = 1")
             }
@@ -80,6 +83,7 @@ extension DBMSService {
         
         if sqlite3_open(dbURL, &db) == SQLITE_OK {
             if let db = db {
+                sqlite3_busy_timeout(db, 5_000)
                 try self.performSQLStatement(for: db, query: "PRAGMA foreign_keys = 1")
                 try self.performSQLStatement(for: db, query: "PRAGMA recursive_triggers = 1")
             }
