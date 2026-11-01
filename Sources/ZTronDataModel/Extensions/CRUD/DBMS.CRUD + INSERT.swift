@@ -113,7 +113,8 @@ public final class CRUD {
         try dbConnection.run(
             tab.table.insert(
                 or: or,
-                tab.nameColumn <- name,
+                // Tab names are stored lowercased: every UPDATE/DELETE on TAB filters on `name.lowercased()`.
+                tab.nameColumn <- name.lowercased(),
                 tab.positionColumn <- position,
                 tab.ratingColumn <- rating,
                 tab.foreignKeys.gameColumn <- game,

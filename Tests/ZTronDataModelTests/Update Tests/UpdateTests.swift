@@ -74,6 +74,116 @@ final class UpdateTests: XCTestCase {
     }
     
     
+    // MARK: - TEST TABS UPDATE
+    public final func testTabPositionUpdates() async throws {
+        try DBMSMockProvider.transaction { dbConnection in
+            let tabsForShaolin = try CRUD.readTabsForMap(
+                for: dbConnection,
+                game: "infinite warfare",
+                map: "shaolin shuffle"
+            )
+            
+            XCTAssertGreaterThan(tabsForShaolin.count, 1)
+            
+            let randomPositions = (0..<tabsForShaolin.count).shuffled()
+            var expectedPositionByName: [String: Int] = [:]
+            
+            zip(tabsForShaolin, randomPositions).forEach { tab, position in
+                expectedPositionByName[tab.getName()] = position
+            }
+            
+            try CRUD.updateTabsForMap(
+                for: dbConnection,
+                game: "infinite warfare",
+                map: "shaolin shuffle"
+            ) { tabDraft in
+                XCTAssertFalse(tabDraft.didPositionChange())
+                
+                guard let newPosition = expectedPositionByName[tabDraft.getName()] else {
+                    fatalError("Unable to find a target position for tab \(tabDraft.getName())")
+                }
+                
+                tabDraft.withUpdatedPosition(newPosition)
+                
+                if newPosition != tabDraft.getPreviousPosition() {
+                    XCTAssertTrue(tabDraft.didPositionChange())
+                }
+            } validate: { tabModels in
+                let sortedPositions = tabModels.map { $0.getPosition() }.sorted()
+                return sortedPositions == Array(0..<tabModels.count)
+            }
+            
+            let tabsAfterUpdate = try CRUD.readTabsForMap(
+                for: dbConnection,
+                game: "infinite warfare",
+                map: "shaolin shuffle"
+            )
+            
+            XCTAssertEqual(tabsAfterUpdate.count, tabsForShaolin.count)
+            
+            // `readTabsForMap` orders by position, so index i must hold the tab assigned position i.
+            tabsAfterUpdate.enumerated().forEach { i, tab in
+                XCTAssertEqual(tab.getPosition(), i)
+                XCTAssertEqual(expectedPositionByName[tab.getName()], i)
+            }
+            
+            return .rollback
+        }
+    }
+    
+    
+    public final func testTabRenameAndRatingUpdate() async throws {
+        try DBMSMockProvider.transaction { dbConnection in
+            let tabsForShaolin = try CRUD.readTabsForMap(
+                for: dbConnection,
+                game: "infinite warfare",
+                map: "shaolin shuffle"
+            )
+            
+            guard let targetTab = tabsForShaolin.first else {
+                fatalError("Expected at least one tab for shaolin shuffle")
+            }
+            
+            let newName = "\(targetTab.getName()) renamed"
+            let newRating = (targetTab.getRating() + 1) % 4
+            
+            try CRUD.updateTabsForMap(
+                for: dbConnection,
+                game: "infinite warfare",
+                map: "shaolin shuffle"
+            ) { tabDraft in
+                if tabDraft.getName() == targetTab.getName() {
+                    tabDraft
+                        .withName(newName)
+                        .withRating(newRating)
+                }
+            } validate: { _ in
+                return true
+            }
+            
+            let tabsAfterUpdate = try CRUD.readTabsForMap(
+                for: dbConnection,
+                game: "infinite warfare",
+                map: "shaolin shuffle"
+            )
+            
+            XCTAssertEqual(tabsAfterUpdate.count, tabsForShaolin.count)
+            XCTAssertNil(tabsAfterUpdate.first { $0.getName() == targetTab.getName() })
+            
+            guard let renamedTab = tabsAfterUpdate.first(where: { $0.getName() == newName }) else {
+                XCTFail("Renamed tab \(newName) not found after update")
+                return .rollback
+            }
+            
+            // The rating update must land on the same row that was renamed.
+            XCTAssertEqual(renamedTab.getRating(), newRating)
+            XCTAssertEqual(renamedTab.getPosition(), targetTab.getPosition())
+            
+            return .rollback
+        }
+    }
+    
+    
     public final func testUpdateOutline() async throws {
         try DBMSMockProvider.transaction { dbConnection in
             

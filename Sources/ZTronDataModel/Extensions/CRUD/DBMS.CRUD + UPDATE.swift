@@ -2395,12 +2395,14 @@ public extension CRUD {
     ) throws -> Void {
         let tools = DBMS.tool
         
+        // Only the specified tool is moved, and it is moved to `newTab` (not back to its current tab).
         try dbConnection.run(
             tools.table.filter(
+                tools.nameColumn == tool &&
                 tools.foreignKeys.tabColumn == tab &&
                 tools.foreignKeys.mapColumn == map &&
                 tools.foreignKeys.gameColumn == game
-            ).update(tools.foreignKeys.tabColumn <- tab.lowercased())
+            ).update(tools.foreignKeys.tabColumn <- newTab.lowercased())
         )
     }
     
@@ -2443,12 +2445,25 @@ public extension CRUD {
         }
         
         let toolModel = DBMS.tool
+        let tabModel = DBMS.tab
         
-        let findAllTabsForThisToolQuery = toolModel.table.filter(
+        // Collect the names of the tabs that contain a tool with this name, then load the actual TAB rows.
+        // Building a `SerializedTabModel` straight from a TOOL row would crash: TOOL has no `rating` column.
+        let findTabNamesForThisToolQuery = toolModel.table.select(toolModel.foreignKeys.tabColumn).filter(
             toolModel.nameColumn == tool &&
             toolModel.foreignKeys.mapColumn == map &&
             toolModel.foreignKeys.gameColumn == game
         )
+        
+        let tabNamesForThisTool = try dbConnection.prepare(findTabNamesForThisToolQuery).map { toolRow in
+            return toolRow[toolModel.foreignKeys.tabColumn]
+        }
+        
+        let findAllTabsForThisToolQuery = tabModel.table.filter(
+            tabNamesForThisTool.contains(tabModel.nameColumn) &&
+            tabModel.foreignKeys.mapColumn == map &&
+            tabModel.foreignKeys.gameColumn == game
+        ).order(tabModel.positionColumn)
         
         let allTabsForThisTool = try dbConnection.prepare(findAllTabsForThisToolQuery).map { tabRow in
             return SerializedTabModel(tabRow)
@@ -2635,10 +2650,13 @@ public extension CRUD {
                     )
                 }
                 
+                // Rename last: every update above filters on the tool's previous name.
+                // If the tab changed above, the tool now lives in `getTab()`.
                 if toolDraftModel.didNameChange() {
-                    try Self.updateTabName(
+                    try Self.updateToolName(
                         for: dbConnection,
-                        newTabName: toolDraftModel.getName(),
+                        newToolName: toolDraftModel.getName(),
+                        tool: toolDraftModel.getPreviousName(),
                         game: game,
                         map: map,
                         tab: toolDraftModel.getTab()
@@ -2779,20 +2797,21 @@ public extension CRUD {
                     )
                 }
                 
-                if tabModelDraft.didNameChange() {
-                    try Self.updateTabName(
+                if tabModelDraft.didRatingChange() {
+                    try Self.updateTabRating(
                         for: dbConnection,
-                        newTabName: tabModelDraft.getName(),
+                        rating: tabModelDraft.getRating(),
                         game: game,
                         map: map,
                         tab: tabModelDraft.getPreviousName()
                     )
                 }
                 
-                if tabModelDraft.didRatingChange() {
-                    try Self.updateTabRating(
+                // Rename last: the updates above filter on the tab's previous name.
+                if tabModelDraft.didNameChange() {
+                    try Self.updateTabName(
                         for: dbConnection,
-                        rating: tabModelDraft.getRating(),
+                        newTabName: tabModelDraft.getName(),
                         game: game,
                         map: map,
                         tab: tabModelDraft.getPreviousName()

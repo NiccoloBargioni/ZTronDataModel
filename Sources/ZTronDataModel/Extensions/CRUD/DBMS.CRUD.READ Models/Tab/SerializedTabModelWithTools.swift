@@ -98,14 +98,30 @@ public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableOb
         weak private var owner: SerializedTabModelWithTools?
         private var position: Int
         
+        private var didPositionUpdate: Bool = false
+        
         internal init(from: SerializedTabModelWithTools) {
             self.owner = from
             self.position = from.getPosition()
         }
         
         @discardableResult public final func withUpdatedPosition(_ newPosition: Int) -> WritableDraft {
-            self.position = newPosition
+            if self.position != newPosition {
+                self.position = newPosition
+                self.didPositionUpdate = true
+            }
             return self
+        }
+        
+        internal final func didPositionChange() -> Bool {
+            return self.didPositionUpdate
+        }
+        
+        public final func getPreviousPosition() -> Int {
+            guard let owner = self.owner else {
+                fatalError("Unable to retain reference of master before reading `position`.")
+            }
+            return owner.position
         }
         
         public final func getPosition() -> Int {
@@ -114,9 +130,10 @@ public final class SerializedTabModelWithTools: Hashable, Sendable, ObservableOb
         
         public final func getImmutableCopy() -> SerializedTabModelWithTools {
             guard let owner = self.owner else { fatalError("Failed to retain reference to mutable parent of type \(String(describing: SerializedTabModelWithTools.self))") }
+            // Use the draft's position so that changes made through the draft are not discarded.
             return SerializedTabModelWithTools(
                 name: owner.name,
-                position: owner.position,
+                position: self.position,
                 rating: owner.rating,
                 map: owner.map,
                 game: owner.game,
